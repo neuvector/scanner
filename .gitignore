@@ -23,4 +23,9 @@ _testmain.go
 *.test
 *.prof
 
+.*.swp
+.vscode
+*.code-workspace
+*.bak
+
 /scanner

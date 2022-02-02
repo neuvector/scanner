@@ -37,11 +37,5 @@
 # dependency files
 *.d
 
-cscope.out
-tags
-
 # project specifics
-/.objs/
-/.deps/
-/rpmparser
-!/objects/*/*.o
+monitor

@@ -18,8 +18,8 @@ import (
 	"bufio"
 	"strings"
 
-	"github.com/neuvector/neuvector/scanner/common"
-	"github.com/neuvector/neuvector/scanner/detectors"
+	"github.com/neuvector/scanner/common"
+	"github.com/neuvector/scanner/detectors"
 )
 
 // AptSourcesNamespaceDetector implements NamespaceDetector and detects the Namespace from the

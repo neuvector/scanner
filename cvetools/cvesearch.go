@@ -2,6 +2,7 @@ package cvetools
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,36 +11,32 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/coreos/clair/utils/types"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/net/context"
 
-	"github.com/neuvector/neuvector/scanner/common"
-	"github.com/neuvector/neuvector/scanner/detectors"
-	_ "github.com/neuvector/neuvector/scanner/detectors/feature/apk"
-	_ "github.com/neuvector/neuvector/scanner/detectors/feature/dpkg"
-	_ "github.com/neuvector/neuvector/scanner/detectors/feature/others"
-	_ "github.com/neuvector/neuvector/scanner/detectors/feature/rpm"
-	_ "github.com/neuvector/neuvector/scanner/detectors/namespace/aptsources"
-	_ "github.com/neuvector/neuvector/scanner/detectors/namespace/lsbrelease"
-	_ "github.com/neuvector/neuvector/scanner/detectors/namespace/osrelease"
-	_ "github.com/neuvector/neuvector/scanner/detectors/namespace/redhatrelease"
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/httptrace"
 	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/scan/secrets"
 	"github.com/neuvector/neuvector/share/utils"
+	"github.com/neuvector/scanner/common"
+	"github.com/neuvector/scanner/detectors"
+	_ "github.com/neuvector/scanner/detectors/feature/apk"
+	_ "github.com/neuvector/scanner/detectors/feature/dpkg"
+	_ "github.com/neuvector/scanner/detectors/feature/others"
+	_ "github.com/neuvector/scanner/detectors/feature/rpm"
+	_ "github.com/neuvector/scanner/detectors/namespace/aptsources"
+	_ "github.com/neuvector/scanner/detectors/namespace/lsbrelease"
+	_ "github.com/neuvector/scanner/detectors/namespace/osrelease"
+	_ "github.com/neuvector/scanner/detectors/namespace/redhatrelease"
 )
 
 const (
-	maxFileSize     = 50 * 1024 * 1024 // 50 MiB
+	maxFileSize     = 300 * 1024 * 1024
 	rpmPackages     = "var/lib/rpm/Packages"
 	contentManifest = "root/buildinfo/content_manifests"
 	dockerfile      = "root/buildinfo/Dockerfile-"
 )
-
-var minSeverity = types.Medium
 
 var toExtract utils.Set = utils.NewSet("var/lib/dpkg/status",
 	"var/lib/rpm/Packages",
@@ -112,7 +109,6 @@ type layerScanFiles struct {
 	apps []detectors.AppFeatureVersion
 }
 
-// ScanImageData helps scanning image data
 func (cv *CveTools) ScanImageData(data *share.ScanData) (*share.ScanResult, error) {
 	result := &share.ScanResult{
 		Provider:        share.ScanProvider_Neuvector,
@@ -360,7 +356,7 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 		fileMap := make(map[string]string) // [realpath]:[mapping path from its layer folder]
 		for i := len(info.Layers) - 1; i >= 0; i-- {
 			layerPath := filepath.Join(imgPath, info.Layers[i])
-			if _, err := scan.CollectImageFileMap(layerPath, fileMap); err != nil {
+			if _, err := collectImageFileMap(layerPath, fileMap); err != nil {
 				log.WithFields(log.Fields{"error": err, "layer": layerPath}).Error("virtual image map")
 				break
 			}
@@ -574,7 +570,7 @@ func (cv *CveTools) ScanAwsLambda(req *share.ScanAwsLambdaRequest, imgPath strin
 
 	uid := uuid.New().String()
 	filename := fmt.Sprintf("/tmp/%s-%s-%s.zip", req.Region, req.FuncName, uid)
-	err := scan.DownloadFromUrl(req.FuncLink, filename)
+	err := downloadFromUrl(req.FuncLink, filename)
 	if err != nil {
 		log.WithFields(log.Fields{"Lambda": req.FuncName}).Error("Lambada Func download fail")
 		result.Error = share.ScanErrorCode_ScanErrAwsDownloadErr
@@ -587,7 +583,7 @@ func (cv *CveTools) ScanAwsLambda(req *share.ScanAwsLambdaRequest, imgPath strin
 	if req.ScanSecrets {
 		// for scan Secrets
 		if imgPath == "" { // not-defined yet
-			imgPath = scan.CreateImagePath("")
+			imgPath = createImagePath("")
 			defer os.RemoveAll(imgPath)
 		}
 
@@ -1069,7 +1065,7 @@ type vulnerabilityInfo struct {
 	vulnerability common.VulFull
 	featVer       detectors.FeatureVersion
 	fixedIn       common.FeaFull
-	severity      types.Priority
+	severity      common.Priority
 }
 type SortBy func(v1, v2 vulnerabilityInfo) bool
 
@@ -1112,7 +1108,7 @@ func getVulItemList(vuls []vulFullReport) []*share.ScanVulnerability {
 			// vul.ft.Feature.Name = name[a+1:]
 			name = name[:a]
 		}
-		severity := types.Priority(vul.Vf.Severity)
+		severity := common.Priority(vul.Vf.Severity)
 
 		var fixedin common.FeaFull
 		if len(vul.Vf.FixedIn) == 1 {
@@ -1167,8 +1163,8 @@ func getVulItemList(vuls []vulFullReport) []*share.ScanVulnerability {
 		}
 		unique.Add(key)
 
-		if severity == types.Critical {
-			severity = types.High
+		if severity == common.Critical {
+			severity = common.High
 		}
 		var cpes []string
 		if featver.CPEs != nil && featver.CPEs.Cardinality() > 0 {

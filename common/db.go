@@ -24,7 +24,10 @@ import (
 const maxExtractSize = 0 // No extract limit
 const maxVersionHeader = 100 * 1024
 const maxBufferSize = 1024 * 1024
-const encryptLocalDB = true
+
+func getCVEDBEncryptKey() []byte {
+	return cveDBEncryptKey
+}
 
 type DBFile struct {
 	Filename string
@@ -100,14 +103,6 @@ func readCveDbMeta(path, osname string, fullDb map[string]*share.ScanVulnerabili
 		return err
 	}
 
-	if encryptLocalDB {
-		data, err = utils.Decrypt(utils.GetCVEDBEncryptKey(), data)
-		if err != nil {
-			log.WithFields(log.Fields{"error": err}).Error("Decrypt file error")
-			return err
-		}
-	}
-
 	buf := make([]byte, maxBufferSize)
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 	scanner.Buffer(buf, maxBufferSize)
@@ -172,14 +167,6 @@ func readAppDbMeta(path string, fullDb map[string]*share.ScanVulnerability, outC
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Read file error")
 		return err
-	}
-
-	if encryptLocalDB {
-		data, err = utils.Decrypt(utils.GetCVEDBEncryptKey(), data)
-		if err != nil {
-			log.WithFields(log.Fields{"error": err}).Error("Decrypt file error")
-			return err
-		}
 	}
 
 	buf := make([]byte, maxBufferSize)
@@ -291,14 +278,6 @@ func LoadVulnerabilityIndex(path, osname string) ([]VulShort, error) {
 		return nil, err
 	}
 
-	if encryptLocalDB {
-		data, err = utils.Decrypt(utils.GetCVEDBEncryptKey(), data)
-		if err != nil {
-			log.WithFields(log.Fields{"error": err}).Error("Decrypt file error")
-			return nil, err
-		}
-	}
-
 	vul := make([]VulShort, 0)
 
 	buf := make([]byte, maxBufferSize)
@@ -333,14 +312,6 @@ func LoadFullVulnerabilities(path, osname string) (map[string]VulFull, error) {
 		return nil, err
 	}
 
-	if encryptLocalDB {
-		data, err = utils.Decrypt(utils.GetCVEDBEncryptKey(), data)
-		if err != nil {
-			log.WithFields(log.Fields{"error": err}).Error("Decrypt file error")
-			return nil, err
-		}
-	}
-
 	fullDb := make(map[string]VulFull, 0)
 
 	buf := make([]byte, maxBufferSize)
@@ -372,14 +343,6 @@ func LoadAppVulsTb(path string) (map[string][]AppModuleVul, error) {
 	if err != nil {
 		log.WithFields(log.Fields{"filename": filename, "error": err}).Error("Read file error")
 		return nil, err
-	}
-
-	if encryptLocalDB {
-		data, err = utils.Decrypt(utils.GetCVEDBEncryptKey(), data)
-		if err != nil {
-			log.WithFields(log.Fields{"filename": filename, "error": err}).Error("Decrypt file error")
-			return nil, err
-		}
 	}
 
 	vul := make(map[string][]AppModuleVul, 0)
@@ -437,14 +400,6 @@ func LoadRawFile(path, name string) ([]byte, error) {
 	if err != nil {
 		log.WithFields(log.Fields{"filename": filename, "error": err}).Error("Read file error")
 		return nil, err
-	}
-
-	if encryptLocalDB {
-		data, err = utils.Decrypt(utils.GetCVEDBEncryptKey(), data)
-		if err != nil {
-			log.WithFields(log.Fields{"filename": filename, "error": err}).Error("Decrypt file error")
-			return nil, err
-		}
 	}
 
 	return data, nil
@@ -624,18 +579,14 @@ func unzipDb(path, desPath string) error {
 	}
 
 	// Use local decrypt function
-	plainData, err := decrypt(cipherData, utils.GetCVEDBEncryptKey())
+	plainData, err := decrypt(cipherData, getCVEDBEncryptKey())
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Decrypt tar file error")
 		return err
 	}
 
 	tarFile := bytes.NewReader(plainData)
-	if encryptLocalDB {
-		err = utils.ExtractAllArchiveToFiles(desPath, tarFile, maxExtractSize, utils.GetCVEDBEncryptKey())
-	} else {
-		err = utils.ExtractAllArchiveToFiles(desPath, tarFile, maxExtractSize, nil)
-	}
+	err = utils.ExtractAllArchiveToFiles(desPath, tarFile, maxExtractSize, nil)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Extract db file error")
 		return err
@@ -649,14 +600,6 @@ func checkDbHash(filename, hash string) bool {
 	if err != nil {
 		log.WithFields(log.Fields{"file": filename, "error": err}).Info("Read file error")
 		return false
-	}
-
-	if encryptLocalDB {
-		data, err = utils.Decrypt(utils.GetCVEDBEncryptKey(), data)
-		if err != nil {
-			log.WithFields(log.Fields{"file": filename, "error": err}).Error("Decrypt file error")
-			return false
-		}
 	}
 
 	sha := sha256.Sum256(data)

@@ -6,18 +6,9 @@ MAKE = make
 
 ROOTDIR = $(TOPDIR)/..
 
-GCC_VERSION = $(shell gcc -dumpversion)
-
 CFLAGS = -Wall -Werror -fstrict-aliasing -Wstrict-aliasing -g
 CFLAGS += -I./ -I$(TOPDIR)/
 CFLAGS += -O3
-
-# -no-pie is supported since gcc 6
-ifeq ("6.0",$(firstword $(sort "$(GCC_VERSION)" "6.0")))
-LDFLAGS = -no-pie -L$(TOPDIR)/third-party/.objs/lib
-else
-LDFLAGS = -L$(TOPDIR)/third-party/.objs/lib
-endif
 
 CSRCS += $(wildcard *.c)
 OBJS := $(CSRCS:%.c=%.o)

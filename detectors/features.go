@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/neuvector/neuvector/scanner/common"
+	"github.com/neuvector/scanner/common"
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/utils"

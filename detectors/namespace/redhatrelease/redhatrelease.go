@@ -18,7 +18,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/neuvector/neuvector/scanner/detectors"
+	"github.com/neuvector/scanner/detectors"
 )
 
 var redhatReleaseRegexp = regexp.MustCompile(`(?P<os>[^\s]*) (Linux release|release) (?P<version>[\d]+)`)

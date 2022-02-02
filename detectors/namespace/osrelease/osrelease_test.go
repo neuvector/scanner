@@ -3,7 +3,7 @@ package osrelease
 import (
 	"testing"
 
-	"github.com/neuvector/neuvector/scanner/detectors"
+	"github.com/neuvector/scanner/detectors"
 )
 
 func Test_AMZN(t *testing.T) {
