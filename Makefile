@@ -46,4 +46,4 @@ ubi_scanner:
 binary:
 	@echo "Making $@ ..."
 	@docker pull $(REPO_REL_URL)/neuvector/build
-	@docker run --rm -ia STDOUT --name build -e VULN_VER=$(VULN_VER) --net=none -v $(CURDIR):/go/src/github.com/neuvector/scanner -w /go/src/github.com/neuvector/scanner --entrypoint ./make_bin.sh $(REPO_REL_URL)/neuvector/build
+	@docker run --rm -ia STDOUT --name build -e VULN_VER=$(VULN_VER) -v $(CURDIR):/go/src/github.com/neuvector/scanner -w /go/src/github.com/neuvector/scanner --entrypoint ./make_bin.sh $(REPO_REL_URL)/neuvector/build
