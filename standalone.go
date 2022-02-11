@@ -14,7 +14,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/neuvector/neuvector/controller/api"
-	"github.com/neuvector/neuvector/controller/common"
 	"github.com/neuvector/neuvector/share"
 	scanUtils "github.com/neuvector/neuvector/share/scan"
 )
@@ -39,7 +38,7 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 		CVEDBCreateTime: cveTools.CveDBCreateTime,
 		CVEDB:           cvedb,
 	}
-	common.SetScannerDB(newDB)
+	scanUtils.SetScannerDB(newDB)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*20)
 	if scanTasker != nil {
@@ -68,7 +67,7 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 			"registry": req.Registry, "repo": req.Repository, "tag": req.Tag,
 		}).Info("Scan repository finish")
 
-		rpt := common.ScanRepoResult2REST(result, nil)
+		rpt := scanUtils.ScanRepoResult2REST(result, nil)
 		rptData.Report = rpt
 	}
 
