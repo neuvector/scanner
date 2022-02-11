@@ -678,8 +678,10 @@ github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f/go.mod h1:qRW
 github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f/go.mod h1:ZdcZmHo+o7JKHSa8/e818NopupXU1YMK5fe1lsApnBw=
 github.com/nbutton23/zxcvbn-go v0.0.0-20160627004424-a22cb81b2ecd/go.mod h1:o96djdrsSGy3AWPyBgZMAGfxZNfgntdJG+11KU4QvbU=
 github.com/nbutton23/zxcvbn-go v0.0.0-20171102151520-eafdab6b0663/go.mod h1:o96djdrsSGy3AWPyBgZMAGfxZNfgntdJG+11KU4QvbU=
-github.com/neuvector/neuvector v5.0.0-preview.1.0.20220126034402-1a26b1032116+incompatible h1:vmiE0/T29IsG8tq0M0+aQZuGoiiNOJTlc7Vp9SM0PY0=
-github.com/neuvector/neuvector v5.0.0-preview.1.0.20220126034402-1a26b1032116+incompatible/go.mod h1:Plt68l+XIQ0yrm4G4IevMZgZcTNbBm13QW85Ez/HkXg=
+github.com/neuvector/neuvector v5.0.0-preview.1.0.20220211025229-d3840aee5080+incompatible h1:B6GAP2pmfg9VCRKbB900LpH9egvD3IYGysUUeGKq18g=
+github.com/neuvector/neuvector v5.0.0-preview.1.0.20220211025229-d3840aee5080+incompatible/go.mod h1:Plt68l+XIQ0yrm4G4IevMZgZcTNbBm13QW85Ez/HkXg=
+github.com/neuvector/neuvector v5.0.0-preview.1.0.20220211045101-73ed561218fc+incompatible h1:+Y9vnZ1F+F4BdAUb88yvokF3LuUWe75boid1rUzsxfA=
+github.com/neuvector/neuvector v5.0.0-preview.1.0.20220211045101-73ed561218fc+incompatible/go.mod h1:Plt68l+XIQ0yrm4G4IevMZgZcTNbBm13QW85Ez/HkXg=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWbfPhv4DMiApHyliiK5xCTNVSPiaAs=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=

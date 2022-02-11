@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const imageWorkingPath = "/tmp/images"
+const ImageWorkingPath = "/tmp/images"
 
 func downloadFromUrl(url, fileName string) error {
 	output, err := os.Create(fileName)
@@ -37,15 +37,15 @@ func downloadFromUrl(url, fileName string) error {
 }
 
 // Get an unique image folder under /tmp, return "" if can not allocate a good folder
-func createImagePath(uid string) string {
+func CreateImagePath(uid string) string {
 	var imgPath string
 
 	// existing uid
 	if uid != "" {
-		imgPath = filepath.Join(imageWorkingPath, uid)
+		imgPath = filepath.Join(ImageWorkingPath, uid)
 	} else {
 		for i := 0; i < 16; i++ {
-			imgPath = filepath.Join(imageWorkingPath, uuid.New().String())
+			imgPath = filepath.Join(ImageWorkingPath, uuid.New().String())
 			if _, err := os.Stat(imgPath); os.IsNotExist(err) {
 				break
 			}

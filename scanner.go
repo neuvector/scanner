@@ -10,8 +10,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/neuvector/scanner/common"
-	"github.com/neuvector/scanner/cvetools"
+	"github.com/neuvector/neuvector/controller/api"
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/cluster"
 	"github.com/neuvector/neuvector/share/container"
@@ -19,8 +18,8 @@ import (
 	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/system"
 	"github.com/neuvector/neuvector/share/utils"
-
-	"github.com/neuvector/neuvector/controller/api"
+	"github.com/neuvector/scanner/common"
+	"github.com/neuvector/scanner/cvetools"
 )
 
 func usage() {
@@ -198,8 +197,8 @@ func main() {
 	}
 
 	// recovered, clean up all possible previous image folders
-	os.RemoveAll(scan.ImageWorkingPath)
-	os.MkdirAll(scan.ImageWorkingPath, 0755)
+	os.RemoveAll(cvetools.ImageWorkingPath)
+	os.MkdirAll(cvetools.ImageWorkingPath, 0755)
 
 	var err error
 	if sys.IsRunningInContainer() {
