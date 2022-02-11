@@ -2,7 +2,7 @@
 
 # This script is invoked by build container
 
-go test github.com/neuvector/scanner/... || exit $?
+./unitest.sh || exit $?
 
 echo "==> Making monitor"
 cd monitor; make || exit $?; cd ..
