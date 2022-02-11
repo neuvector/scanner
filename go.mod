@@ -55,7 +55,7 @@ require (
 	github.com/hashicorp/serf v0.9.7 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
-	github.com/neuvector/neuvector v5.0.0-preview.1.0.20220126034402-1a26b1032116+incompatible
+	github.com/neuvector/neuvector v5.0.0-preview.1.0.20220211045101-73ed561218fc+incompatible
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/streadway/simpleuuid v0.0.0-20130420165545-6617b501e485 // indirect

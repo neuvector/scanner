@@ -15,12 +15,12 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/neuvector/scanner/common"
-	"github.com/neuvector/scanner/cvetools"
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/system"
 	"github.com/neuvector/neuvector/share/utils"
+	"github.com/neuvector/scanner/common"
+	"github.com/neuvector/scanner/cvetools"
 )
 
 func usage() {
@@ -120,11 +120,11 @@ func main() {
 	// create an imgPath from the input file
 	var imageWorkingPath string
 	if *infile == "inputs.json" { // default
-		imageWorkingPath = scan.CreateImagePath("")
+		imageWorkingPath = cvetools.CreateImagePath("")
 	} else { // normal from scanner
 		uid := strings.TrimPrefix(*infile, "/tmp/")
 		uid = strings.TrimSuffix(uid, "_i.json") // obtains the uuid
-		imageWorkingPath = filepath.Join(scan.ImageWorkingPath, uid)
+		imageWorkingPath = filepath.Join(cvetools.ImageWorkingPath, uid)
 	}
 	log.WithFields(log.Fields{"imageWorkingPath": imageWorkingPath}).Debug()
 	defer os.RemoveAll(imageWorkingPath) // either delete from caller (kill -9) or self-deleted

@@ -236,7 +236,7 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 
 	// for layered storages
 	if imgPath == "" { // not-defined yet
-		imgPath = scan.CreateImagePath("")
+		imgPath = CreateImagePath("")
 		defer os.RemoveAll(imgPath)
 	}
 
@@ -583,7 +583,7 @@ func (cv *CveTools) ScanAwsLambda(req *share.ScanAwsLambdaRequest, imgPath strin
 	if req.ScanSecrets {
 		// for scan Secrets
 		if imgPath == "" { // not-defined yet
-			imgPath = createImagePath("")
+			imgPath = CreateImagePath("")
 			defer os.RemoveAll(imgPath)
 		}
 
