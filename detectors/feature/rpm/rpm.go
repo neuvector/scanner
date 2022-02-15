@@ -22,9 +22,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
 	"github.com/neuvector/scanner/detectors"
-	"github.com/neuvector/neuvector/share/utils"
 )
 
 // RpmFeaturesDetector implements FeaturesDetector and detects rpm packages
@@ -148,7 +148,7 @@ func (detector *RpmFeaturesDetector) Detect(namespace string, files map[string]*
 		}
 
 		// Parse version
-		version, err := common.NewVersion(strings.Replace(line[1], "(none):", "", -1))
+		version, err := utils.NewVersion(strings.Replace(line[1], "(none):", "", -1))
 		if err != nil {
 			log.Warningf("could not parse package version '%s': %s. skipping", line[1], err.Error())
 			continue

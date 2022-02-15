@@ -7,7 +7,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/neuvector/scanner/common"
+	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/detectors"
 )
 
@@ -39,7 +39,7 @@ func (detector *RpmFeaturesDetector) Detect(namespace string, files map[string]*
 			if line[0] == 'P' && line[1] == ':' {
 				pkg.Feature.Name = strings.TrimPrefix(line, "P:")
 			} else if line[0] == 'V' && line[1] == ':' {
-				pkg.Version, err = common.NewVersion(strings.TrimPrefix(line, "V:"))
+				pkg.Version, err = utils.NewVersion(strings.TrimPrefix(line, "V:"))
 				if err != nil {
 					log.Warningf("could not parse package version '%c': %s. skipping", line[1], err.Error())
 				}
@@ -53,7 +53,7 @@ func (detector *RpmFeaturesDetector) Detect(namespace string, files map[string]*
 				pkg.InBase = f.InBase
 				packagesMap[pkg.Feature.Name+"#"+pkg.Version.String()] = pkg
 				pkg.Feature.Name = ""
-				pkg.Version = common.Version{}
+				pkg.Version = utils.Version{}
 			}
 		}
 	}

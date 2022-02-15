@@ -1,9 +1,10 @@
-package common
+package utils
 
 import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+
 	// "fmt"
 	"regexp"
 	"strconv"
