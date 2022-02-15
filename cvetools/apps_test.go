@@ -3,6 +3,7 @@ package cvetools
 import (
 	"testing"
 
+	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
 )
 
@@ -40,7 +41,7 @@ func TestAffectedVersion(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		v, _ := common.NewVersion(c.version)
+		v, _ := utils.NewVersion(c.version)
 		if v.String() != c.version {
 			t.Errorf("Error parsing version:  %v => %v", c.version, v.String())
 		}
@@ -56,7 +57,7 @@ func TestFixedVersion(t *testing.T) {
 		versionTestCase{result: true, version: "4.0.2", dbVer: []common.AppModuleVersion{{"gteq", "2.12.5"}, {"lt", "3.0.0"}, {"orgteq", "3.7.2"}, {"lt", "4.0.0"}, {"orgteq", "4.0.0.beta8"}}},
 	}
 	for _, c := range cases {
-		v, _ := common.NewVersion(c.version)
+		v, _ := utils.NewVersion(c.version)
 		if v.String() != c.version {
 			t.Errorf("Error parsing version:  %v => %v", c.version, v.String())
 		}
