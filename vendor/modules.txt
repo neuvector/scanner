@@ -24,8 +24,6 @@ github.com/Microsoft/hcsshim/internal/vmcompute
 github.com/Microsoft/hcsshim/internal/wclayer
 github.com/Microsoft/hcsshim/internal/winapi
 github.com/Microsoft/hcsshim/osversion
-# github.com/RackSec/srslog v0.0.0-20180709174129-a4725f04ec91
-## explicit
 # github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da
 github.com/armon/go-metrics
 # github.com/aws/aws-sdk-go v1.42.36
@@ -35,7 +33,6 @@ github.com/aws/aws-sdk-go/aws/endpoints
 # github.com/codegangsta/inject v0.0.0-20150114235600-33e0aa1cb7c0
 github.com/codegangsta/inject
 # github.com/codeskyblue/go-sh v0.0.0-20200712050446-30169cf553fe
-## explicit
 github.com/codeskyblue/go-sh
 # github.com/containerd/cgroups v1.0.1
 github.com/containerd/cgroups/stats/v1
@@ -106,7 +103,6 @@ github.com/containers/storage/pkg/idtools
 github.com/containers/storage/pkg/mount
 github.com/containers/storage/pkg/system
 # github.com/cri-o/cri-o v0.0.0-00010101000000-000000000000 => github.com/cri-o/cri-o v1.15.4
-## explicit
 github.com/cri-o/cri-o/client
 github.com/cri-o/cri-o/types
 # github.com/docker/distribution v2.7.1+incompatible => github.com/docker/distribution v2.8.0-beta.1+incompatible
@@ -122,20 +118,12 @@ github.com/docker/distribution/registry/api/errcode
 ## explicit
 github.com/docker/docker/api/types/registry
 # github.com/docker/go-events v0.0.0-20190806004212-e31b211e4f1c
-## explicit
 github.com/docker/go-events
 # github.com/docker/go-units v0.4.0
 github.com/docker/go-units
 # github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7
 github.com/docker/libtrust
-# github.com/ericchiang/k8s v1.2.0
-## explicit
-github.com/ericchiang/k8s/apis/meta/v1
-github.com/ericchiang/k8s/runtime
-github.com/ericchiang/k8s/runtime/schema
-github.com/ericchiang/k8s/util/intstr
 # github.com/gogo/googleapis v1.4.1
-## explicit
 github.com/gogo/googleapis/google/rpc
 # github.com/gogo/protobuf v1.3.2
 github.com/gogo/protobuf/gogoproto
@@ -157,29 +145,26 @@ github.com/google/gofuzz
 ## explicit
 github.com/google/uuid
 # github.com/hashicorp/go-cleanhttp v0.5.2
-## explicit
 github.com/hashicorp/go-cleanhttp
 # github.com/hashicorp/go-immutable-radix v1.0.0
 github.com/hashicorp/go-immutable-radix
 # github.com/hashicorp/go-rootcerts v1.0.2
-## explicit
 github.com/hashicorp/go-rootcerts
 # github.com/hashicorp/go-version v1.4.0
-## explicit
 github.com/hashicorp/go-version
 # github.com/hashicorp/golang-lru v0.5.1
 github.com/hashicorp/golang-lru/simplelru
 # github.com/hashicorp/serf v0.9.7
-## explicit
 github.com/hashicorp/serf/coordinate
-# github.com/kr/text v0.2.0
-## explicit
 # github.com/mitchellh/go-homedir v1.1.0
 github.com/mitchellh/go-homedir
 # github.com/mitchellh/mapstructure v1.4.3
-## explicit
 github.com/mitchellh/mapstructure
-# github.com/neuvector/neuvector v5.0.0-preview.1.0.20220211185053-84b9c88f6aa3+incompatible
+# github.com/neuvector/k8s v1.2.1-0.20220214174348-d0b3f377461e
+github.com/neuvector/k8s/apis/meta/v1
+github.com/neuvector/k8s/runtime
+github.com/neuvector/k8s/runtime/schema
+# github.com/neuvector/neuvector v0.0.0-20220215180501-4c1781e65b61
 ## explicit
 github.com/neuvector/neuvector/controller/api
 github.com/neuvector/neuvector/share
@@ -202,8 +187,6 @@ github.com/neuvector/neuvector/share/system/sidekick
 github.com/neuvector/neuvector/share/system/sysinfo
 github.com/neuvector/neuvector/share/system/sysinfo/cpuid
 github.com/neuvector/neuvector/share/utils
-# github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e
-## explicit
 # github.com/opencontainers/go-digest v1.0.0
 github.com/opencontainers/go-digest
 # github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
@@ -221,7 +204,6 @@ github.com/pkg/errors
 ## explicit
 github.com/sirupsen/logrus
 # github.com/streadway/simpleuuid v0.0.0-20130420165545-6617b501e485
-## explicit
 github.com/streadway/simpleuuid
 # github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2
 github.com/syndtr/gocapability/capability
@@ -229,7 +211,6 @@ github.com/syndtr/gocapability/capability
 github.com/vishvananda/netlink
 github.com/vishvananda/netlink/nl
 # github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
-## explicit
 github.com/vishvananda/netns
 # go.opencensus.io v0.23.0
 go.opencensus.io
@@ -249,11 +230,11 @@ golang.org/x/net/trace
 # golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.0.0-20210831042530-f4d43177bf5e
+# golang.org/x/sys v0.0.0-20220209214540-3681064d5158
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.3.5
+# golang.org/x/text v0.3.7
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
@@ -334,8 +315,6 @@ google.golang.org/protobuf/types/descriptorpb
 google.golang.org/protobuf/types/known/anypb
 google.golang.org/protobuf/types/known/durationpb
 google.golang.org/protobuf/types/known/timestamppb
-# gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f
-## explicit
 # gopkg.in/inf.v0 v0.9.1
 gopkg.in/inf.v0
 # k8s.io/api v0.22.5 => k8s.io/api v0.18.19

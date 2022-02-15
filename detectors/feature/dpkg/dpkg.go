@@ -21,7 +21,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/neuvector/scanner/common"
+	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/detectors"
 )
 
@@ -62,7 +62,7 @@ func (detector *DpkgFeaturesDetector) addFeature(packagesMap map[string]detector
 			name = pkg.pkgName
 		}
 
-		ver, _ := common.NewVersion(pkg.version)
+		ver, _ := utils.NewVersion(pkg.version)
 		fv := detectors.FeatureVersion{
 			Feature: detectors.Feature{
 				Name: name,
@@ -130,7 +130,7 @@ func (detector *DpkgFeaturesDetector) parseFeatureFile(packagesMap map[string]de
 
 			pkg.source = md["name"]
 			if md["version"] != "" {
-				ver, err := common.NewVersion(md["version"])
+				ver, err := utils.NewVersion(md["version"])
 				if err != nil {
 					log.Warningf("could not parse package version '%c': %s. skipping", line[1], err.Error())
 				}
@@ -143,7 +143,7 @@ func (detector *DpkgFeaturesDetector) parseFeatureFile(packagesMap map[string]de
 			// because the Debian vulnerabilities often skips the epoch from the Version field
 			// which is not present in the Source version, and because +bX revisions don't matter
 			sver := strings.TrimPrefix(line, "Version: ")
-			ver, err := common.NewVersion(sver)
+			ver, err := utils.NewVersion(sver)
 			if err != nil {
 				log.Warningf("could not parse package version '%c': %s. skipping", line[1], err.Error())
 			}

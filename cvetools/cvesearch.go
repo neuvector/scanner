@@ -976,14 +976,14 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 					fixVer = fix.Version
 				}
 			}
-			ver, err := common.NewVersion(fixVer)
+			ver, err := utils.NewVersion(fixVer)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err, "version": fixVer}).Error()
 				continue
 			}
-			if ver == common.MaxVersion {
+			if ver == utils.MaxVersion {
 				afStatus = share.ScanVulStatus_Unpatched
-			} else if ver == common.MinVersion {
+			} else if ver == utils.MinVersion {
 				afStatus = share.ScanVulStatus_Unaffected
 			} else {
 				afStatus = share.ScanVulStatus_FixExists
@@ -994,7 +994,7 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 			}
 
 			if fix.MinVer != "" {
-				minVer, err := common.NewVersion(fix.MinVer)
+				minVer, err := utils.NewVersion(fix.MinVer)
 				if err != nil {
 					log.WithFields(log.Fields{"error": err, "min-version": fix.MinVer}).Error()
 					continue

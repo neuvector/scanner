@@ -34,7 +34,7 @@ func (t *Time) UnmarshalJSON(p []byte) error {
 // Status must implement json.Unmarshaler for the codec to deserialize a JSON
 // payload into it.
 //
-// See https://github.com/ericchiang/k8s/issues/82
+// See https://github.com/neuvector/k8s/issues/82
 
 type jsonStatus Status
 
