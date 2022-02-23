@@ -26,12 +26,6 @@ func (cv *CveTools) DetectAppVul(path string, apps []detectors.AppFeatureVersion
 	for i, app := range apps {
 		// log.WithFields(log.Fields{"namespace": namespace, "package": app}).Info()
 
-		// It seems that alpine patches python vulnerabilities actively. Even the library
-		// version is vulnerable, the source codes are patched.
-		if strings.HasPrefix(namespace, "alpine:") && strings.HasPrefix(app.ModuleName, "python:") {
-			continue
-		}
-
 		if mv, found := modVuls[app.ModuleName]; found {
 			for _, v := range mv {
 				if len(v.UnaffectedVer) > 0 {
