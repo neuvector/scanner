@@ -76,6 +76,9 @@ func ReadCveDbMeta(path string, hasAlpine, hasAmazon bool, output bool) (map[str
 	if err := readAppDbMeta(path, fullDb, outCVEs); err != nil {
 		return nil, err
 	}
+	if err := readCveDbMeta(path, "mariner", fullDb, outCVEs); err != nil {
+		return nil, err
+	}
 
 	if output {
 		sort.Slice(outCVEs, func(s, t int) bool {
@@ -625,6 +628,8 @@ var fileList = []string{"keys",
 	"alpine_full.tb",
 	"amazon_index.tb",
 	"amazon_full.tb",
+	"mariner_full.tb",
+	"mariner_index.tb",
 	"apps.tb",
 	RHELCpeMapFile,
 }

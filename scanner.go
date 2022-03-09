@@ -10,8 +10,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/neuvector/scanner/common"
-	"github.com/neuvector/scanner/cvetools"
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/cluster"
 	"github.com/neuvector/neuvector/share/container"
@@ -19,6 +17,8 @@ import (
 	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/system"
 	"github.com/neuvector/neuvector/share/utils"
+	"github.com/neuvector/scanner/common"
+	"github.com/neuvector/scanner/cvetools"
 
 	"github.com/neuvector/neuvector/controller/api"
 )
