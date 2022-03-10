@@ -73,10 +73,10 @@ func ReadCveDbMeta(path string, hasAlpine, hasAmazon bool, output bool) (map[str
 			return nil, err
 		}
 	}
-	if err := readAppDbMeta(path, fullDb, outCVEs); err != nil {
+	if err := readCveDbMeta(path, "mariner", fullDb, outCVEs); err != nil {
 		return nil, err
 	}
-	if err := readCveDbMeta(path, "mariner", fullDb, outCVEs); err != nil {
+	if err := readAppDbMeta(path, fullDb, outCVEs); err != nil {
 		return nil, err
 	}
 
