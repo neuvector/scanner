@@ -8,6 +8,7 @@ import (
 
 const RESTTokenHeader string = "X-Auth-Token"
 const RESTNvPageHeader string = "X-Nv-Page"
+const RESTRancherTokenHeader string = "X-R-Sess"
 const RESTMaskedValue string = "The value is masked"
 
 const RESTNvPageDashboard string = "dashboard"
@@ -62,6 +63,8 @@ const RESTErrReadOnlyRules int = 46
 const RESTErrUserLoginBlocked int = 47
 const RESTErrPasswordExpired int = 48
 const RESTErrPromoteFail int = 49
+const RESTErrPlatformAuthDisabled int = 50
+const RESTErrRancherUnauthorized int = 51
 
 const FilterPrefix string = "f_"
 const SortPrefix string = "s_"
@@ -856,6 +859,7 @@ type RESTWorkloadBrief struct {
 	ServiceMeshSidecar bool                 `json:"service_mesh_sidecar"`
 	Privileged         bool                 `json:"privileged"`
 	RunAsRoot          bool                 `json:"run_as_root"`
+	BaselineProfile    string               `json:"baseline_profile"`
 }
 
 type RESTWorkload struct {
@@ -1018,18 +1022,19 @@ type RESTGroupCaps struct {
 }
 
 type RESTGroupBrief struct {
-	Name           string   `json:"name"`
-	Comment        string   `json:"comment"`
-	Learned        bool     `json:"learned"`
-	Reserved       bool     `json:"reserved"`
-	PolicyMode     string   `json:"policy_mode,omitempty"`
-	ProfileMode    string   `json:"profile_mode,omitempty"`
-	NotScored      bool     `json:"not_scored"`
-	Domain         string   `json:"domain"`
-	CreaterDomains []string `json:"creater_domains"`
-	Kind           string   `json:"kind"`
-	PlatformRole   string   `json:"platform_role"`
-	CfgType        string   `json:"cfg_type"` // CfgTypeLearned / CfgTypeUserCreated / CfgTypeGround / CfgTypeFederal (see above)
+	Name            string   `json:"name"`
+	Comment         string   `json:"comment"`
+	Learned         bool     `json:"learned"`
+	Reserved        bool     `json:"reserved"`
+	PolicyMode      string   `json:"policy_mode,omitempty"`
+	ProfileMode     string   `json:"profile_mode,omitempty"`
+	NotScored       bool     `json:"not_scored"`
+	Domain          string   `json:"domain"`
+	CreaterDomains  []string `json:"creater_domains"`
+	Kind            string   `json:"kind"`
+	PlatformRole    string   `json:"platform_role"`
+	CfgType         string   `json:"cfg_type"` // CfgTypeLearned / CfgTypeUserCreated / CfgTypeGround / CfgTypeFederal (see above)
+	BaselineProfile string   `json:"baseline_profile"`
 	RESTGroupCaps
 }
 
@@ -1517,6 +1522,7 @@ type RESTSystemConfigConfig struct {
 	SingleCVEPerSyslog        *bool           `json:"single_cve_per_syslog"`
 	AuthOrder                 *[]string       `json:"auth_order,omitempty"`
 	AuthByPlatform            *bool           `json:"auth_by_platform,omitempty"`
+	RancherEP                 *string         `json:"rancher_ep,omitempty"`
 	WebhookEnable             *bool           `json:"webhook_status,omitempty"` // deprecated, kept for backward-compatibility, skip docs
 	WebhookUrl                *string         `json:"webhook_url,omitempty"`    // deprecated, kept for backward-compatibility, skip docs
 	Webhooks                  *[]*RESTWebhook `json:"webhooks,omitempty"`
@@ -1530,6 +1536,8 @@ type RESTSystemConfigConfig struct {
 	IBMSAEpEnabled            *bool           `json:"ibmsa_ep_enabled,omitempty"`
 	IBMSAEpDashboardURL       *string         `json:"ibmsa_ep_dashboard_url,omitempty"`
 	XffEnabled                *bool           `json:"xff_enabled,omitempty"`
+	NetServiceStatus          *bool           `json:"net_service_status,omitempty"`
+	NetServicePolicyMode      *string         `json:"net_service_policy_mode,omitempty"`
 	// InternalSubnets      *[]string `json:"configured_internal_subnets,omitempty"`
 }
 
@@ -1572,6 +1580,7 @@ type RESTSystemConfig struct {
 	SingleCVEPerSyslog        bool          `json:"single_cve_per_syslog"`
 	AuthOrder                 []string      `json:"auth_order"`
 	AuthByPlatform            bool          `json:"auth_by_platform"`
+	RancherEP                 string        `json:"rancher_ep"`
 	InternalSubnets           []string      `json:"configured_internal_subnets,omitempty"`
 	Webhooks                  []RESTWebhook `json:"webhooks"`
 	ClusterName               string        `json:"cluster_name"`
@@ -1586,6 +1595,8 @@ type RESTSystemConfig struct {
 	IBMSAEpDashboardURL       string        `json:"ibmsa_ep_dashboard_url"`
 	IBMSAEpConnectedAt        string        `json:"ibmsa_ep_connected_at"`
 	XffEnabled                bool          `json:"xff_enabled"`
+	NetServiceStatus          bool          `json:"net_service_status"`
+	NetServicePolicyMode      string        `json:"net_service_policy_mode"`
 }
 
 type RESTIBMSAConfig struct {
@@ -1623,11 +1634,12 @@ type RESTInternalSubnetsData struct {
 }
 
 type RESTServiceConfig struct {
-	Name       string  `json:"name"`
-	Domain     string  `json:"domain"`
-	Comment    *string `json:"comment"`
-	PolicyMode *string `json:"policy_mode,omitempty"`
-	NotScored  *bool   `json:"not_scored,omitempty"`
+	Name            string  `json:"name"`
+	Domain          string  `json:"domain"`
+	Comment         *string `json:"comment"`
+	PolicyMode      *string `json:"policy_mode,omitempty"`
+	BaselineProfile *string `json:"baseline_profile,omitempty"`
+	NotScored       *bool   `json:"not_scored,omitempty"`
 }
 
 type RESTServiceConfigData struct {
@@ -1648,6 +1660,7 @@ type RESTService struct {
 	ServiceAddr     *RESTIPPort          `json:"service_addr,omitempty"`
 	IngressExposure bool                 `json:"ingress_exposure"`
 	EgressExposure  bool                 `json:"egress_exposure"`
+	BaselineProfile string               `json:"baseline_profile"`
 	RESTGroupCaps
 }
 
@@ -1660,9 +1673,10 @@ type RESTServiceData struct {
 }
 
 type RESTServiceBatchConfig struct {
-	Services   []string `json:"services,omitempty"`
-	PolicyMode *string  `json:"policy_mode,omitempty"`
-	NotScored  *bool    `json:"not_scored,omitempty"`
+	Services        []string `json:"services,omitempty"`
+	PolicyMode      *string  `json:"policy_mode,omitempty"`
+	BaselineProfile *string  `json:"baseline_profile,omitempty"`
+	NotScored       *bool    `json:"not_scored,omitempty"`
 }
 
 type RESTServiceBatchConfigData struct {

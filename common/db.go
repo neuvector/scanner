@@ -46,7 +46,7 @@ type outputCVEVul struct {
 	Packages []outputPackage `json:"Packages"`
 }
 
-func ReadCveDbMeta(path string, hasAlpine, hasAmazon bool, output bool) (map[string]*share.ScanVulnerability, error) {
+func ReadCveDbMeta(path string, output bool) (map[string]*share.ScanVulnerability, error) {
 	var outCVEs []*outputCVEVul
 
 	if output {
@@ -63,15 +63,17 @@ func ReadCveDbMeta(path string, hasAlpine, hasAmazon bool, output bool) (map[str
 	if err := readCveDbMeta(path, "debian", fullDb, outCVEs); err != nil {
 		return nil, err
 	}
-	if hasAlpine {
-		if err := readCveDbMeta(path, "alpine", fullDb, outCVEs); err != nil {
-			return nil, err
-		}
+	if err := readCveDbMeta(path, "alpine", fullDb, outCVEs); err != nil {
+		return nil, err
 	}
-	if hasAmazon {
-		if err := readCveDbMeta(path, "amazon", fullDb, outCVEs); err != nil {
-			return nil, err
-		}
+	if err := readCveDbMeta(path, "amazon", fullDb, outCVEs); err != nil {
+		return nil, err
+	}
+	if err := readCveDbMeta(path, "oracle", fullDb, outCVEs); err != nil {
+		return nil, err
+	}
+	if err := readCveDbMeta(path, "suse", fullDb, outCVEs); err != nil {
+		return nil, err
 	}
 	if err := readAppDbMeta(path, fullDb, outCVEs); err != nil {
 		return nil, err
@@ -405,7 +407,7 @@ func LoadRawFile(path, name string) ([]byte, error) {
 	return data, nil
 }
 
-func LoadCveDb(path, desPath string) (string, string, bool, bool, error) {
+func LoadCveDb(path, desPath string) (string, string, error) {
 	var latestVer string
 
 	if err := os.RemoveAll(desPath); err != nil {
@@ -415,7 +417,7 @@ func LoadCveDb(path, desPath string) (string, string, bool, bool, error) {
 	if _, err := os.Stat(desPath); os.IsNotExist(err) {
 		if err = os.MkdirAll(desPath, 0760); err != nil {
 			log.WithFields(log.Fields{"error": err, "dir": desPath}).Error("Failed to make directory")
-			return "", "", false, false, err
+			return "", "", err
 		}
 	}
 
@@ -428,11 +430,11 @@ func LoadCveDb(path, desPath string) (string, string, bool, bool, error) {
 	}
 
 	// Read expanded db version
-	oldVer, _, hasAlpineTb, hasAmazonTb, oldErr := CheckExpandedDb(desPath, true)
+	oldVer, _, oldErr := CheckExpandedDb(desPath, true)
 	if oldErr != nil && err != nil {
 		// no new database, no expanded database
 		log.WithFields(log.Fields{"error": err}).Error("No CVE database found")
-		return "", "", false, false, err
+		return "", "", err
 	} else if oldErr != nil && err == nil {
 		log.WithFields(log.Fields{"version": newVer}).Info("Expand new DB")
 
@@ -440,13 +442,13 @@ func LoadCveDb(path, desPath string) (string, string, bool, bool, error) {
 		err = unzipDb(path, desPath)
 		if err != nil {
 			log.WithFields(log.Fields{"error": err}).Error("Unzip CVE database")
-			return "", "", false, false, err
+			return "", "", err
 		}
 
-		newVer, update, hasAlpineTb, hasAmazonTb, err = CheckExpandedDb(desPath, true)
+		newVer, update, err = CheckExpandedDb(desPath, true)
 		if err != nil {
 			log.WithFields(log.Fields{"error": err}).Error("CVE database format error")
-			return "", "", false, false, errors.New("Invalid database format")
+			return "", "", errors.New("Invalid database format")
 		}
 		latestVer = fmt.Sprintf("%.3f", newVer)
 	} else if oldErr == nil && err == nil && newVer > oldVer {
@@ -456,17 +458,17 @@ func LoadCveDb(path, desPath string) (string, string, bool, bool, error) {
 		tmpDir, err := ioutil.TempDir(os.TempDir(), "cvedb")
 		if err != nil {
 			log.Errorf("could not create temporary folder for RPM detection: %s", err)
-			return "", "", false, false, err
+			return "", "", err
 		}
 
 		err = unzipDb(path, tmpDir+"/")
 		if err != nil {
 			log.WithFields(log.Fields{"error": err}).Error("Unzip CVE database")
 			os.RemoveAll(tmpDir)
-			return "", "", false, false, err
+			return "", "", err
 		}
 
-		newVer, update, hasAlpineTb, hasAmazonTb, err = CheckExpandedDb(tmpDir+"/", true)
+		newVer, update, err = CheckExpandedDb(tmpDir+"/", true)
 		if err != nil {
 			log.WithFields(log.Fields{"error": err}).Error("CVE database format error")
 			os.Remove(path + share.DefaultCVEDBName)
@@ -477,7 +479,7 @@ func LoadCveDb(path, desPath string) (string, string, bool, bool, error) {
 			os.RemoveAll(tmpDir)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err}).Error("mv CVE database error")
-				return "", "", false, false, err
+				return "", "", err
 			}
 		}
 		latestVer = fmt.Sprintf("%.3f", newVer)
@@ -485,7 +487,7 @@ func LoadCveDb(path, desPath string) (string, string, bool, bool, error) {
 		latestVer = fmt.Sprintf("%.3f", oldVer)
 	}
 
-	return latestVer, update, hasAlpineTb, hasAmazonTb, nil
+	return latestVer, update, nil
 }
 
 func GetDbVersion(path string) (float64, string, error) {
@@ -614,7 +616,8 @@ func checkDbHash(filename, hash string) bool {
 
 const RHELCpeMapFile = "rhel-cpe.map"
 
-var fileList = []string{"keys",
+var fileList = []string{
+	"keys",
 	"ubuntu_index.tb",
 	"ubuntu_full.tb",
 	"debian_index.tb",
@@ -625,6 +628,10 @@ var fileList = []string{"keys",
 	"alpine_full.tb",
 	"amazon_index.tb",
 	"amazon_full.tb",
+	"oracle_index.tb",
+	"oracle_full.tb",
+	"suse_index.tb",
+	"suse_full.tb",
 	"apps.tb",
 	RHELCpeMapFile,
 }
@@ -646,59 +653,41 @@ func moveDb(path, desPath string) error {
 	return nil
 }
 
-func CheckExpandedDb(path string, checkHash bool) (float64, string, bool, bool, error) {
-	var hasAlpineTb bool
-	var hasAmazonTb bool
-
+func CheckExpandedDb(path string, checkHash bool) (float64, string, error) {
 	data, err := ioutil.ReadFile(path + "keys")
 	if err != nil {
-		return 0, "", false, false, err
+		return 0, "", err
 	}
 
 	var key KeyVersion
 	err = json.Unmarshal(data, &key)
 	if err != nil {
 		removeDb(path)
-		return 0, "", false, false, err
+		return 0, "", err
 	}
 
 	var verFl float64
 	verFl, err = strconv.ParseFloat(key.Version, 64)
 	if err != nil {
 		removeDb(path)
-		return 0, "", false, false, err
+		return 0, "", err
 	}
 
-	valid := true
-	for i := 1; i < len(fileList); i++ {
-		if strings.Contains(fileList[i], "alpine") {
-			if _, err := os.Stat(path + fileList[i]); err == nil {
-				hasAlpineTb = true
-			} else {
-				hasAlpineTb = false
-				continue
-			}
-		}
-		if strings.Contains(fileList[i], "amazon") {
-			if _, err := os.Stat(path + fileList[i]); err == nil {
-				hasAmazonTb = true
-			} else {
-				hasAmazonTb = false
-				continue
-			}
-		}
+	if checkHash {
+		valid := true
 
-		if checkHash {
+		for i := 1; i < len(fileList); i++ {
 			if !checkDbHash(path+fileList[i], key.Shas[fileList[i]]) {
 				log.WithFields(log.Fields{"file": fileList[i]}).Error("Database hash error")
 				valid = false
 			}
 		}
+
+		if !valid {
+			removeDb(path)
+			return 0, "", errors.New("database hash error")
+		}
 	}
 
-	if !valid {
-		removeDb(path)
-		return 0, "", false, false, errors.New("database hash error")
-	}
-	return verFl, key.UpdateTime, hasAlpineTb, hasAmazonTb, nil
+	return verFl, key.UpdateTime, nil
 }
