@@ -11,15 +11,15 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/neuvector/scanner/common"
-	"github.com/neuvector/scanner/cvetools"
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/system"
+	"github.com/neuvector/scanner/common"
+	"github.com/neuvector/scanner/cvetools"
 )
 
 ////
-const dbPath = "../../data/"
+const dbPath = "../data/"
 const outPath = "test_output.json"
 const testTmpPath = "/tmp/neuvector/db/"
 const rtSock = "unix:///var/run/docker.sock"
@@ -67,7 +67,7 @@ func initEnv() (*taskMain, string, bool) {
 		return nil, "", false
 	}
 
-	_, _, _, _, err := common.LoadCveDb("../../data/", testTmpPath)
+	_, _, _, _, err := common.LoadCveDb(dbPath, testTmpPath)
 	if err != nil {
 		fmt.Printf("load cvedb error: %+v\n", err)
 		return nil, "", false
@@ -86,7 +86,7 @@ func initEnv() (*taskMain, string, bool) {
 	return tm, scan.CreateImagePath(""), true
 }
 
-func testDockerImageScan(t *testing.T) {
+func TestDockerImageScan(t *testing.T) {
 	fmt.Printf("TestDockerImageScan: Start ...\n")
 	tm, wpath, ok := initEnv()
 	if !ok {
@@ -98,8 +98,8 @@ func testDockerImageScan(t *testing.T) {
 		Registry:    "https://registry.hub.docker.com/",
 		Username:    "",
 		Password:    "",
-		Repository:  "library/alpine", // "library/mysql", "library/alpine"
-		Tag:         "latest",         // latest
+		Repository:  "gracewehner/mariner-test", //"library/alpine", // "library/mysql", "library/alpine"
+		Tag:         "012422-both-24",           //"latest",                   // latest
 		Proxy:       "",
 		ScanLayers:  true,
 		ScanSecrets: true,

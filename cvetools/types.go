@@ -3,19 +3,20 @@ package cvetools
 import (
 	"sync"
 
-	"github.com/neuvector/scanner/common"
-	"github.com/neuvector/scanner/detectors"
 	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/utils"
+	"github.com/neuvector/scanner/common"
+	"github.com/neuvector/scanner/detectors"
 )
 
 type updateData struct {
-	Redhat bool
-	Debian bool
-	Ubuntu bool
-	Alpine bool
-	Amazon bool
-	Oracle bool
+	Redhat  bool
+	Debian  bool
+	Ubuntu  bool
+	Alpine  bool
+	Amazon  bool
+	Oracle  bool
+	Mariner bool
 }
 
 type CveTools struct {
