@@ -1,17 +1,3 @@
-// Copyright 2015 clair authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package rpm
 
 import (
@@ -22,13 +8,11 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
 	"github.com/neuvector/scanner/detectors"
-	"github.com/neuvector/neuvector/share/utils"
 )
 
-// RpmFeaturesDetector implements FeaturesDetector and detects rpm packages
-// It requires the "rpm" binary to be in the PATH
 type RpmFeaturesDetector struct{}
 
 const (
@@ -48,7 +32,6 @@ func init() {
 	detectors.RegisterFeaturesDetector("rpm", &RpmFeaturesDetector{})
 }
 
-// Detect detects packages using var/lib/rpm/Packages from the input data
 func (detector *RpmFeaturesDetector) Detect(namespace string, files map[string]*detectors.FeatureFile, path string) ([]detectors.FeatureVersion, error) {
 	f, hasFile := files[rpmPackageFile]
 	if !hasFile {
@@ -148,7 +131,7 @@ func (detector *RpmFeaturesDetector) Detect(namespace string, files map[string]*
 		}
 
 		// Parse version
-		version, err := common.NewVersion(strings.Replace(line[1], "(none):", "", -1))
+		version, err := utils.NewVersion(strings.Replace(line[1], "(none):", "", -1))
 		if err != nil {
 			log.Warningf("could not parse package version '%s': %s. skipping", line[1], err.Error())
 			continue
@@ -175,8 +158,6 @@ func (detector *RpmFeaturesDetector) Detect(namespace string, files map[string]*
 	return packages, nil
 }
 
-// GetRequiredFiles returns the list of files required for Detect, without
-// leading /
 func (detector *RpmFeaturesDetector) GetRequiredFiles() []string {
 	return []string{"var/lib/rpm/Packages"}
 }

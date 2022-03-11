@@ -5,10 +5,11 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/neuvector/scanner/common"
-	"github.com/neuvector/scanner/detectors"
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/scan"
+	"github.com/neuvector/neuvector/share/utils"
+	"github.com/neuvector/scanner/common"
+	"github.com/neuvector/scanner/detectors"
 )
 
 func (cv *CveTools) DetectAppVul(path string, apps []detectors.AppFeatureVersion, namespace string) []vulFullReport {
@@ -24,12 +25,6 @@ func (cv *CveTools) DetectAppVul(path string, apps []detectors.AppFeatureVersion
 
 	for i, app := range apps {
 		// log.WithFields(log.Fields{"namespace": namespace, "package": app}).Info()
-
-		// It seems that alpine patches python vulnerabilities actively. Even the library
-		// version is vulnerable, the source codes are patched.
-		if strings.HasPrefix(namespace, "alpine:") && strings.HasPrefix(app.ModuleName, "python:") {
-			continue
-		}
 
 		if mv, found := modVuls[app.ModuleName]; found {
 			for _, v := range mv {
@@ -84,7 +79,7 @@ func appVul2FullVul(app detectors.AppFeatureVersion, mv common.AppModuleVul) vul
 		fv.Ft.Feature.Name = app.FileName
 	}
 	fv.Ft.Feature.Namespace.Name = app.AppName
-	fv.Ft.Version, _ = common.NewVersion(app.Version)
+	fv.Ft.Version, _ = utils.NewVersion(app.Version)
 	fv.Ft.InBase = app.InBase
 
 	var nv common.NVDMetadata
@@ -117,8 +112,8 @@ func compareAppVersion(ver string, affectedVer []common.AppModuleVersion) bool {
 			ver = ver[:a]
 		}
 	*/
-	var bv common.Version
-	av, err := common.NewVersion(ver)
+	var bv utils.Version
+	av, err := utils.NewVersion(ver)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err, "version": ver}).Error("Failed to parse app version")
 		return false
@@ -135,7 +130,7 @@ func compareAppVersion(ver string, affectedVer []common.AppModuleVersion) bool {
 				prefix = mv.Version[a+1:]
 				mv.Version = mv.Version[:a]
 			}
-			bv, err = common.NewVersion(mv.Version)
+			bv, err = utils.NewVersion(mv.Version)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err, "version": mv.Version}).Error("Failed to parse affected version")
 				continue

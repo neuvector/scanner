@@ -8,7 +8,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/neuvector/scanner/common"
+	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/detectors"
 )
 
@@ -38,7 +38,7 @@ func (detector *OthersFeaturesDetector) Detect(namespace string, files map[strin
 		r := pipPackagesRegexp.FindStringSubmatch(line)
 		if len(r) == 3 {
 			pkg.Feature.Name = strings.ToLower(r[1])
-			pkg.Version, err = common.NewVersion(r[2])
+			pkg.Version, err = utils.NewVersion(r[2])
 			if err != nil {
 				log.Warningf("could not parse package version '%s': %s. skipping", r[2], err.Error())
 				continue

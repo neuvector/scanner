@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/neuvector/scanner/common"
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/utils"
@@ -46,8 +45,8 @@ type ModuleVul struct {
 type FeatureVersion struct {
 	Name       string
 	Feature    Feature
-	Version    common.Version
-	MinVer     common.Version
+	Version    utils.Version
+	MinVer     utils.Version
 	ModuleVuls []ModuleVul
 	CPEs       utils.Set
 	InBase     bool

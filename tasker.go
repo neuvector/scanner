@@ -16,8 +16,8 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/neuvector/neuvector/share"
-	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/system"
+	"github.com/neuvector/scanner/cvetools"
 )
 
 const reqTemplate = "/tmp/%s_i.json"
@@ -132,7 +132,7 @@ func (ts *Tasker) Run(ctx context.Context, request interface{}) (*share.ScanResu
 	defer os.Remove(fmt.Sprintf(resTemplate, uid))
 
 	// image working folder
-	workingFolder := scan.CreateImagePath(uid)
+	workingFolder := cvetools.CreateImagePath(uid)
 	defer os.RemoveAll(workingFolder)
 
 	log.WithFields(log.Fields{"cmd": ts.taskPath, "wpath": workingFolder, "args": args}).Debug()
