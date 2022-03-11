@@ -657,7 +657,7 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 	if nsName != "" {
 		r := redhatReleaseRegexp.FindStringSubmatch(nsName)
 		if len(r) == 3 {
-			if r[1] == "rhel" || r[1] == "server" {
+			if r[1] == "rhel" || r[1] == "server" || r[1] == "mariner" {
 				nsName = "centos:" + r[2]
 				log.Info("namespace map to: ", nsName)
 			} else if !cv.isSupportOs(r[1]) {
