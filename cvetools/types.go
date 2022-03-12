@@ -3,10 +3,10 @@ package cvetools
 import (
 	"sync"
 
-	"github.com/neuvector/scanner/common"
-	"github.com/neuvector/scanner/detectors"
 	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/utils"
+	"github.com/neuvector/scanner/common"
+	"github.com/neuvector/scanner/detectors"
 )
 
 type updateData struct {
@@ -16,6 +16,7 @@ type updateData struct {
 	Alpine bool
 	Amazon bool
 	Oracle bool
+	Suse   bool
 }
 
 type CveTools struct {

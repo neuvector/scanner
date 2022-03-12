@@ -49,21 +49,17 @@ func dbRead(path string, maxRetry int, output bool) map[string]*share.ScanVulner
 			log.WithFields(log.Fields{"file": dbFile}).Error("cannot find scanner db")
 		} else {
 			cveTools.UpdateMux.Lock()
-			if verNew, createTime, hasAlpineTb, hasAmazonTb, err := common.LoadCveDb(path, cveTools.TbPath); err == nil {
+			if verNew, createTime, err := common.LoadCveDb(path, cveTools.TbPath); err == nil {
 				cveTools.CveDBVersion = verNew
 				cveTools.CveDBCreateTime = createTime
 				cveTools.Update.Redhat = true
 				cveTools.Update.Debian = true
 				cveTools.Update.Ubuntu = true
-				if hasAlpineTb {
-					cveTools.Update.Alpine = true
-					cveTools.SupportOs.Add("alpine")
-				}
-				if hasAmazonTb {
-					cveTools.Update.Amazon = true
-					cveTools.SupportOs.Add("amzn")
-				}
-				if dbData, err = common.ReadCveDbMeta(cveTools.TbPath, hasAlpineTb, hasAmazonTb, output); err != nil {
+				cveTools.Update.Alpine = true
+				cveTools.Update.Amazon = true
+				cveTools.Update.Oracle = true
+				cveTools.Update.Suse = true
+				if dbData, err = common.ReadCveDbMeta(cveTools.TbPath, output); err != nil {
 					log.WithFields(log.Fields{"error": err}).Error("Failed to load scanner db")
 				} else {
 					dbReady = true

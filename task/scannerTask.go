@@ -36,20 +36,14 @@ var cveTools *cvetools.CveTools // available inside package
 func checkDbReady() bool {
 	var dbReady bool
 	for {
-		if newVer, createTime, hasAlpineTb, hasAmazonTb, err := common.CheckExpandedDb(cveTools.TbPath, false); err == nil {
+		if newVer, createTime, err := common.CheckExpandedDb(cveTools.TbPath, false); err == nil {
 			cveTools.CveDBVersion = fmt.Sprintf("%.3f", newVer)
 			cveTools.CveDBCreateTime = createTime
 			cveTools.Update.Redhat = true
 			cveTools.Update.Debian = true
 			cveTools.Update.Ubuntu = true
-			if hasAlpineTb {
-				cveTools.Update.Alpine = true
-				cveTools.SupportOs.Add("alpine")
-			}
-			if hasAmazonTb {
-				cveTools.Update.Amazon = true
-				cveTools.SupportOs.Add("amzn")
-			}
+			cveTools.Update.Alpine = true
+			cveTools.Update.Amazon = true
 			dbReady = true
 			break
 		} else {
