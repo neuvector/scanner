@@ -65,6 +65,7 @@ var alpine_db []common.VulShort = nil
 var amazon_db []common.VulShort = nil
 var oracle_db []common.VulShort = nil
 var mariner_db []common.VulShort = nil
+var suse_db []common.VulShort = nil
 
 var redhat_fdb map[string]common.VulFull
 var debian_fdb map[string]common.VulFull
@@ -73,6 +74,7 @@ var alpine_fdb map[string]common.VulFull
 var amazon_fdb map[string]common.VulFull
 var oracle_fdb map[string]common.VulFull
 var mariner_fdb map[string]common.VulFull
+var suse_fdb map[string]common.VulFull
 
 ///////
 const tbPath = "/tmp/neuvector/db/"
@@ -84,7 +86,7 @@ var cveTools *CveTools
 func NewCveTools(rtSock string, scanTool *scan.ScanUtil) *CveTools {
 	return &CveTools{ // available inside package
 		TbPath:    tbPath,
-		SupportOs: utils.NewSet("centos", "ubuntu", "debian", "ol", "mariner"),
+		SupportOs: utils.NewSet("centos", "ubuntu", "debian", "alpine", "amzn", "ol", "sles", "mariner"),
 		RtSock:    rtSock,
 		ScanTool:  scanTool,
 	}
@@ -792,10 +794,26 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 					log.WithFields(log.Fields{"error": err}).Error("Load full Database error:", osname)
 					return share.ScanErrorCode_ScanErrDatabase, nil
 				}
-				cv.Update.Debian = false
+				cv.Update.Mariner = false
 			}
 			vss = mariner_db
 			vfs = mariner_fdb
+		} else if osname == "sles" {
+			if suse_db == nil || cv.Update.Suse {
+				suse_db, err = common.LoadVulnerabilityIndex(cv.TbPath, "suse")
+				if err != nil {
+					log.WithFields(log.Fields{"error": err}).Error("Load Database error:", osname)
+					return share.ScanErrorCode_ScanErrDatabase, nil
+				}
+				suse_fdb, err = common.LoadFullVulnerabilities(cv.TbPath, "suse")
+				if err != nil {
+					log.WithFields(log.Fields{"error": err}).Error("Load full Database error:", osname)
+					return share.ScanErrorCode_ScanErrDatabase, nil
+				}
+				cv.Update.Suse = false
+			}
+			vss = suse_db
+			vfs = suse_fdb
 		}
 	}
 

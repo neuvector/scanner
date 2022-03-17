@@ -3,11 +3,13 @@ package rpm
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
 	"github.com/neuvector/scanner/detectors"
@@ -33,8 +35,19 @@ func init() {
 }
 
 func (detector *RpmFeaturesDetector) Detect(namespace string, files map[string]*detectors.FeatureFile, path string) ([]detectors.FeatureVersion, error) {
-	f, hasFile := files[rpmPackageFile]
-	if !hasFile {
+	var rpmFF *detectors.FeatureFile
+	var max int
+
+	for fn, ff := range files {
+		// In case there are multiple rpm package files present, pick the largest
+		if scan.RPMPkgFiles.Contains(fn) && len(ff.Data) > max {
+			rpmFF = ff
+			max = len(ff.Data)
+		}
+	}
+
+	if rpmFF == nil {
+		// Not RPM
 		return []detectors.FeatureVersion{}, nil
 	}
 
@@ -73,80 +86,71 @@ func (detector *RpmFeaturesDetector) Detect(namespace string, files map[string]*
 		}
 	}
 
-	/*
-		// require live download
-		if cpes == nil || cpes.Cardinality() == 0 {
-			// check the customer build CPEs
-			for filename, d := range data {
-				var component string
-				var arch string
-				var version string
-				if strings.HasPrefix(filename, dockerfile) {
-					r := versionRegexp.FindStringSubmatch(filename)
-					if len(r) > 2 {
-						version = r[2]
-					}
-					scanner := bufio.NewScanner(strings.NewReader(string(d)))
-					for scanner.Scan() {
-						lines := strings.Split(scanner.Text(), " ")
-						for _, line := range lines {
-							r = redhatRegexp.FindStringSubmatch(line)
-							if len(r) > 1 {
-								component = r[1]
-							}
-
-							r = archRegexp.FindStringSubmatch(line)
-							if len(r) > 1 {
-								arch = r[1]
-							}
-						}
-					}
-					if arch != "" && component != "" && version != "" {
-						cpes = pyxisGetCpes(arch, component, version)
-						if cpes != nil && cpes.Cardinality() > 0 {
-							break
-						}
-					}
-				}
-			}
-		}
-	*/
 	log.WithFields(log.Fields{"namespace": namespace, "cpes": cpes}).Info()
 
 	// Create a map to store packages and ensure their uniqueness
 	packagesMap := make(map[string]detectors.FeatureVersion)
 
-	scanner := bufio.NewScanner(strings.NewReader(string(f.Data)))
-	for scanner.Scan() {
-		line := strings.Split(scanner.Text(), " ")
-		if len(line) != 2 {
-			// We may see warnings on some RPM versions:
-			// "warning: Generating 12 missing index(es), please wait..."
-			continue
-		}
+	var pkgs []scan.RPMPackage
+	if err := json.Unmarshal(rpmFF.Data, &pkgs); err == nil {
+		for _, p := range pkgs {
+			// Parse version
+			var version utils.Version
+			if p.Epoch == 0 {
+				version, err = utils.NewVersion(fmt.Sprintf("%s-%s", p.Version, p.Release))
+			} else {
+				version, err = utils.NewVersion(fmt.Sprintf("%d:%s-%s", p.Epoch, p.Version, p.Release))
+			}
+			if err != nil {
+				log.WithFields(log.Fields{"epoch": p.Epoch, "version": p.Version, "release": p.Release}).Error("Failed to parse package version")
+				continue
+			}
 
-		// Ignore gpg-pubkey packages which are fake packages used to store GPG keys - they are not versionned properly.
-		if line[0] == "gpg-pubkey" {
-			continue
+			// Add package
+			pkg := detectors.FeatureVersion{
+				Feature: detectors.Feature{
+					Name: p.Name,
+				},
+				Version: version,
+				CPEs:    cpes,
+				InBase:  rpmFF.InBase,
+			}
+			packagesMap[pkg.Feature.Name+"#"+pkg.Version.String()] = pkg
 		}
+	} else {
+		// To support legacy format from old enforcer
+		scanner := bufio.NewScanner(strings.NewReader(string(rpmFF.Data)))
+		for scanner.Scan() {
+			line := strings.Split(scanner.Text(), " ")
+			if len(line) != 2 {
+				// We may see warnings on some RPM versions:
+				// "warning: Generating 12 missing index(es), please wait..."
+				continue
+			}
 
-		// Parse version
-		version, err := utils.NewVersion(strings.Replace(line[1], "(none):", "", -1))
-		if err != nil {
-			log.Warningf("could not parse package version '%s': %s. skipping", line[1], err.Error())
-			continue
-		}
+			// Ignore gpg-pubkey packages which are fake packages used to store GPG keys - they are not versionned properly.
+			if line[0] == "gpg-pubkey" {
+				continue
+			}
 
-		// Add package
-		pkg := detectors.FeatureVersion{
-			Feature: detectors.Feature{
-				Name: line[0],
-			},
-			Version: version,
-			CPEs:    cpes,
-			InBase:  f.InBase,
+			// Parse version
+			version, err := utils.NewVersion(strings.Replace(line[1], "(none):", "", -1))
+			if err != nil {
+				log.Warningf("could not parse package version '%s': %s. skipping", line[1], err.Error())
+				continue
+			}
+
+			// Add package
+			pkg := detectors.FeatureVersion{
+				Feature: detectors.Feature{
+					Name: line[0],
+				},
+				Version: version,
+				CPEs:    cpes,
+				InBase:  rpmFF.InBase,
+			}
+			packagesMap[pkg.Feature.Name+"#"+pkg.Version.String()] = pkg
 		}
-		packagesMap[pkg.Feature.Name+"#"+pkg.Version.String()] = pkg
 	}
 
 	// Convert the map to a slice

@@ -16,6 +16,7 @@ type updateData struct {
 	Alpine  bool
 	Amazon  bool
 	Oracle  bool
+	Suse    bool
 	Mariner bool
 }
 
