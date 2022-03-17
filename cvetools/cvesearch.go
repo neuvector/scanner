@@ -659,8 +659,11 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 	if nsName != "" {
 		r := redhatReleaseRegexp.FindStringSubmatch(nsName)
 		if len(r) == 3 {
-			if r[1] == "rhel" || r[1] == "server" || r[1] == "mariner" {
+			if r[1] == "rhel" || r[1] == "server" {
 				nsName = "centos:" + r[2]
+				log.Info("namespace map to: ", nsName)
+			} else if r[1] == "mariner" {
+				nsName = r[1] + ":" + r[2] + ".0"
 				log.Info("namespace map to: ", nsName)
 			} else if !cv.isSupportOs(r[1]) {
 				log.WithFields(log.Fields{"os": nsName}).Info("map to ubuntu: upstream")
