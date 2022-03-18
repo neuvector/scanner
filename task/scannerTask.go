@@ -123,29 +123,6 @@ func main() {
 	log.WithFields(log.Fields{"imageWorkingPath": imageWorkingPath}).Debug()
 	defer os.RemoveAll(imageWorkingPath) // either delete from caller (kill -9) or self-deleted
 
-	pass := false
-	if sys.IsRunningInContainer() {
-		// restricted only to scanner
-		var exe string
-		ppid := os.Getppid()
-		ppath := fmt.Sprintf("/proc/%d/exe", ppid)
-		if _, err := os.Stat(ppath); err == nil {
-			exe, err = os.Readlink(ppath)
-			// patch when exe is shown as "/usr/local/bin/scanner (deleted)"
-			if err == nil && strings.HasPrefix(exe, "/usr/local/bin/scanner") {
-				pass = true
-			}
-		}
-	} else {
-		log.Info("Not running in container.")
-		pass = true // TODO: add some restriction
-	}
-
-	if !pass {
-		fmt.Fprintf(os.Stderr, "---")
-		usage() // exited as 2
-	}
-
 	log.Info("Running ... ")
 	start := time.Now()
 
