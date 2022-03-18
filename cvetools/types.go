@@ -10,13 +10,14 @@ import (
 )
 
 type updateData struct {
-	Redhat bool
-	Debian bool
-	Ubuntu bool
-	Alpine bool
-	Amazon bool
-	Oracle bool
-	Suse   bool
+	Redhat  bool
+	Debian  bool
+	Ubuntu  bool
+	Alpine  bool
+	Amazon  bool
+	Oracle  bool
+	Suse    bool
+	Mariner bool
 }
 
 type CveTools struct {

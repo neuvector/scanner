@@ -75,6 +75,9 @@ func ReadCveDbMeta(path string, output bool) (map[string]*share.ScanVulnerabilit
 	if err := readCveDbMeta(path, "suse", fullDb, outCVEs); err != nil {
 		return nil, err
 	}
+	if err := readCveDbMeta(path, "mariner", fullDb, outCVEs); err != nil {
+		return nil, err
+	}
 	if err := readAppDbMeta(path, fullDb, outCVEs); err != nil {
 		return nil, err
 	}
@@ -628,6 +631,8 @@ var fileList = []string{
 	"alpine_full.tb",
 	"amazon_index.tb",
 	"amazon_full.tb",
+	"mariner_full.tb",
+	"mariner_index.tb",
 	"oracle_index.tb",
 	"oracle_full.tb",
 	"suse_index.tb",

@@ -42,6 +42,7 @@ var ubuntu_db []common.VulShort = nil
 var alpine_db []common.VulShort = nil
 var amazon_db []common.VulShort = nil
 var oracle_db []common.VulShort = nil
+var mariner_db []common.VulShort = nil
 var suse_db []common.VulShort = nil
 
 var redhat_fdb map[string]common.VulFull
@@ -50,6 +51,7 @@ var ubuntu_fdb map[string]common.VulFull
 var alpine_fdb map[string]common.VulFull
 var amazon_fdb map[string]common.VulFull
 var oracle_fdb map[string]common.VulFull
+var mariner_fdb map[string]common.VulFull
 var suse_fdb map[string]common.VulFull
 
 ///////
@@ -62,7 +64,7 @@ var cveTools *CveTools
 func NewCveTools(rtSock string, scanTool *scan.ScanUtil) *CveTools {
 	return &CveTools{ // available inside package
 		TbPath:    tbPath,
-		SupportOs: utils.NewSet("centos", "ubuntu", "debian", "alpine", "amzn", "ol", "sles"),
+		SupportOs: utils.NewSet("centos", "ubuntu", "debian", "alpine", "amzn", "ol", "sles", "mariner"),
 		RtSock:    rtSock,
 		ScanTool:  scanTool,
 	}
@@ -629,6 +631,9 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 			if r[1] == "rhel" || r[1] == "server" {
 				nsName = "centos:" + r[2]
 				log.Info("namespace map to: ", nsName)
+			} else if r[1] == "mariner" {
+				nsName = r[1] + ":" + r[2] + ".0"
+				log.Info("namespace map to: ", nsName)
 			} else if !cv.isSupportOs(r[1]) {
 				log.WithFields(log.Fields{"os": nsName}).Info("map to ubuntu: upstream")
 				nsName = "ubuntu:upstream"
@@ -749,6 +754,22 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 			}
 			vss = oracle_db
 			vfs = oracle_fdb
+		} else if osname == "mariner" {
+			if mariner_db == nil || cv.Update.Mariner {
+				mariner_db, err = common.LoadVulnerabilityIndex(cv.TbPath, osname)
+				if err != nil {
+					log.WithFields(log.Fields{"error": err}).Error("Load Database error:", osname)
+					return share.ScanErrorCode_ScanErrDatabase, nil
+				}
+				mariner_fdb, err = common.LoadFullVulnerabilities(cv.TbPath, osname)
+				if err != nil {
+					log.WithFields(log.Fields{"error": err}).Error("Load full Database error:", osname)
+					return share.ScanErrorCode_ScanErrDatabase, nil
+				}
+				cv.Update.Mariner = false
+			}
+			vss = mariner_db
+			vfs = mariner_fdb
 		} else if osname == "sles" {
 			if suse_db == nil || cv.Update.Suse {
 				suse_db, err = common.LoadVulnerabilityIndex(cv.TbPath, "suse")
