@@ -33,30 +33,8 @@ import (
 
 const (
 	maxFileSize     = 300 * 1024 * 1024
-	rpmPackages     = "var/lib/rpm/Packages"
 	contentManifest = "root/buildinfo/content_manifests"
-	dockerfile      = "root/buildinfo/Dockerfile-"
 )
-
-var toExtract utils.Set = utils.NewSet("var/lib/dpkg/status",
-	"var/lib/rpm/Packages",
-	"etc/lsb-release",
-	"etc/os-release",
-	"usr/lib/os-release",
-	"etc/centos-release",
-	"etc/redhat-release",
-	"etc/system-release",
-	"etc/fedora-release",
-	"lib/apk/db/installed",
-	"node_modules",
-	"etc/apt/sources.list",
-	"others_modules",
-	scan.AppFileName,
-)
-
-var toExtractDir []string = []string{
-	"var/lib/dpkg/status.d/", // used by distroless images
-}
 
 var redhat_db []common.VulShort = nil
 var debian_db []common.VulShort = nil
@@ -119,23 +97,7 @@ func (cv *CveTools) ScanImageData(data *share.ScanData) (*share.ScanResult, erro
 	}
 
 	pkgs, err := utils.SelectivelyExtractArchive(bytes.NewReader(data.Buffer), func(filename string) bool {
-		if toExtract.Contains(filename) {
-			return true
-		}
-
-		for _, dir := range toExtractDir {
-			if strings.HasPrefix(filename, dir) {
-				return true
-			}
-		}
-		if strings.HasPrefix(filename, contentManifest) && strings.HasSuffix(filename, ".json") {
-			return true
-		}
-		if strings.HasPrefix(filename, dockerfile) {
-			return true
-		}
-
-		return false
+		return true
 	}, maxFileSize)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("read file error")
@@ -406,7 +368,14 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 	for _, l := range info.Layers {
 		isBase := baseLayers.Contains(l)
 		if lf, ok := layerFiles[l]; ok {
-			_, hasRpmPackages := lf.Pkgs[rpmPackages]
+			var hasRpmPackages bool
+			for filename, _ := range lf.Pkgs {
+				if scan.RPMPkgFiles.Contains(filename) {
+					hasRpmPackages = true
+					break
+				}
+			}
+
 			for filename, data := range lf.Pkgs {
 				if _, ok := mergedFiles[filename]; !ok {
 					// for redhat CPE
