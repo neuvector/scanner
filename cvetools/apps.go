@@ -71,7 +71,7 @@ func appVul2FullVul(app detectors.AppFeatureVersion, mv common.AppModuleVul) vul
 	fv.Vf.Severity = mv.Severity
 	fv.Vf.FixedIn = make([]common.FeaFull, 0)
 	fv.Vf.FixedIn = append(fv.Vf.FixedIn, moduleVer2FixVer(app, mv))
-	fv.Vf.Metadata = make(map[string]common.NVDMetadata)
+	fv.Vf.CVSSv2.Score = mv.Score
 
 	if strings.HasSuffix(app.FileName, scan.WPVerFileSuffix) {
 		fv.Ft.Feature.Name = "WordPress"
@@ -81,11 +81,6 @@ func appVul2FullVul(app detectors.AppFeatureVersion, mv common.AppModuleVul) vul
 	fv.Ft.Feature.Namespace.Name = app.AppName
 	fv.Ft.Version, _ = utils.NewVersion(app.Version)
 	fv.Ft.InBase = app.InBase
-
-	var nv common.NVDMetadata
-	nv.CVSSv2.Score = mv.Score
-	fv.Vf.Metadata["NVD"] = nv
-
 	return fv
 }
 

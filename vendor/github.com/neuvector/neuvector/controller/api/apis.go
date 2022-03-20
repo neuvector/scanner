@@ -1536,19 +1536,24 @@ type RESTSystemConfigConfig struct {
 	IBMSAEpEnabled            *bool           `json:"ibmsa_ep_enabled,omitempty"`
 	IBMSAEpDashboardURL       *string         `json:"ibmsa_ep_dashboard_url,omitempty"`
 	XffEnabled                *bool           `json:"xff_enabled,omitempty"`
+	// InternalSubnets      *[]string `json:"configured_internal_subnets,omitempty"`
+}
+
+type RESTSysNetConfigConfig struct {
 	NetServiceStatus          *bool           `json:"net_service_status,omitempty"`
 	NetServicePolicyMode      *string         `json:"net_service_policy_mode,omitempty"`
-	// InternalSubnets      *[]string `json:"configured_internal_subnets,omitempty"`
 }
 
 type RESTSystemConfigConfigCfgMap struct {
 	RESTSystemConfigConfig
+	RESTSysNetConfigConfig
 	AlwaysReload bool `json:"always_reload"`
 }
 
 type RESTSystemConfigConfigData struct {
 	Config    *RESTSystemConfigConfig `json:"config"`
 	FedConfig *RESTSystemConfigConfig `json:"fed_config"`
+	NetConfig *RESTSysNetConfigConfig `json:"net_config"`
 }
 
 type RESTUnquarReq struct {
@@ -2376,6 +2381,7 @@ type RESTDlpRule struct {
 	Name     string                 `json:"name"`
 	ID       uint32                 `json:"id"`
 	Patterns []RESTDlpCriteriaEntry `json:"patterns"`
+	CfgType  string                 `json:"cfg_type"`
 }
 
 type RESTDlpRuleDetail struct {
@@ -2429,6 +2435,7 @@ type RESTDlpSensor struct {
 	RuleList  []*RESTDlpRule `json:"rules"`
 	Comment   string         `json:"comment"`
 	Predefine bool           `json:"predefine"`
+	CfgType   string         `json:"cfg_type"` // CfgTypeUserCreated / CfgTypeGround
 }
 
 type RESTDlpSensorData struct {
@@ -2458,6 +2465,21 @@ type RESTDlpRuleConfig struct {
 
 type RESTDlpRuleConfigData struct {
 	Config *RESTDlpRuleConfig `json:"config"`
+}
+
+type RESTCrdDlpGroupSetting struct {
+	Name   string `json:"name"`
+	Action string `json:"action"`
+}
+
+type RESTCrdDlpGroupConfig struct {
+	Name       string                    `json:"name"`
+	Status     *bool                     `json:"status,omitempty"`
+	RepSensors *[]RESTCrdDlpGroupSetting `json:"replace,omitempty"` //replace list used by GUI
+}
+
+type RESTDlpSensorExport struct {
+	Names []string `json:"names"`
 }
 
 type RESTDerivedWorkloadDlpRule struct {
