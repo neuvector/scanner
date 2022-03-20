@@ -5,12 +5,10 @@ import (
 )
 
 type NVDMetadata struct {
-	Description      string `json:"description,omitempty"`
-	CVSSv2           NVDmetadataCVSS
-	CVSSv3           NVDmetadataCVSS
-	VulnVersions     []NVDvulnerableVersion
-	PublishedDate    time.Time
-	LastModifiedDate time.Time
+	Description  string `json:"description,omitempty"`
+	CVSSv2       CVSS
+	CVSSv3       CVSS
+	VulnVersions []NVDvulnerableVersion
 }
 
 type NVDvulnerableVersion struct {
@@ -20,7 +18,7 @@ type NVDvulnerableVersion struct {
 	EndExcluding   string
 }
 
-type NVDmetadataCVSS struct {
+type CVSS struct {
 	Vectors string
 	Score   float64
 }
@@ -56,17 +54,20 @@ type FeaFull struct {
 }
 
 type VulFull struct {
-	Name        string                 `json:"N"`
-	Namespace   string                 `json:"NS"`
-	Description string                 `json:"D"`
-	Link        string                 `json:"L"`
-	Severity    string                 `json:"S"`
-	Metadata    map[string]NVDMetadata `json:"M"`
-	FixedBy     string                 `json:"FB"`
-	FixedIn     []FeaFull              `json:"FI"`
-	CPEs        []string               `json:"CPE,omitempty"`
-	CVEs        []string               `json:"CVE,omitempty"`
-	FeedRating  string                 `json:"RATE,omitempty"`
+	Name        string    `json:"N"`
+	Namespace   string    `json:"NS"`
+	Description string    `json:"D"`
+	Link        string    `json:"L"`
+	Severity    string    `json:"S"`
+	CVSSv2      CVSS      `json:"C2"`
+	CVSSv3      CVSS      `json:"C3"`
+	FixedBy     string    `json:"FB"`
+	FixedIn     []FeaFull `json:"FI"`
+	CPEs        []string  `json:"CPE,omitempty"`
+	CVEs        []string  `json:"CVE,omitempty"`
+	FeedRating  string    `json:"RATE,omitempty"`
+	IssuedDate  time.Time `json:"Issue"`
+	LastModDate time.Time `json:"LastMod"`
 }
 
 type AppModuleVersion struct {

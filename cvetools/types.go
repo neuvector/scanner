@@ -26,9 +26,9 @@ type CveTools struct {
 	CveDBVersion    string
 	CveDBCreateTime string
 	UpdateMux       sync.RWMutex
-	Update          updateData
-	SupportOs       utils.Set
-	ScanTool        *scan.ScanUtil
+	// Update          updateData
+	SupportOs utils.Set
+	ScanTool  *scan.ScanUtil
 }
 
 type vulShortReport struct {

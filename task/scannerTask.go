@@ -39,11 +39,6 @@ func checkDbReady() bool {
 		if newVer, createTime, err := common.CheckExpandedDb(cveTools.TbPath, false); err == nil {
 			cveTools.CveDBVersion = fmt.Sprintf("%.3f", newVer)
 			cveTools.CveDBCreateTime = createTime
-			cveTools.Update.Redhat = true
-			cveTools.Update.Debian = true
-			cveTools.Update.Ubuntu = true
-			cveTools.Update.Alpine = true
-			cveTools.Update.Amazon = true
 			dbReady = true
 			break
 		} else {

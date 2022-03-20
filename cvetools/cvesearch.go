@@ -147,7 +147,7 @@ func (cv *CveTools) ScanAppPackage(req *share.ScanAppRequest, namespace string) 
 	}
 
 	appvuls := cv.DetectAppVul(cv.TbPath, apps, namespace)
-	vulList := getVulItemList(appvuls)
+	vulList := getVulItemList(appvuls, "app")
 
 	result := &share.ScanResult{
 		Provider:        share.ScanProvider_Neuvector,
@@ -530,6 +530,10 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 			result.Error = share.ScanErrorCode_ScanErrRegistryAPI
 		}
 	}
+
+	// bs, _ := json.Marshal(result)
+	// fmt.Println(string(bs[:]))
+
 	return result, nil
 }
 
@@ -623,175 +627,69 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 	var vss []common.VulShort
 	var vfs map[string]common.VulFull
 	var err error
-	var osname string
 
-	if nsName != "" {
-		r := redhatReleaseRegexp.FindStringSubmatch(nsName)
-		if len(r) == 3 {
-			if r[1] == "rhel" || r[1] == "server" {
-				nsName = "centos:" + r[2]
-				log.Info("namespace map to: ", nsName)
-			} else if r[1] == "mariner" {
-				nsName = r[1] + ":" + r[2] + ".0"
-				log.Info("namespace map to: ", nsName)
-			} else if !cv.isSupportOs(r[1]) {
-				log.WithFields(log.Fields{"os": nsName}).Info("map to ubuntu: upstream")
-				nsName = "ubuntu:upstream"
-			}
-		}
-
-		osname = nsName[:strings.Index(nsName, ":")]
-		if osname == "alpine" {
+	db := common.DBMax
+	r := releaseRegexp.FindStringSubmatch(nsName)
+	if len(r) == 3 {
+		switch r[1] {
+		case "ubuntu":
+			db = common.DBUbuntu
+		case "debian":
+			db = common.DBDebian
+		case "rhel", "server":
+			nsName = "centos:" + r[2]
+			db = common.DBCentos
+			log.Info("namespace map to: ", nsName)
+		case "alpine":
 			nsName = removeSubVersion(nsName)
-		} else if osname == "ol" {
-			nsName = removeSubVersion(nsName)
-		} else if osname == "amzn" {
+			db = common.DBAlpine
+		case "amzn":
 			// amazon linux only has two versions: 1, 2
 			if v := strings.TrimPrefix(nsName, "amzn:"); v != "2" {
 				nsName = "amzn:1"
 			}
+			db = common.DBAmazon
+		case "ol":
+			nsName = removeSubVersion(nsName)
+			db = common.DBOracle
+		case "mariner":
+			nsName = r[1] + ":" + r[2] + ".0"
+			db = common.DBMariner
+		case "sles":
+			db = common.DBSuse
 		}
+	}
+
+	if db == common.DBMax {
+		nsName = "ubuntu:upstream"
+		db = common.DBUbuntu
+		log.WithFields(log.Fields{"os": nsName}).Info("map to ubuntu: upstream")
 	}
 
 	cv.UpdateMux.Lock()
 	defer cv.UpdateMux.Unlock()
 
-	if len(features) != 0 {
-		//load the correct namespace index database
-		if osname == "centos" {
-			if redhat_db == nil || cv.Update.Redhat {
-				redhat_db, err = common.LoadVulnerabilityIndex(cv.TbPath, osname)
-				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Load Database error:", osname)
-					return share.ScanErrorCode_ScanErrDatabase, nil
-				}
-				redhat_fdb, err = common.LoadFullVulnerabilities(cv.TbPath, osname)
-				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Load full Database error:", osname)
-					return share.ScanErrorCode_ScanErrDatabase, nil
-				}
-				cv.Update.Redhat = false
-			}
-			vss = redhat_db
-			vfs = redhat_fdb
-		} else if osname == "debian" {
-			if debian_db == nil || cv.Update.Debian {
-				debian_db, err = common.LoadVulnerabilityIndex(cv.TbPath, osname)
-				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Load Database error:", osname)
-					return share.ScanErrorCode_ScanErrDatabase, nil
-				}
-				debian_fdb, err = common.LoadFullVulnerabilities(cv.TbPath, osname)
-				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Load full Database error:", osname)
-					return share.ScanErrorCode_ScanErrDatabase, nil
-				}
-				cv.Update.Debian = false
-			}
-			vss = debian_db
-			vfs = debian_fdb
-		} else if osname == "ubuntu" {
-			if ubuntu_db == nil || cv.Update.Ubuntu {
-				ubuntu_db, err = common.LoadVulnerabilityIndex(cv.TbPath, osname)
-				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Load Database error:", osname)
-					return share.ScanErrorCode_ScanErrDatabase, nil
-				}
-				ubuntu_fdb, err = common.LoadFullVulnerabilities(cv.TbPath, osname)
-				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Load full Database error:", osname)
-					return share.ScanErrorCode_ScanErrDatabase, nil
-				}
-				cv.Update.Ubuntu = false
-			}
-			vss = ubuntu_db
-			vfs = ubuntu_fdb
-		} else if osname == "alpine" {
-			if alpine_db == nil || cv.Update.Alpine {
-				alpine_db, err = common.LoadVulnerabilityIndex(cv.TbPath, osname)
-				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Load Database error:", osname)
-					return share.ScanErrorCode_ScanErrDatabase, nil
-				}
-				alpine_fdb, err = common.LoadFullVulnerabilities(cv.TbPath, osname)
-				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Load full Database error:", osname)
-					return share.ScanErrorCode_ScanErrDatabase, nil
-				}
-				cv.Update.Alpine = false
-			}
-			vss = alpine_db
-			vfs = alpine_fdb
-		} else if osname == "amzn" {
-			if amazon_db == nil || cv.Update.Amazon {
-				amazon_db, err = common.LoadVulnerabilityIndex(cv.TbPath, "amazon")
-				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Load Database error:", osname)
-					return share.ScanErrorCode_ScanErrDatabase, nil
-				}
-				amazon_fdb, err = common.LoadFullVulnerabilities(cv.TbPath, "amazon")
-				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Load full Database error:", osname)
-					return share.ScanErrorCode_ScanErrDatabase, nil
-				}
-				cv.Update.Amazon = false
-			}
-			vss = amazon_db
-			vfs = amazon_fdb
-		} else if osname == "ol" {
-			if oracle_db == nil || cv.Update.Oracle {
-				oracle_db, err = common.LoadVulnerabilityIndex(cv.TbPath, "oracle")
-				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Load Database error:", osname)
-					return share.ScanErrorCode_ScanErrDatabase, nil
-				}
-				oracle_fdb, err = common.LoadFullVulnerabilities(cv.TbPath, "oracle")
-				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Load full Database error:", osname)
-					return share.ScanErrorCode_ScanErrDatabase, nil
-				}
-				cv.Update.Oracle = false
-			}
-			vss = oracle_db
-			vfs = oracle_fdb
-		} else if osname == "mariner" {
-			if mariner_db == nil || cv.Update.Mariner {
-				mariner_db, err = common.LoadVulnerabilityIndex(cv.TbPath, osname)
-				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Load Database error:", osname)
-					return share.ScanErrorCode_ScanErrDatabase, nil
-				}
-				mariner_fdb, err = common.LoadFullVulnerabilities(cv.TbPath, osname)
-				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Load full Database error:", osname)
-					return share.ScanErrorCode_ScanErrDatabase, nil
-				}
-				cv.Update.Mariner = false
-			}
-			vss = mariner_db
-			vfs = mariner_fdb
-		} else if osname == "sles" {
-			if suse_db == nil || cv.Update.Suse {
-				suse_db, err = common.LoadVulnerabilityIndex(cv.TbPath, "suse")
-				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Load Database error:", osname)
-					return share.ScanErrorCode_ScanErrDatabase, nil
-				}
-				suse_fdb, err = common.LoadFullVulnerabilities(cv.TbPath, "suse")
-				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Load full Database error:", osname)
-					return share.ScanErrorCode_ScanErrDatabase, nil
-				}
-				cv.Update.Suse = false
-			}
-			vss = suse_db
-			vfs = suse_fdb
+	if common.DBS.Buffers[db].Short == nil {
+		common.DBS.Buffers[db].Short, err = common.LoadVulnerabilityIndex(cv.TbPath, common.DBS.Buffers[db].Name)
+		if err != nil {
+			log.WithFields(log.Fields{"error": err}).Error("Load Database error:", common.DBS.Buffers[db].Name)
+			return share.ScanErrorCode_ScanErrDatabase, nil
+		}
+		common.DBS.Buffers[db].Full, err = common.LoadFullVulnerabilities(cv.TbPath, common.DBS.Buffers[db].Name)
+		if err != nil {
+			log.WithFields(log.Fields{"error": err}).Error("Load full Database error:", common.DBS.Buffers[db].Name)
+			return share.ScanErrorCode_ScanErrDatabase, nil
 		}
 	}
 
-	log.WithFields(log.Fields{"os": osname, "namespace": nsName, "short": len(vss), "full": len(vfs)}).Info("Load Database")
+	vss = common.DBS.Buffers[db].Short
+	vfs = common.DBS.Buffers[db].Full
 
+	log.WithFields(log.Fields{"db": common.DBS.Buffers[db].Name, "namespace": nsName, "short": len(vss), "full": len(vfs)}).Info("Load Database")
+
+	var vulList []*share.ScanVulnerability
 	var vuls []vulFullReport
+
 	if vss != nil {
 		// build feature -> vul version map for search use
 		mv := makeFeatureMap(vss, nsName)
@@ -802,15 +700,14 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 
 		// get the full vulneribility description from full database
 		vuls = getFullAffectedVul(avsr, vfs)
+		vulList = append(vulList, getVulItemList(vuls, common.DBS.Buffers[db].Name)...)
 	}
 
 	if len(appPkg) != 0 {
 		appvuls := cv.DetectAppVul(cv.TbPath, appPkg, nsName)
-		vuls = append(vuls, appvuls...)
+		vulList = append(vulList, getVulItemList(appvuls, "app")...)
 	}
 
-	// generate the final report
-	vulList := getVulItemList(vuls)
 	return share.ScanErrorCode_ScanErrNone, vulList
 }
 
@@ -874,7 +771,7 @@ func getAffectedVul(mv map[string][]common.VulShort, features []detectors.Featur
 	return avs
 }
 
-var redhatReleaseRegexp = regexp.MustCompile(`^([a-z]+):([0-9]+)`)
+var releaseRegexp = regexp.MustCompile(`^([a-z]+):([0-9]+)`)
 
 func (cv *CveTools) getFeatures(layerFiles *layerScanFiles, imageNs *detectors.Namespace) ([]detectors.FeatureVersion, *detectors.Namespace, []detectors.AppFeatureVersion, share.ScanErrorCode) {
 	var namespace *detectors.Namespace
@@ -1102,7 +999,7 @@ func (s *sorter) Less(i, j int) bool {
 	return s.by(s.vulnerabilities[i], s.vulnerabilities[j])
 }
 
-func getVulItemList(vuls []vulFullReport) []*share.ScanVulnerability {
+func getVulItemList(vuls []vulFullReport, dbPrefix string) []*share.ScanVulnerability {
 	vulnerabilities := make([]vulnerabilityInfo, 0)
 	vulList := make([]*share.ScanVulnerability, 0)
 	if len(vuls) == 0 {
@@ -1148,11 +1045,11 @@ func getVulItemList(vuls []vulFullReport) []*share.ScanVulnerability {
 	SortBy(priority).Sort(vulnerabilities)
 
 	unique := utils.NewSet()
-	for _, vulnerabilityInfo := range vulnerabilities {
-		vulnerability := vulnerabilityInfo.vulnerability
-		featver := vulnerabilityInfo.featVer
-		fixedin := vulnerabilityInfo.fixedIn
-		severity := vulnerabilityInfo.severity
+	for _, vuln := range vulnerabilities {
+		v := vuln.vulnerability
+		featver := vuln.featVer
+		fixedin := vuln.fixedIn
+		severity := vuln.severity
 
 		var fixedInVer string
 		if fixedin.Version == "#MAXV#" {
@@ -1165,7 +1062,7 @@ func getVulItemList(vuls []vulFullReport) []*share.ScanVulnerability {
 		packVer := featver.Version.String()
 
 		// TODO: Quick fix to remove duplication. It should be done earlier
-		key := fmt.Sprintf("%s-%s-%s", vulnerability.Name, featver.Feature.Name, packVer)
+		key := fmt.Sprintf("%s-%s-%s", v.Name, featver.Feature.Name, packVer)
 		if unique.Contains(key) {
 			continue
 		}
@@ -1184,52 +1081,35 @@ func getVulItemList(vuls []vulFullReport) []*share.ScanVulnerability {
 			}
 		}
 
-		pub, mod := getDate(vulnerability.Metadata)
-		// s, v, s3, v3 := getCvss(vulnerability.Metadata)
-		s, _, s3, _ := getCvss(vulnerability.Metadata)
+		// Reduce grpc message size
 		item := &share.ScanVulnerability{
-			// Description:      vulnerability.Description,
-			// Link:             vulnerability.Link,
-			// Vectors:          v,
-			// VectorsV3:        v3,
-			Score:            s,
-			ScoreV3:          s3,
-			Name:             vulnerability.Name,
+			// Description:      v.Description,
+			// Link:             v.Link,
+			// Vectors:          v.CVSSv2.Vectors,
+			// VectorsV3:        v.CVSSv3.Vectors,
+			Score:            float32(v.CVSSv2.Score),
+			ScoreV3:          float32(v.CVSSv3.Score),
+			Name:             v.Name,
 			Severity:         fmt.Sprintf("%s", severity),
 			PackageName:      featver.Feature.Name,
 			PackageVersion:   packVer,
 			FixedVersion:     strings.Replace(fixedInVer, "||", " OR ", -1),
-			PublishedDate:    fmt.Sprintf("%d", pub),
-			LastModifiedDate: fmt.Sprintf("%d", mod),
+			PublishedDate:    fmt.Sprintf("%d", v.IssuedDate.Unix()),
+			LastModifiedDate: fmt.Sprintf("%d", v.LastModDate.Unix()),
 			CPEs:             cpes,
-			FeedRating:       vulnerability.FeedRating,
+			FeedRating:       v.FeedRating,
 			InBase:           featver.InBase,
+			DBKey:            fmt.Sprintf("%s:%s", dbPrefix, v.Name),
 		}
-		if len(vulnerability.CVEs) > 0 {
-			item.CVEs = vulnerability.CVEs
-		} else if strings.HasPrefix(vulnerability.Name, "CVE-") {
-			item.CVEs = []string{vulnerability.Name}
+		if len(v.CVEs) > 0 {
+			item.CVEs = v.CVEs
+		} else if strings.HasPrefix(v.Name, "CVE-") {
+			item.CVEs = []string{v.Name}
 		}
 		vulList = append(vulList, item)
 	}
 	// log.Info("scan report:", len(vulList))
 	return vulList
-}
-
-func getDate(meta map[string]common.NVDMetadata) (int64, int64) {
-	if n, ok := meta["NVD"]; ok {
-		return n.PublishedDate.Unix(), n.LastModifiedDate.Unix()
-	} else {
-		return 0, 0
-	}
-}
-
-func getCvss(meta map[string]common.NVDMetadata) (float32, string, float32, string) {
-	if n, ok := meta["NVD"]; ok {
-		return float32(n.CVSSv2.Score), n.CVSSv2.Vectors, float32(n.CVSSv3.Score), n.CVSSv3.Vectors
-	} else {
-		return 0, "", 0, ""
-	}
 }
 
 func removeSubVersion(name string) string {

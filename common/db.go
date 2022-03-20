@@ -25,14 +25,43 @@ const maxExtractSize = 0 // No extract limit
 const maxVersionHeader = 100 * 1024
 const maxBufferSize = 1024 * 1024
 
-func getCVEDBEncryptKey() []byte {
-	return cveDBEncryptKey
+const (
+	DBUbuntu = iota
+	DBDebian
+	DBCentos
+	DBAlpine
+	DBAmazon
+	DBOracle
+	DBMariner
+	DBSuse
+	DBMax
+)
+
+type dbBuffer struct {
+	Name  string
+	Full  map[string]VulFull
+	Short []VulShort
 }
 
-type DBFile struct {
-	Filename string
-	Key      KeyVersion
-	Files    []utils.TarFileInfo
+type dbSpace struct {
+	Buffers [DBMax]dbBuffer
+}
+
+var DBS dbSpace = dbSpace{
+	Buffers: [DBMax]dbBuffer{
+		DBUbuntu:  dbBuffer{Name: "ubuntu"},
+		DBDebian:  dbBuffer{Name: "debian"},
+		DBCentos:  dbBuffer{Name: "centos"},
+		DBAlpine:  dbBuffer{Name: "alpine"},
+		DBAmazon:  dbBuffer{Name: "amazon"},
+		DBOracle:  dbBuffer{Name: "oracle"},
+		DBMariner: dbBuffer{Name: "mariner"},
+		DBSuse:    dbBuffer{Name: "suse"},
+	},
+}
+
+func getCVEDBEncryptKey() []byte {
+	return cveDBEncryptKey
 }
 
 type outputPackage struct {
@@ -54,29 +83,10 @@ func ReadCveDbMeta(path string, output bool) (map[string]*share.ScanVulnerabilit
 	}
 
 	fullDb := make(map[string]*share.ScanVulnerability, 0)
-	if err := readCveDbMeta(path, "ubuntu", fullDb, outCVEs); err != nil {
-		return nil, err
-	}
-	if err := readCveDbMeta(path, "centos", fullDb, outCVEs); err != nil {
-		return nil, err
-	}
-	if err := readCveDbMeta(path, "debian", fullDb, outCVEs); err != nil {
-		return nil, err
-	}
-	if err := readCveDbMeta(path, "alpine", fullDb, outCVEs); err != nil {
-		return nil, err
-	}
-	if err := readCveDbMeta(path, "amazon", fullDb, outCVEs); err != nil {
-		return nil, err
-	}
-	if err := readCveDbMeta(path, "oracle", fullDb, outCVEs); err != nil {
-		return nil, err
-	}
-	if err := readCveDbMeta(path, "suse", fullDb, outCVEs); err != nil {
-		return nil, err
-	}
-	if err := readCveDbMeta(path, "mariner", fullDb, outCVEs); err != nil {
-		return nil, err
+	for i := 0; i < DBMax; i++ {
+		if err := readCveDbMeta(path, DBS.Buffers[i].Name, fullDb, outCVEs); err != nil {
+			return nil, err
+		}
 	}
 	if err := readAppDbMeta(path, fullDb, outCVEs); err != nil {
 		return nil, err
@@ -125,14 +135,14 @@ func readCveDbMeta(path, osname string, fullDb map[string]*share.ScanVulnerabili
 		if err == nil {
 			if _, ok := fullDb[cveName]; !ok {
 				sv := &share.ScanVulnerability{
-					Score:            getCvssScore(v.Metadata),
-					Vectors:          getCvssVector(v.Metadata),
+					Score:            float32(v.CVSSv2.Score),
+					Vectors:          v.CVSSv2.Vectors,
 					Description:      v.Description,
 					Link:             v.Link,
-					ScoreV3:          getCvssScoreV3(v.Metadata),
-					VectorsV3:        getCvssVectorV3(v.Metadata),
-					PublishedDate:    getPublishedDate(v.Metadata),
-					LastModifiedDate: getLastModifiedDate(v.Metadata),
+					ScoreV3:          float32(v.CVSSv3.Score),
+					VectorsV3:        v.CVSSv3.Vectors,
+					PublishedDate:    v.IssuedDate.Format(time.RFC3339),
+					LastModifiedDate: v.LastModDate.Format(time.RFC3339),
 					FeedRating:       v.FeedRating,
 				}
 				fullDb[cveName] = sv
@@ -213,58 +223,10 @@ func readAppDbMeta(path string, fullDb map[string]*share.ScanVulnerability, outC
 				}
 			}
 		} else {
-			log.Error("Unmarshal vulnerability err")
+			log.WithFields(log.Fields{"error": err}).Error("Unmarshal vulnerability error")
 		}
 	}
 	return nil
-}
-
-func getCvssScore(meta map[string]NVDMetadata) float32 {
-	if n, ok := meta["NVD"]; ok {
-		return float32(n.CVSSv2.Score)
-	} else {
-		return 0
-	}
-}
-
-func getCvssVector(meta map[string]NVDMetadata) string {
-	if n, ok := meta["NVD"]; ok {
-		return n.CVSSv2.Vectors
-	} else {
-		return ""
-	}
-}
-
-func getCvssScoreV3(meta map[string]NVDMetadata) float32 {
-	if n, ok := meta["NVD"]; ok {
-		return float32(n.CVSSv3.Score)
-	} else {
-		return 0
-	}
-}
-
-func getCvssVectorV3(meta map[string]NVDMetadata) string {
-	if n, ok := meta["NVD"]; ok {
-		return n.CVSSv3.Vectors
-	} else {
-		return ""
-	}
-}
-
-func getPublishedDate(meta map[string]NVDMetadata) string {
-	if n, ok := meta["NVD"]; ok {
-		return n.PublishedDate.Format(time.RFC3339)
-	} else {
-		return ""
-	}
-}
-
-func getLastModifiedDate(meta map[string]NVDMetadata) string {
-	if n, ok := meta["NVD"]; ok {
-		return n.LastModifiedDate.Format(time.RFC3339)
-	} else {
-		return ""
-	}
 }
 
 func LoadVulnerabilityIndex(path, osname string) ([]VulShort, error) {
