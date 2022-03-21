@@ -147,7 +147,7 @@ func (cv *CveTools) ScanAppPackage(req *share.ScanAppRequest, namespace string) 
 	}
 
 	appvuls := cv.DetectAppVul(cv.TbPath, apps, namespace)
-	vulList := getVulItemList(appvuls, "app")
+	vulList := getVulItemList(appvuls, common.DBAppName)
 
 	result := &share.ScanResult{
 		Provider:        share.ScanProvider_Neuvector,
@@ -705,7 +705,7 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 
 	if len(appPkg) != 0 {
 		appvuls := cv.DetectAppVul(cv.TbPath, appPkg, nsName)
-		vulList = append(vulList, getVulItemList(appvuls, "app")...)
+		vulList = append(vulList, getVulItemList(appvuls, common.DBAppName)...)
 	}
 
 	return share.ScanErrorCode_ScanErrNone, vulList
