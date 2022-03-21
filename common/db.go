@@ -37,6 +37,8 @@ const (
 	DBMax
 )
 
+const DBAppName = "apps"
+
 type dbBuffer struct {
 	Name  string
 	Full  map[string]VulFull
@@ -192,7 +194,7 @@ func readAppDbMeta(path string, fullDb map[string]*share.ScanVulnerability, outC
 		s := scanner.Text()
 		err := json.Unmarshal([]byte(s), &v)
 		if err == nil {
-			cveName := fmt.Sprintf("%s:%s", "apps", v.VulName)
+			cveName := fmt.Sprintf("%s:%s", DBAppName, v.VulName)
 			if _, ok := fullDb[cveName]; !ok {
 				sv := &share.ScanVulnerability{
 					Score:            float32(v.Score),
