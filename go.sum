@@ -696,8 +696,8 @@ github.com/nbutton23/zxcvbn-go v0.0.0-20160627004424-a22cb81b2ecd/go.mod h1:o96d
 github.com/nbutton23/zxcvbn-go v0.0.0-20171102151520-eafdab6b0663/go.mod h1:o96djdrsSGy3AWPyBgZMAGfxZNfgntdJG+11KU4QvbU=
 github.com/neuvector/k8s v1.2.1-0.20220214174348-d0b3f377461e h1:y7w21QaxlBzeRNW1PEdBfR/rA0S801uCEvubsiq1AJ0=
 github.com/neuvector/k8s v1.2.1-0.20220214174348-d0b3f377461e/go.mod h1:djxl7Js+tfAJJgxKpeN3lnFZT6jRhl1Ikkgd/wMrLQU=
-github.com/neuvector/neuvector v0.0.0-20220320175714-e167ec3bce58 h1:Rzz8BSiShaL+ECLojN0s6CGUA/R+3FQL3MOhVBuj3lI=
-github.com/neuvector/neuvector v0.0.0-20220320175714-e167ec3bce58/go.mod h1:VqqrTb5QcBkdsh+SP00/tBbfg+PA5DAGjaiYkrzj+xg=
+github.com/neuvector/neuvector v0.0.0-20220323060902-e877bff0fee0 h1:6//uwcYr/qO+ZsD23mI2mBEVfFgBq9h+kWY4AnVFULg=
+github.com/neuvector/neuvector v0.0.0-20220323060902-e877bff0fee0/go.mod h1:VqqrTb5QcBkdsh+SP00/tBbfg+PA5DAGjaiYkrzj+xg=
 github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d/go.mod h1:YUTz3bUH2ZwIWBy3CJBeOBEugqcmXREj14T+iG/4k4U=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
