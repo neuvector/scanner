@@ -71,7 +71,7 @@ require (
 	github.com/knqyf263/go-rpmdb v0.0.0-20220209103220-0f7a6d951a6d
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/neuvector/k8s v1.2.1-0.20220214174348-d0b3f377461e
-	github.com/neuvector/neuvector v0.0.0-20220320175714-e167ec3bce58
+	github.com/neuvector/neuvector v0.0.0-20220323060902-e877bff0fee0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/opencontainers/runc v1.0.2
