@@ -1537,11 +1537,15 @@ type RESTSystemConfigConfig struct {
 	IBMSAEpDashboardURL       *string         `json:"ibmsa_ep_dashboard_url,omitempty"`
 	XffEnabled                *bool           `json:"xff_enabled,omitempty"`
 	// InternalSubnets      *[]string `json:"configured_internal_subnets,omitempty"`
+	ModeAutoD2M               *bool           `json:"mode_auto_d2m"`
+	ModeAutoD2MDuration       *int64          `json:"mode_auto_d2m_duration"`
+	ModeAutoM2P               *bool           `json:"mode_auto_m2p"`
+	ModeAutoM2PDuration       *int64          `json:"mode_auto_m2p_duration"`
 }
 
 type RESTSysNetConfigConfig struct {
-	NetServiceStatus          *bool           `json:"net_service_status,omitempty"`
-	NetServicePolicyMode      *string         `json:"net_service_policy_mode,omitempty"`
+	NetServiceStatus     *bool   `json:"net_service_status,omitempty"`
+	NetServicePolicyMode *string `json:"net_service_policy_mode,omitempty"`
 }
 
 type RESTSystemConfigConfigCfgMap struct {
@@ -1602,6 +1606,10 @@ type RESTSystemConfig struct {
 	XffEnabled                bool          `json:"xff_enabled"`
 	NetServiceStatus          bool          `json:"net_service_status"`
 	NetServicePolicyMode      string        `json:"net_service_policy_mode"`
+	ModeAutoD2M               bool          `json:"mode_auto_d2m"`
+	ModeAutoD2MDuration       int64         `json:"mode_auto_d2m_duration"`
+	ModeAutoM2P               bool          `json:"mode_auto_m2p"`
+	ModeAutoM2PDuration       int64         `json:"mode_auto_m2p_duration"`
 }
 
 type RESTIBMSAConfig struct {
@@ -2400,13 +2408,16 @@ type RESTDlpRulesData struct {
 type RESTDlpSetting struct {
 	Name    string `json:"name"`
 	Action  string `json:"action"`
+	Exist   bool   `json:"exist"`
 	Comment string `json:"comment,omitempty"`
+	CfgType string `json:"cfg_type"` // CfgTypeUserCreated / CfgTypeGround. It's from the DLP sensor's cfgType
 }
 
 type RESTDlpGroup struct {
 	Name    string            `json:"name"`
 	Status  bool              `json:"status"`
 	Sensors []*RESTDlpSetting `json:"sensors"`
+	CfgType string            `json:"cfg_type"` // CfgTypeUserCreated / CfgTypeGround
 }
 
 type RESTDlpGroupData struct {
@@ -2417,12 +2428,18 @@ type RESTDlpGroupsData struct {
 	DlpGroups []*RESTDlpGroup `json:"dlp_groups"`
 }
 
+type RESTDlpConfig struct {
+	Name    string `json:"name"`
+	Action  string `json:"action"`
+	Comment string `json:"comment,omitempty"`
+}
+
 type RESTDlpGroupConfig struct {
-	Name       string            `json:"name"`
-	Status     *bool             `json:"status,omitempty"`
-	DelSensors *[]string         `json:"delete,omitempty"`  //delete list used by CLI
-	Sensors    *[]RESTDlpSetting `json:"sensors,omitempty"` //change list used by CLI
-	RepSensors *[]RESTDlpSetting `json:"replace,omitempty"` //replace list used by GUI
+	Name       string           `json:"name"`
+	Status     *bool            `json:"status,omitempty"`
+	DelSensors *[]string        `json:"delete,omitempty"`  //delete list used by CLI
+	Sensors    *[]RESTDlpConfig `json:"sensors,omitempty"` //change list used by CLI
+	RepSensors *[]RESTDlpConfig `json:"replace,omitempty"` //replace list used by GUI
 }
 
 type RESTDlpGroupConfigData struct {
@@ -2473,9 +2490,8 @@ type RESTCrdDlpGroupSetting struct {
 }
 
 type RESTCrdDlpGroupConfig struct {
-	Name       string                    `json:"name"`
-	Status     *bool                     `json:"status,omitempty"`
-	RepSensors *[]RESTCrdDlpGroupSetting `json:"replace,omitempty"` //replace list used by GUI
+	Status     bool                     `json:"status,omitempty"`
+	RepSensors []RESTCrdDlpGroupSetting `json:"replace,omitempty"` //replace list used by GUI
 }
 
 type RESTDlpSensorExport struct {
@@ -2582,7 +2598,7 @@ type RESTWafSetting struct {
 	Action  string `json:"action"`
 	Exist   bool   `json:"exist"`
 	Comment string `json:"comment,omitempty"`
-	CfgType string `json:"cfg_type"` // CfgTypeUserCreated / CfgTypeGround
+	CfgType string `json:"cfg_type"` // CfgTypeUserCreated / CfgTypeGround. It's from the WAF sensor's cfgType
 }
 
 type RESTWafGroup struct {
@@ -2624,9 +2640,8 @@ type RESTCrdWafGroupSetting struct {
 }
 
 type RESTCrdWafGroupConfig struct {
-	Name       string                    `json:"name"`
-	Status     *bool                     `json:"status,omitempty"`
-	RepSensors *[]RESTCrdWafGroupSetting `json:"replace,omitempty"` //replace list used by GUI
+	Status     bool                     `json:"status,omitempty"`
+	RepSensors []RESTCrdWafGroupSetting `json:"replace,omitempty"` //replace list used by GUI
 }
 
 const (
