@@ -636,7 +636,7 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 			db = common.DBUbuntu
 		case "debian":
 			db = common.DBDebian
-		case "rhel", "server":
+		case "rhel", "server", "centos":
 			nsName = "centos:" + r[2]
 			db = common.DBCentos
 			log.Info("namespace map to: ", nsName)
@@ -661,9 +661,9 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 	}
 
 	if db == common.DBMax {
+		log.WithFields(log.Fields{"os": nsName}).Info("map to ubuntu:upstream")
 		nsName = "ubuntu:upstream"
 		db = common.DBUbuntu
-		log.WithFields(log.Fields{"os": nsName}).Info("map to ubuntu: upstream")
 	}
 
 	cv.UpdateMux.Lock()
