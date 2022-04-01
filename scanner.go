@@ -39,6 +39,7 @@ var selfID string
 
 func dbRead(path string, maxRetry int, output bool) map[string]*share.ScanVulnerability {
 	dbFile := path + share.DefaultCVEDBName
+	encryptKey := common.GetCVEDBEncryptKey()
 
 	var retry int
 	var dbReady bool
@@ -49,7 +50,7 @@ func dbRead(path string, maxRetry int, output bool) map[string]*share.ScanVulner
 			log.WithFields(log.Fields{"file": dbFile}).Error("cannot find scanner db")
 		} else {
 			cveTools.UpdateMux.Lock()
-			if verNew, createTime, err := common.LoadCveDb(path, cveTools.TbPath); err == nil {
+			if verNew, createTime, err := common.LoadCveDb(path, cveTools.TbPath, encryptKey); err == nil {
 				cveTools.CveDBVersion = verNew
 				cveTools.CveDBCreateTime = createTime
 				if dbData, err = common.ReadCveDbMeta(cveTools.TbPath, output); err != nil {

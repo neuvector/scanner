@@ -62,7 +62,7 @@ var DBS dbSpace = dbSpace{
 	},
 }
 
-func getCVEDBEncryptKey() []byte {
+func GetCVEDBEncryptKey() []byte {
 	return cveDBEncryptKey
 }
 
@@ -374,7 +374,7 @@ func LoadRawFile(path, name string) ([]byte, error) {
 	return data, nil
 }
 
-func LoadCveDb(path, desPath string) (string, string, error) {
+func LoadCveDb(path, desPath string, encryptKey []byte) (string, string, error) {
 	var latestVer string
 
 	if err := os.RemoveAll(desPath); err != nil {
@@ -406,7 +406,7 @@ func LoadCveDb(path, desPath string) (string, string, error) {
 		log.WithFields(log.Fields{"version": newVer}).Info("Expand new DB")
 
 		// has new database, no expanded database, untar the new database
-		err = unzipDb(path, desPath)
+		err = unzipDb(path, desPath, encryptKey)
 		if err != nil {
 			log.WithFields(log.Fields{"error": err}).Error("Unzip CVE database")
 			return "", "", err
@@ -428,7 +428,7 @@ func LoadCveDb(path, desPath string) (string, string, error) {
 			return "", "", err
 		}
 
-		err = unzipDb(path, tmpDir+"/")
+		err = unzipDb(path, tmpDir+"/", encryptKey)
 		if err != nil {
 			log.WithFields(log.Fields{"error": err}).Error("Unzip CVE database")
 			os.RemoveAll(tmpDir)
@@ -499,7 +499,7 @@ func GetDbVersion(path string) (float64, string, error) {
 	return verFl, keyVer.UpdateTime, nil
 }
 
-func unzipDb(path, desPath string) error {
+func unzipDb(path, desPath string, encryptKey []byte) error {
 	f, err := os.Open(path + share.DefaultCVEDBName)
 	if err != nil {
 		log.Info("Open zip db file fail")
@@ -548,7 +548,7 @@ func unzipDb(path, desPath string) error {
 	}
 
 	// Use local decrypt function
-	plainData, err := decrypt(cipherData, getCVEDBEncryptKey())
+	plainData, err := decrypt(cipherData, encryptKey)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Decrypt tar file error")
 		return err
