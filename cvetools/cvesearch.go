@@ -640,6 +640,9 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 			nsName = "centos:" + r[2]
 			db = common.DBCentos
 			log.Info("namespace map to: ", nsName)
+		case "rhcos":
+			log.Info("unsupported namespace: ", nsName)
+			return share.ScanErrorCode_ScanErrNone, make([]*share.ScanVulnerability, 0)
 		case "alpine":
 			nsName = removeSubVersion(nsName)
 			db = common.DBAlpine
