@@ -154,7 +154,7 @@ func (s *ScanUtil) readRunningPackages(id string, pid int, prefix, kernel string
 			// NVSHAS-5589, on some containers, we somehow identify the base os as the host's os.
 			// The container shares host mount and pid namespace, but it still shouldn't result in this.
 			// The real cause is unknown, switching the namespace fixes the problem.
-			if strings.HasSuffix(lib, "release") {
+			if pid != 1 && strings.HasSuffix(lib, "release") {
 				data, err = s.sys.NsGetFile(prefix+lib, pid, false, 0, 0)
 			} else {
 				data, err = s.sys.ReadContainerFile(prefix+lib, pid, 0, 0)
@@ -279,7 +279,6 @@ func isRpmKernelPackage(p *rpmdb.PackageInfo) string {
 func getRpmPackages(fullpath, kernel string) ([]byte, error) {
 	db, err := rpmdb.Open(fullpath)
 	if err != nil {
-		log.WithFields(log.Fields{"file": fullpath, "kernel": kernel}).Error("Failed to open rpm packages")
 		return nil, err
 	}
 
@@ -326,7 +325,6 @@ func isDpkgKernelPackage(line string) string {
 }
 
 func getDpkgStatus(fullpath, kernel string) ([]byte, error) {
-	buf := new(bytes.Buffer)
 	inputFile, err := os.Open(fullpath)
 	if err != nil {
 		return nil, err
@@ -337,6 +335,7 @@ func getDpkgStatus(fullpath, kernel string) ([]byte, error) {
 
 	skipPackage := false
 
+	buf := new(bytes.Buffer)
 	scanner := bufio.NewScanner(inputFile)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
