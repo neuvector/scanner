@@ -9,6 +9,7 @@ all:
 REPO_URL = 10.1.127.3:5000
 REPO_REL_URL = 10.1.127.12:5000
 STAGE_DIR = stage
+S_DATA_FILE = ubistage.tgz
 
 copy_scan:
 	mkdir -p ${STAGE_DIR}/usr/local/bin/
