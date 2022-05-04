@@ -831,7 +831,7 @@ type RESTIDName struct {
 	Domains     []string `json:"domains"`
 }
 
-type RESTWorkloadBrief struct {
+type RESTWorkloadBrief struct { // obsolete, use v2 instead
 	ID                 string               `json:"id"`
 	Name               string               `json:"name"`
 	DisplayName        string               `json:"display_name"`
@@ -862,24 +862,25 @@ type RESTWorkloadBrief struct {
 	BaselineProfile    string               `json:"baseline_profile"`
 }
 
-type RESTWorkload struct {
+type RESTWorkload struct { // obsolete, use v2 instead
 	RESTWorkloadBrief
-	AgentID      string                   `json:"enforcer_id"`
-	NetworkMode  string                   `json:"network_mode"`
-	CreatedAt    string                   `json:"created_at"`
-	StartedAt    string                   `json:"started_at"`
-	FinishedAt   string                   `json:"finished_at"`
-	Running      bool                     `json:"running"`
-	SecuredAt    string                   `json:"secured_at"`
-	ExitCode     int                      `json:"exit_code"`
-	Ifaces       map[string][]*RESTIPAddr `json:"interfaces"`
-	Ports        []*RESTWorkloadPorts     `json:"ports"`
-	Labels       map[string]string        `json:"labels"`
-	Applications []string                 `json:"applications"`
-	MemoryLimit  int64                    `json:"memory_limit"`
-	CPUs         string                   `json:"cpus"`
-	Children     []*RESTWorkload          `json:"children"`
-	ServiceAccount string                 `json:"service_account"`
+	AgentID        string                   `json:"enforcer_id"`
+	AgentName      string                   `json:"enforcer_name"`
+	NetworkMode    string                   `json:"network_mode"`
+	CreatedAt      string                   `json:"created_at"`
+	StartedAt      string                   `json:"started_at"`
+	FinishedAt     string                   `json:"finished_at"`
+	Running        bool                     `json:"running"`
+	SecuredAt      string                   `json:"secured_at"`
+	ExitCode       int                      `json:"exit_code"`
+	Ifaces         map[string][]*RESTIPAddr `json:"interfaces"`
+	Ports          []*RESTWorkloadPorts     `json:"ports"`
+	Labels         map[string]string        `json:"labels"`
+	Applications   []string                 `json:"applications"`
+	MemoryLimit    int64                    `json:"memory_limit"`
+	CPUs           string                   `json:"cpus"`
+	Children       []*RESTWorkload          `json:"children"`
+	ServiceAccount string                   `json:"service_account"`
 }
 
 type RESTWorkloadDetail struct {
@@ -893,8 +894,87 @@ type RESTWorkloadsData struct {
 	Workloads []*RESTWorkload `json:"workloads"`
 }
 
+type RESTWorkloadBriefV2 struct {
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	DisplayName  string `json:"display_name"`
+	HostName     string `json:"host_name"`
+	HostID       string `json:"host_id"`
+	Image        string `json:"image"`
+	ImageID      string `json:"image_id"`
+	Domain       string `json:"domain"`
+	State        string `json:"state"`
+	Service      string `json:"service"`
+	Author       string `json:"author"`
+	ServiceGroup string `json:"service_group"`
+}
+
+type RESTWorkloadSecurityV2 struct {
+	CapSniff           bool           `json:"cap_sniff"`
+	CapQuar            bool           `json:"cap_quarantine"`
+	CapChgMode         bool           `json:"cap_change_mode"`
+	ServiceMesh        bool           `json:"service_mesh"`
+	ServiceMeshSidecar bool           `json:"service_mesh_sidecar"`
+	PolicyMode         string         `json:"policy_mode"`
+	ProfileMode        string         `json:"profile_mode"`
+	BaselineProfile    string         `json:"baseline_profile"`
+	QuarReason         string         `json:"quarantine_reason,omitempty"`
+	ScanSummary        *RESTScanBrief `json:"scan_summary"`
+}
+
+type RESTWorkloadRtAttribesV2 struct {
+	PodName        string                   `json:"pod_name"`
+	ShareNSWith    string                   `json:"share_ns_with,omitempty"`
+	Privileged     bool                     `json:"privileged"`
+	RunAsRoot      bool                     `json:"run_as_root"`
+	Labels         map[string]string        `json:"labels"`
+	MemoryLimit    int64                    `json:"memory_limit"`
+	CPUs           string                   `json:"cpus"`
+	ServiceAccount string                   `json:"service_account"`
+	NetworkMode    string                   `json:"network_mode"`
+	Ifaces         map[string][]*RESTIPAddr `json:"interfaces"`
+	Ports          []*RESTWorkloadPorts     `json:"ports"`
+	Applications   []string                 `json:"applications"`
+}
+
+type RESTWorkloadV2 struct {
+	WlBrief        RESTWorkloadBriefV2      `json:"brief"`
+	WlSecurity     RESTWorkloadSecurityV2   `json:"security"`
+	WlRtAttributes RESTWorkloadRtAttribesV2 `json:"rt_attributes"`
+	Children       []*RESTWorkloadV2        `json:"children"`
+	AgentID        string                   `json:"enforcer_id"`
+	AgentName      string                   `json:"enforcer_name"`
+	PlatformRole   string                   `json:"platform_role"`
+	CreatedAt      string                   `json:"created_at"`
+	StartedAt      string                   `json:"started_at"`
+	FinishedAt     string                   `json:"finished_at"`
+	Running        bool                     `json:"running"`
+	SecuredAt      string                   `json:"secured_at"`
+	ExitCode       int                      `json:"exit_code"`
+	//ChildrenBrief  []*RESTWorkloadBrief     `json:"children_brief"`
+}
+
+type RESTWorkloadDetailMiscV2 struct {
+	Groups   []string                `json:"groups"`
+	AppPorts map[string]string       `json:"app_ports"`
+	Children []*RESTWorkloadDetailV2 `json:"children"`
+}
+
+type RESTWorkloadDetailV2 struct {
+	RESTWorkloadV2
+	Misc RESTWorkloadDetailMiscV2 `json:"misc"`
+}
+
+type RESTWorkloadsDataV2 struct {
+	Workloads []*RESTWorkloadV2 `json:"workloads"` // for pagination, manager needs each layer in workload object to have <22 members
+}
+
 type RESTWorkloadDetailData struct {
 	Workload *RESTWorkloadDetail `json:"workload"`
+}
+
+type RESTWorkloadDetailDataV2 struct {
+	Workload *RESTWorkloadDetailV2 `json:"workload"`
 }
 
 type RESTWorkloadsBriefData struct {
@@ -1547,10 +1627,10 @@ type RESTSysNetConfigConfig struct {
 }
 
 type RESTSysAtmoConfigConfig struct {
-	ModeAutoD2M               *bool           `json:"mode_auto_d2m"`
-	ModeAutoD2MDuration       *int64          `json:"mode_auto_d2m_duration"`
-	ModeAutoM2P               *bool           `json:"mode_auto_m2p"`
-	ModeAutoM2PDuration       *int64          `json:"mode_auto_m2p_duration"`
+	ModeAutoD2M         *bool  `json:"mode_auto_d2m"`
+	ModeAutoD2MDuration *int64 `json:"mode_auto_d2m_duration"`
+	ModeAutoM2P         *bool  `json:"mode_auto_m2p"`
+	ModeAutoM2PDuration *int64 `json:"mode_auto_m2p_duration"`
 }
 
 type RESTSystemConfigConfigCfgMap struct {
@@ -1619,6 +1699,80 @@ type RESTSystemConfig struct {
 	ModeAutoM2PDuration       int64         `json:"mode_auto_m2p_duration"`
 }
 
+type RESTSystemConfigData struct {
+	Config    *RESTSystemConfig    `json:"config"`
+	FedConfig *RESTFedSystemConfig `json:"fed_config"`
+}
+
+type RESTSystemConfigNewSvcV2 struct {
+	NewServicePolicyMode      string `json:"new_service_policy_mode"`
+	NewServiceProfileBaseline string `json:"new_service_profile_baseline"`
+}
+
+type RESTSystemConfigSyslogV2 struct {
+	SyslogServer       string   `json:"syslog_ip"`
+	SyslogIPProto      uint8    `json:"syslog_ip_proto"`
+	SyslogPort         uint16   `json:"syslog_port"`
+	SyslogLevel        string   `json:"syslog_level"`
+	SyslogEnable       bool     `json:"syslog_status"`
+	SyslogCategories   []string `json:"syslog_categories"`
+	SyslogInJSON       bool     `json:"syslog_in_json"`
+	SingleCVEPerSyslog bool     `json:"single_cve_per_syslog"`
+}
+
+type RESTSystemConfigAuthV2 struct {
+	AuthOrder      []string `json:"auth_order"`
+	AuthByPlatform bool     `json:"auth_by_platform"`
+	RancherEP      string   `json:"rancher_ep"`
+}
+
+type RESTSystemConfigMiscV2 struct {
+	InternalSubnets    []string `json:"configured_internal_subnets,omitempty"`
+	UnusedGroupAging   uint8    `json:"unused_group_aging"`
+	ClusterName        string   `json:"cluster_name"`
+	ControllerDebug    []string `json:"controller_debug"`
+	MonitorServiceMesh bool     `json:"monitor_service_mesh"`
+	XffEnabled         bool     `json:"xff_enabled"`
+}
+
+type RESTSystemConfigProxyV2 struct {
+	RegistryHttpProxyEnable  bool      `json:"registry_http_proxy_status"`
+	RegistryHttpsProxyEnable bool      `json:"registry_https_proxy_status"`
+	RegistryHttpProxy        RESTProxy `json:"registry_http_proxy"`
+	RegistryHttpsProxy       RESTProxy `json:"registry_https_proxy"`
+}
+
+type RESTSystemConfigIBMSAV2 struct {
+	IBMSAEpEnabled      bool   `json:"ibmsa_ep_enabled"`
+	IBMSAEpStart        uint32 `json:"ibmsa_ep_start"`
+	IBMSAEpDashboardURL string `json:"ibmsa_ep_dashboard_url"`
+	IBMSAEpConnectedAt  string `json:"ibmsa_ep_connected_at"`
+}
+
+type RESTSystemConfigNetSvcV2 struct {
+	NetServiceStatus     bool   `json:"net_service_status"`
+	NetServicePolicyMode string `json:"net_service_policy_mode"`
+}
+
+type RESTSystemConfigModeAutoV2 struct {
+	ModeAutoD2M         bool  `json:"mode_auto_d2m"`
+	ModeAutoD2MDuration int64 `json:"mode_auto_d2m_duration"`
+	ModeAutoM2P         bool  `json:"mode_auto_m2p"`
+	ModeAutoM2PDuration int64 `json:"mode_auto_m2p_duration"`
+}
+
+type RESTSystemConfigV2 struct {
+	NewSvc   RESTSystemConfigNewSvcV2   `json:"new_svc"`
+	Syslog   RESTSystemConfigSyslogV2   `json:"syslog"`
+	Auth     RESTSystemConfigAuthV2     `json:"auth"`
+	Misc     RESTSystemConfigMiscV2     `json:"misc"`
+	Webhooks []RESTWebhook              `json:"webhooks"`
+	Proxy    RESTSystemConfigProxyV2    `json:"proxy"`
+	IBMSA    RESTSystemConfigIBMSAV2    `json:"ibmsa"`
+	NetSvc   RESTSystemConfigNetSvcV2   `json:"net_svc"`
+	ModeAuto RESTSystemConfigModeAutoV2 `json:"mode_auto"`
+}
+
 type RESTIBMSAConfig struct {
 	AccountID         string `json:"account_id"`
 	APIKey            string `json:"apikey"`
@@ -1630,8 +1784,8 @@ type RESTIBMSAConfig struct {
 	OnboardProviderID string `json:"onboard_provider_id"`
 }
 
-type RESTSystemConfigData struct {
-	Config    *RESTSystemConfig    `json:"config"`
+type RESTSystemConfigDataV2 struct {
+	Config    *RESTSystemConfigV2  `json:"config"`
 	FedConfig *RESTFedSystemConfig `json:"fed_config"`
 }
 
@@ -1835,27 +1989,29 @@ type RESTVulnPackageVersion struct {
 }
 
 type RESTVulnerabilityAsset struct {
-	Name            string                              `json:"name"`
-	Severity        string                              `json:"severity"`
-	Description     string                              `json:"description"`
-	Packages        map[string][]RESTVulnPackageVersion `json:"packages`
-	PackageName     string                              `json:"package_name"` // deprecated in 4.3.3
-	Link            string                              `json:"link"`
-	Score           float32                             `json:"score"`
-	Vectors         string                              `json:"vectors"`
-	ScoreV3         float32                             `json:"score_v3"`
-	VectorsV3       string                              `json:"vectors_v3"`
-	PublishedTS     int64                               `json:"published_timestamp"`
-	LastModTS       int64                               `json:"last_modified_timestamp"`
-	PackageVersions []RESTVulnPackageVersion            `json:"package_versions"` // deprecated in 4.3.3
-	Workloads       []RESTIDName                        `json:"workloads"`
-	Nodes           []RESTIDName                        `json:"nodes"`
-	Images          []RESTIDName                        `json:"images"`
-	Platforms       []RESTIDName                        `json:"platforms"`
+	Name        string                              `json:"name"`
+	Severity    string                              `json:"severity"`
+	Description string                              `json:"description"`
+	Packages    map[string][]RESTVulnPackageVersion `json:"packages`
+	Link        string                              `json:"link"`
+	Score       float32                             `json:"score"`
+	Vectors     string                              `json:"vectors"`
+	ScoreV3     float32                             `json:"score_v3"`
+	VectorsV3   string                              `json:"vectors_v3"`
+	PublishedTS int64                               `json:"published_timestamp"`
+	LastModTS   int64                               `json:"last_modified_timestamp"`
+	Workloads   []string                            `json:"workloads"`
+	Nodes       []string                            `json:"nodes"`
+	Images      []string                            `json:"images"`
+	Platforms   []string                            `json:"platforms"`
 }
 
 type RESTVulnerabilityAssetData struct {
-	Vuls []*RESTVulnerabilityAsset `json:"vulnerabilities"`
+	Vuls      []*RESTVulnerabilityAsset `json:"vulnerabilities"`
+	Workloads map[string][]RESTIDName   `json:"workloads"`
+	Nodes     map[string][]RESTIDName   `json:"nodes"`
+	Images    map[string][]RESTIDName   `json:"images"`
+	Platforms map[string][]RESTIDName   `json:"platforms"`
 }
 
 type RESTScanReportData struct {
@@ -2130,28 +2286,32 @@ type RESTComplianceData struct {
 }
 
 type RESTComplianceAsset struct {
-	Name        string       `json:"name"`
-	Catalog     string       `json:"catalog"`
-	Type        string       `json:"type"`
-	Level       string       `json:"level"`
-	Profile     string       `json:"profile"`
-	Scored      bool         `json:"scored"`
-	Description string       `json:"description"`
-	Message     []string     `json:"message"`
-	Remediation string       `json:"remediation"`
-	Group       string       `json:"group"`
-	Tags        []string     `json:"tags"`
-	Workloads   []RESTIDName `json:"workloads"`
-	Nodes       []RESTIDName `json:"nodes"`
-	Images      []RESTIDName `json:"images"`
-	Platforms   []RESTIDName `json:"platforms"`
+	Name        string   `json:"name"`
+	Catalog     string   `json:"catalog"`
+	Type        string   `json:"type"`
+	Level       string   `json:"level"`
+	Profile     string   `json:"profile"`
+	Scored      bool     `json:"scored"`
+	Description string   `json:"description"`
+	Message     []string `json:"message"`
+	Remediation string   `json:"remediation"`
+	Group       string   `json:"group"`
+	Tags        []string `json:"tags"`
+	Workloads   []string `json:"workloads"`
+	Nodes       []string `json:"nodes"`
+	Images      []string `json:"images"`
+	Platforms   []string `json:"platforms"`
 }
 
 type RESTComplianceAssetData struct {
-	Compliances   []*RESTComplianceAsset `json:"compliances"`
-	KubeCategory  string                 `json:"kubernetes_cis_category"`
-	KubeVersion   string                 `json:"kubernetes_cis_version"`
-	DockerVersion string                 `json:"docker_cis_version"`
+	Compliances   []*RESTComplianceAsset  `json:"compliances"`
+	Workloads     map[string][]RESTIDName `json:"workloads"`
+	Nodes         map[string][]RESTIDName `json:"nodes"`
+	Images        map[string][]RESTIDName `json:"images"`
+	Platforms     map[string][]RESTIDName `json:"platforms"`
+	KubeCategory  string                  `json:"kubernetes_cis_category"`
+	KubeVersion   string                  `json:"kubernetes_cis_version"`
+	DockerVersion string                  `json:"docker_cis_version"`
 }
 
 const (
@@ -2413,12 +2573,12 @@ type RESTDlpRulesData struct {
 }
 
 type RESTDlpSetting struct {
-	Name        string `json:"name"`
-	Action      string `json:"action"`
-	Exist       bool   `json:"exist"`
-	Predefine   bool   `json:"predefine"`
-	Comment     string `json:"comment,omitempty"`
-	CfgType     string `json:"cfg_type"` // CfgTypeUserCreated / CfgTypeGround. It's from the DLP sensor's cfgType
+	Name      string `json:"name"`
+	Action    string `json:"action"`
+	Exist     bool   `json:"exist"`
+	Predefine bool   `json:"predefine"`
+	Comment   string `json:"comment,omitempty"`
+	CfgType   string `json:"cfg_type"` // CfgTypeUserCreated / CfgTypeGround. It's from the DLP sensor's cfgType
 }
 
 type RESTDlpGroup struct {
