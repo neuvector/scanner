@@ -12,6 +12,12 @@ import (
 	"github.com/neuvector/scanner/detectors"
 )
 
+const log4jModName = "org.apache.logging.log4j.log4j"
+
+var log4jComponents = utils.NewSet("org.apache.logging.log4j:log4j-core",
+	"org.apache.logging.log4j:log4j-api",
+	"org.apache.logging.log4j:log4j-to-slf4j")
+
 func (cv *CveTools) DetectAppVul(path string, apps []detectors.AppFeatureVersion, namespace string) []vulFullReport {
 	if apps == nil || len(apps) == 0 {
 		return nil
@@ -20,45 +26,57 @@ func (cv *CveTools) DetectAppVul(path string, apps []detectors.AppFeatureVersion
 	if err != nil {
 		return nil
 	}
-
 	vuls := make([]vulFullReport, 0)
-
 	for i, app := range apps {
-		// log.WithFields(log.Fields{"namespace": namespace, "package": app}).Info()
-
+		//If the entry exists, find vulnerabilities.
 		if mv, found := modVuls[app.ModuleName]; found {
-			for _, v := range mv {
-				if len(v.UnaffectedVer) > 0 {
-					if unaffected := compareAppVersion(app.Version, v.UnaffectedVer); unaffected {
-						continue
-					}
-				}
-				// ruby reports patched version. The affected version is converted from patched version.
-				// The conversion logic is not correct.
-				if strings.HasPrefix(app.ModuleName, "ruby:") && len(v.FixedVer) > 0 {
-					if fixed := compareAppVersion(app.Version, v.FixedVer); !fixed {
-						fv := appVul2FullVul(app, v)
-						vuls = append(vuls, fv)
-						mcve := detectors.ModuleVul{Name: v.VulName, Status: share.ScanVulStatus_FixExists}
-						apps[i].ModuleVuls = append(apps[i].ModuleVuls, mcve)
-					}
-				} else {
-					if affected := compareAppVersion(app.Version, v.AffectedVer); affected {
-						fv := appVul2FullVul(app, v)
-						vuls = append(vuls, fv)
-						if len(v.FixedVer) > 0 {
-							mcve := detectors.ModuleVul{Name: v.VulName, Status: share.ScanVulStatus_FixExists}
-							apps[i].ModuleVuls = append(apps[i].ModuleVuls, mcve)
-						} else {
-							mcve := detectors.ModuleVul{Name: v.VulName, Status: share.ScanVulStatus_Unpatched}
-							apps[i].ModuleVuls = append(apps[i].ModuleVuls, mcve)
-						}
-					}
+			results := checkForVulns(app, i, apps, mv)
+			vuls = append(vuls, results...)
+		} else if strings.Contains(app.ModuleName, "log4j") {
+			//If the entry doesn't match and module contains log4j, check the exception list for component.
+			if log4jComponents.Contains(app.ModuleName) {
+				//If we find the entry on the exception list check the general log4j entry as well.
+				if mv, found := modVuls[log4jModName]; found {
+					results := checkForVulns(app, i, apps, mv)
+					vuls = append(vuls, results...)
 				}
 			}
 		}
 	}
+	return vuls
+}
 
+func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detectors.AppFeatureVersion, mv []common.AppModuleVul) []vulFullReport {
+	vuls := make([]vulFullReport, 0)
+	for _, v := range mv {
+		if len(v.UnaffectedVer) > 0 {
+			if unaffected := compareAppVersion(app.Version, v.UnaffectedVer); unaffected {
+				continue
+			}
+		}
+		// ruby reports patched version. The affected version is converted from patched version.
+		// The conversion logic is not correct.
+		if strings.HasPrefix(app.ModuleName, "ruby:") && len(v.FixedVer) > 0 {
+			if fixed := compareAppVersion(app.Version, v.FixedVer); !fixed {
+				fv := appVul2FullVul(app, v)
+				vuls = append(vuls, fv)
+				mcve := detectors.ModuleVul{Name: v.VulName, Status: share.ScanVulStatus_FixExists}
+				apps[appIndex].ModuleVuls = append(apps[appIndex].ModuleVuls, mcve)
+			}
+		} else {
+			if affected := compareAppVersion(app.Version, v.AffectedVer); affected {
+				fv := appVul2FullVul(app, v)
+				vuls = append(vuls, fv)
+				if len(v.FixedVer) > 0 {
+					mcve := detectors.ModuleVul{Name: v.VulName, Status: share.ScanVulStatus_FixExists}
+					apps[appIndex].ModuleVuls = append(apps[appIndex].ModuleVuls, mcve)
+				} else {
+					mcve := detectors.ModuleVul{Name: v.VulName, Status: share.ScanVulStatus_Unpatched}
+					apps[appIndex].ModuleVuls = append(apps[appIndex].ModuleVuls, mcve)
+				}
+			}
+		}
+	}
 	return vuls
 }
 
