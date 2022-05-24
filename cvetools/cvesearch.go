@@ -155,8 +155,8 @@ func (cv *CveTools) ScanAppPackage(req *share.ScanAppRequest, namespace string) 
 		CVEDBCreateTime: cv.CveDBCreateTime,
 		Error:           share.ScanErrorCode_ScanErrNone,
 		Vuls:            vulList,
+		Modules:         feature2Module(namespace, nil, apps),
 	}
-
 	return result, nil
 }
 
