@@ -627,6 +627,7 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 	var vss []common.VulShort
 	var vfs map[string]common.VulFull
 	var err error
+	var rhel bool
 
 	db := common.DBMax
 	r := releaseRegexp.FindStringSubmatch(nsName)
@@ -639,6 +640,7 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 		case "rhel", "server", "centos":
 			nsName = "centos:" + r[2]
 			db = common.DBCentos
+			rhel = true
 			log.Info("namespace map to: ", nsName)
 		case "rhcos":
 			log.Info("unsupported namespace: ", nsName)
@@ -687,7 +689,12 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 
 	vss = common.DBS.Buffers[db].Short
 	vfs = common.DBS.Buffers[db].Full
-
+	if rhel {
+		//Find and cull all CVEs with related RHSA entries to avoid false positives.
+		newVFs, newVSs := cullAllVulns(vfs, vss)
+		vfs = newVFs
+		vss = newVSs
+	}
 	log.WithFields(log.Fields{"db": common.DBS.Buffers[db].Name, "namespace": nsName, "short": len(vss), "full": len(vfs)}).Info("Load Database")
 
 	var vulList []*share.ScanVulnerability
@@ -710,8 +717,101 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 		appvuls := cv.DetectAppVul(cv.TbPath, appPkg, nsName)
 		vulList = append(vulList, getVulItemList(appvuls, common.DBAppName)...)
 	}
-
 	return share.ScanErrorCode_ScanErrNone, vulList
+}
+
+func cullAllVulns(fullVulns map[string]common.VulFull, shortVulns []common.VulShort) (map[string]common.VulFull, []common.VulShort) {
+	rhsamap, cveMap, rhsas := getRHSACVEs(fullVulns)
+	cullFullVulns(rhsamap, cveMap)
+	//add the rhsas back to the cves after culling
+	for _, val := range rhsas {
+		key := fmt.Sprintf("%v:%v", val.Namespace, val.Name)
+		cveMap[key] = val
+	}
+	culledShorts := cullShortVulns(shortVulns, cveMap)
+
+	return cveMap, culledShorts
+}
+
+func cullFullVulns(rhsamap map[string][]common.VulFull, cvemap map[string]common.VulFull) {
+	for cvekey, vuln := range cvemap {
+		key := fmt.Sprintf("%s:%s", vuln.Namespace, vuln.Name)
+		remainingFeatures := vuln.FixedIn
+		if rhsas, ok := rhsamap[key]; ok {
+			for _, rhsa := range rhsas {
+				remainingFeatures = removeMatchingFeatures(remainingFeatures, rhsa.FixedIn)
+				if len(remainingFeatures) == 0 {
+					//remove the cve since there are no remaining features that could be vulnerable.
+					delete(cvemap, key)
+					//log.WithFields(log.Fields{"key removed": key}).Info("Remove due to empty features")
+					continue
+				} else {
+					vuln.FixedIn = remainingFeatures
+					cvemap[cvekey] = vuln
+				}
+			}
+		}
+	}
+}
+
+func cullShortVulns(shorts []common.VulShort, cvemap map[string]common.VulFull) []common.VulShort {
+	results := make([]common.VulShort, 0)
+	for _, short := range shorts {
+		key := fmt.Sprintf("%s:%s", short.Namespace, short.Name)
+		if _, ok := cvemap[key]; ok {
+			results = append(results, short)
+		}
+	}
+	return results
+}
+
+//removeMatchingFeatures removes entries in entryA that match an entry in entryB
+func removeMatchingFeatures(entryA []common.FeaFull, entryB []common.FeaFull) []common.FeaFull {
+	result := make([]common.FeaFull, 0)
+	foundFeatures := make(map[string]bool)
+	for _, entry := range entryB {
+		foundFeatures[entry.Name] = true
+	}
+	for _, entry := range entryA {
+		if _, ok := foundFeatures[entry.Name]; !ok {
+			result = append(result, entry)
+		}
+	}
+
+	return result
+}
+
+//getRHSACVEs returns a map of all CVE names to the matching RHSA entries.
+func getRHSACVEs(fullVulns map[string]common.VulFull) (map[string][]common.VulFull, map[string]common.VulFull, map[string]common.VulFull) {
+	result := make(map[string][]common.VulFull)
+	cves := make(map[string]common.VulFull)
+	rhsas := make(map[string]common.VulFull)
+
+	for _, vuln := range fullVulns {
+		if strings.Contains(vuln.Name, "RHSA") {
+			rhsaskey := fmt.Sprintf("%s:%s", vuln.Namespace, vuln.Name)
+			rhsas[rhsaskey] = vuln
+			for _, cve := range vuln.CVEs {
+				key := fmt.Sprintf("%s:%s", vuln.Namespace, cve)
+				//if slice doesn't exist
+				if _, ok := result[key]; !ok {
+					//if the data exists, initialize the slice
+					if _, ok := fullVulns[key]; ok {
+						result[key] = []common.VulFull{vuln}
+					}
+					continue
+				}
+				//slice exists, append to slice.
+				if _, ok := fullVulns[key]; ok {
+					result[key] = append(result[key], vuln)
+				}
+			}
+		} else {
+			key := fmt.Sprintf("%s:%s", vuln.Namespace, vuln.Name)
+			cves[key] = vuln
+		}
+	}
+	return result, cves, rhsas
 }
 
 func (cv *CveTools) isSupportOs(name string) bool {
@@ -837,6 +937,7 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 		name = name[:a]
 	}
 	featName := fmt.Sprintf("%s:%s", namespace, name)
+
 	vs, _ := mv[featName]
 
 	matchMap := make(map[string]share.ScanVulStatus)
@@ -916,6 +1017,7 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 			v.Fixin = append(v.Fixin, common.FeaShort{
 				Name: fix.Name, Version: fix.Version, MinVer: fix.MinVer,
 			})
+
 			affectVs = append(affectVs, v)
 			break
 		}
