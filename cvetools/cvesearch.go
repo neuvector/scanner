@@ -660,6 +660,9 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 			db = common.DBMariner
 		case "sles":
 			db = common.DBSuse
+		case "opensuse-leap":
+			nsName = "sles:l" + r[2]
+			db = common.DBSuse
 		}
 	}
 
@@ -696,6 +699,7 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 	if vss != nil {
 		// build feature -> vul version map for search use
 		mv := makeFeatureMap(vss, nsName)
+		log.WithFields(log.Fields{"count": len(mv)}).Info("Packages in database to be examed")
 
 		// get the vulnerbilitys from the hash map, associate them with the modules in features.
 		avsr := getAffectedVul(mv, features, nsName)
@@ -774,7 +778,7 @@ func getAffectedVul(mv map[string][]common.VulShort, features []detectors.Featur
 	return avs
 }
 
-var releaseRegexp = regexp.MustCompile(`^([a-z]+):([0-9]+)`)
+var releaseRegexp = regexp.MustCompile(`^([a-z-]+):([0-9.]+)`)
 
 func (cv *CveTools) getFeatures(layerFiles *layerScanFiles, imageNs *detectors.Namespace) ([]detectors.FeatureVersion, *detectors.Namespace, []detectors.AppFeatureVersion, share.ScanErrorCode) {
 	var namespace *detectors.Namespace
