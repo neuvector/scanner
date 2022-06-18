@@ -199,6 +199,7 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 	}
 	// var layeredSecret []*share.ScanSecretResult
 	var setidPerm []*share.ScanSetIdPermLog
+	var layers []string
 
 	// for layered storages
 	if imgPath == "" { // not-defined yet
@@ -247,6 +248,7 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 			return result, nil
 		}
 
+		layers = info.Layers
 		for _, lf := range layerFiles {
 			result.Size += lf.Size
 		}
@@ -278,7 +280,7 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 			log.WithFields(log.Fields{"baseImage": req.BaseImage, "base": baseLayers, "layers": len(meta.Layers)}).Debug()
 		}
 
-		info, layerFiles, errCode = cv.ScanTool.LoadLocalImage(ctx, req.Repository, req.Tag, cv.RtSock, imgPath)
+		info, layerFiles, layers, errCode = cv.ScanTool.LoadLocalImage(ctx, req.Repository, req.Tag, cv.RtSock, imgPath)
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
 			return result, nil
@@ -313,21 +315,19 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 		}
 	}
 
+	// Build a map for whole image
+	fileMap := make(map[string]string) // [path]:[file from untar layers]
+	for i := len(layers) - 1; i >= 0; i-- {
+		layerPath := filepath.Join(imgPath, layers[i])
+		if _, err := collectImageFileMap(layerPath, fileMap); err != nil {
+			log.WithFields(log.Fields{"error": err, "layer": layerPath}).Error("virtual image map")
+			break
+		}
+	}
+
 	// parallel scanning: cve and secrets
 	done := make(chan bool, 1)
 	if req.ScanSecrets {
-		// rebuild the root image: osutil.CopyDir takes too many io.Copy(),
-		// for example, "nshou/elasticsearch-kibana"(877MB) took about 2 minutes to assemble it
-		// use a map instead, it took like seconds to get.
-		fileMap := make(map[string]string) // [realpath]:[mapping path from its layer folder]
-		for i := len(info.Layers) - 1; i >= 0; i-- {
-			layerPath := filepath.Join(imgPath, info.Layers[i])
-			if _, err := collectImageFileMap(layerPath, fileMap); err != nil {
-				log.WithFields(log.Fields{"error": err, "layer": layerPath}).Error("virtual image map")
-				break
-			}
-		}
-
 		go func() {
 			log.Info("Scanning secrets ....")
 			config := secrets.Config{
@@ -344,18 +344,6 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 			logs, perms, err := secrets.FindSecretsByFilePathMap(fileMap, envVars, config)
 			secret = buildSecretResult(logs, err)
 			setidPerm = buildSetIdPermLogs(perms)
-
-			//// TODO: remove it for better performance
-			//if scanLayers {
-			//	log.Info("Scanning layered secrets ....")
-			//	var envVars []byte
-			//	layeredSecret = make([]*share.ScanSecretResult, len(info.Layers))
-			//	for i := len(info.Layers) - 1; i >= 0; i-- {
-			//		layerPath := filepath.Join(imgPath, info.Layers[i])
-			//		logs, _, err := secrets.FindSecretsByRootpath(layerPath, envVars, config)
-			//		layeredSecret[i] = buildSecretResult(logs, err)
-			//	}
-			//}
 			log.Info("Done secrets ....")
 			done <- true
 		}()
@@ -392,6 +380,12 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 				}
 			}
 			for filename, apps := range lf.Apps {
+				fpath := filepath.Join("/", filename) // add "/" at its front
+				if _, ok := fileMap[fpath]; !ok {
+					log.WithFields(log.Fields{"filename": fpath, "apps": apps}).Debug()
+					continue
+				}
+
 				if _, ok := mergedApps[filename]; !ok {
 					// convert AppPackage to AppFeatureVersion
 					afvs := make([]detectors.AppFeatureVersion, len(apps))

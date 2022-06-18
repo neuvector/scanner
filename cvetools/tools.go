@@ -62,11 +62,12 @@ func collectImageFileMap(rootPath string, fmap map[string]string) (int, error) {
 	if len(rootPath) == 0 {
 		return 0, nil
 	}
-
 	//
+	var opqDirs []string
+	var curfmap map[string]string = make(map[string]string)
+
 	rootLen := len(filepath.Clean(rootPath))
 	errorCnt := 0
-	cnt := 0
 	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			if strings.Contains(err.Error(), "no such file") ||
@@ -81,12 +82,44 @@ func collectImageFileMap(rootPath string, fmap map[string]string) (int, error) {
 
 		if info.Mode().IsRegular() || info.Mode().IsDir() {
 			inpath := path[rootLen:] // include the root "/"
-			cnt++
-			fmap[inpath] = path // always update
-			//	log.WithFields(log.Fields{"path": inpath}).Debug()
+			if info.Mode().IsRegular() {
+				dir := filepath.Dir(inpath)
+				file := filepath.Base(inpath)
+				switch {
+				case file == "_.wh..wh..opq":
+					// In a Docker image, there can be an opaque whiteout, ".wh..wh..opq", entry under a directory
+					// which indicates all siblings under that directory should be removed.
+					// log.WithFields(log.Fields{"path": inpath, "rootPath": rootPath}).Info("opq dir")
+					opqDirs = append(opqDirs, dir)
+				case strings.HasPrefix(file, "_.wh."):
+					// In this case, a "unique whiteout file", like ".wh.myapps", is generated for each entry.
+					// If there were more children of this directory in the base layer,
+					// there would be an entry for each. Note that this opaque file will apply to all children,
+					// including sub-directories, other resources and all descendants.
+					// log.WithFields(log.Fields{"path": inpath, "rootPath": rootPath}).Info("opq unique dir")
+					opqDirs = append(opqDirs, filepath.Join(dir, file[len("_.wh."):]))
+				default:
+					curfmap[inpath] = path
+				}
+			}
 		}
 		return nil
 	})
 
-	return cnt, err
+	// (1) remove the opaque directories from lower layers
+	for _, dir := range opqDirs {
+		for path, _ := range fmap {
+			if strings.HasPrefix(path, dir) {
+				// log.WithFields(log.Fields{"path": path, "dir": dir}).Debug("Remove")
+				delete(fmap, path)
+			}
+		}
+	}
+
+	// (2) add the new added files
+	for path, ref := range curfmap {
+		fmap[path] = ref
+		// log.WithFields(log.Fields{"path": path}).Debug("Add")
+	}
+	return len(curfmap), err
 }
