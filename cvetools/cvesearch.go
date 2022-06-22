@@ -602,6 +602,8 @@ func (cv *CveTools) ScanAwsLambda(req *share.ScanAwsLambdaRequest, imgPath strin
 	return res, err
 }
 
+var releaseRegexp = regexp.MustCompile(`^([a-z-]+):([0-9.]+)`)
+
 func (cv *CveTools) doScan(layerFiles *layerScanFiles, imageNs *detectors.Namespace) (*detectors.Namespace, share.ScanErrorCode, []*share.ScanVulnerability, []detectors.FeatureVersion, []detectors.AppFeatureVersion) {
 	features, namespace, apps, serr := cv.getFeatures(layerFiles, imageNs)
 
@@ -617,11 +619,7 @@ func (cv *CveTools) doScan(layerFiles *layerScanFiles, imageNs *detectors.Namesp
 	return namespace, errCode, vuls, features, apps
 }
 
-func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string, appPkg []detectors.AppFeatureVersion) (share.ScanErrorCode, []*share.ScanVulnerability) {
-	var vss []common.VulShort
-	var vfs map[string]common.VulFull
-	var err error
-
+func selectDB(nsName string) (string, int) {
 	db := common.DBMax
 	r := releaseRegexp.FindStringSubmatch(nsName)
 	if len(r) == 3 {
@@ -635,8 +633,7 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 			db = common.DBCentos
 			log.Info("namespace map to: ", nsName)
 		case "rhcos":
-			log.Info("unsupported namespace: ", nsName)
-			return share.ScanErrorCode_ScanErrNone, make([]*share.ScanVulnerability, 0)
+			// unsupported
 		case "alpine":
 			nsName = removeSubVersion(nsName)
 			db = common.DBAlpine
@@ -650,7 +647,7 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 			nsName = removeSubVersion(nsName)
 			db = common.DBOracle
 		case "mariner":
-			nsName = r[1] + ":" + r[2] + ".0"
+			nsName = r[1] + ":" + r[2]
 			db = common.DBMariner
 		case "sles":
 			db = common.DBSuse
@@ -659,11 +656,19 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 			db = common.DBSuse
 		}
 	}
+	return nsName, db
+}
 
+func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string, appPkg []detectors.AppFeatureVersion) (share.ScanErrorCode, []*share.ScanVulnerability) {
+	var db int
+	var vss []common.VulShort
+	var vfs map[string]common.VulFull
+	var err error
+
+	nsName, db = selectDB(nsName)
 	if db == common.DBMax {
-		log.WithFields(log.Fields{"os": nsName}).Info("map to ubuntu:upstream")
-		nsName = "ubuntu:upstream"
-		db = common.DBUbuntu
+		log.WithFields(log.Fields{"os": nsName}).Info("Unsupported OS")
+		return share.ScanErrorCode_ScanErrNone, make([]*share.ScanVulnerability, 0)
 	}
 
 	cv.UpdateMux.Lock()
@@ -771,8 +776,6 @@ func getAffectedVul(mv map[string][]common.VulShort, features []detectors.Featur
 	}
 	return avs
 }
-
-var releaseRegexp = regexp.MustCompile(`^([a-z-]+):([0-9.]+)`)
 
 func (cv *CveTools) getFeatures(layerFiles *layerScanFiles, imageNs *detectors.Namespace) ([]detectors.FeatureVersion, *detectors.Namespace, []detectors.AppFeatureVersion, share.ScanErrorCode) {
 	var namespace *detectors.Namespace

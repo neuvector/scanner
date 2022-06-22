@@ -1,7 +1,10 @@
 package cvetools
 
 import (
+	"testing"
+
 	"github.com/neuvector/neuvector/share/scan"
+	"github.com/neuvector/scanner/common"
 )
 
 const testTmpPath = "/tmp/scanner_test/"
@@ -39,4 +42,26 @@ func makePlatformReq(k8s, oc string) []scan.AppPackage {
 		})
 	}
 	return pkgs
+}
+
+func TestSelectDB(t *testing.T) {
+	type result struct {
+		ns string
+		db int
+	}
+
+	tests := map[string]result{
+		"alpine:3.4.6":       result{"alpine:3.4", common.DBAlpine},
+		"rhel:8.3":           result{"centos:8.3", common.DBCentos},
+		"mariner:1.0":        result{"mariner:1.0", common.DBMariner},
+		"opensuse-leap:15.2": result{"sles:l15.2", common.DBSuse},
+	}
+
+	for ns, r := range tests {
+		var db int
+		ns, db = selectDB(ns)
+		if ns != r.ns || db != r.db {
+			t.Errorf("Incorrect result:  %s != %s or %d != %d", ns, r.ns, db, r.db)
+		}
+	}
 }
