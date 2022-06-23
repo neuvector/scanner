@@ -629,7 +629,11 @@ func selectDB(nsName string) (string, int) {
 		case "debian":
 			db = common.DBDebian
 		case "rhel", "server", "centos":
-			nsName = "centos:" + r[2]
+			if dot := strings.Index(r[2], "."); dot != -1 {
+				nsName = "centos:" + r[2][:dot]
+			} else {
+				nsName = "centos:" + r[2]
+			}
 			db = common.DBCentos
 			log.Info("namespace map to: ", nsName)
 		case "rhcos":

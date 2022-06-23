@@ -52,7 +52,7 @@ func TestSelectDB(t *testing.T) {
 
 	tests := map[string]result{
 		"alpine:3.4.6":       result{"alpine:3.4", common.DBAlpine},
-		"rhel:8.3":           result{"centos:8.3", common.DBCentos},
+		"rhel:8.3":           result{"centos:8", common.DBCentos},
 		"mariner:1.0":        result{"mariner:1.0", common.DBMariner},
 		"opensuse-leap:15.2": result{"sles:l15.2", common.DBSuse},
 	}
