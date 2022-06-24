@@ -381,8 +381,13 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 			}
 			for filename, apps := range lf.Apps {
 				fpath := filepath.Join("/", filename) // add "/" at its front
+				if pos := strings.Index(fpath, ":"); pos > 0 {
+					// jar: a package inside a package
+					fpath = fpath[:pos]
+				}
+
 				if _, ok := fileMap[fpath]; !ok {
-					log.WithFields(log.Fields{"filename": fpath, "apps": apps}).Debug()
+					// log.WithFields(log.Fields{"filename": fpath, "apps": apps}).Info("Ignore")
 					continue
 				}
 
