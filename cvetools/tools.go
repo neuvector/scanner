@@ -80,27 +80,28 @@ func collectImageFileMap(rootPath string, fmap map[string]string) (int, error) {
 			return err
 		}
 
-		if info.Mode().IsRegular() || info.Mode().IsDir() {
+		if info.Mode().IsDir() {
 			inpath := path[rootLen:] // include the root "/"
-			if info.Mode().IsRegular() {
-				dir := filepath.Dir(inpath)
-				file := filepath.Base(inpath)
-				switch {
-				case file == "_.wh..wh..opq":
-					// In a Docker image, there can be an opaque whiteout, ".wh..wh..opq", entry under a directory
-					// which indicates all siblings under that directory should be removed.
-					// log.WithFields(log.Fields{"path": inpath, "rootPath": rootPath}).Info("opq dir")
-					opqDirs = append(opqDirs, dir)
-				case strings.HasPrefix(file, "_.wh."):
-					// In this case, a "unique whiteout file", like ".wh.myapps", is generated for each entry.
-					// If there were more children of this directory in the base layer,
-					// there would be an entry for each. Note that this opaque file will apply to all children,
-					// including sub-directories, other resources and all descendants.
-					// log.WithFields(log.Fields{"path": inpath, "rootPath": rootPath}).Info("opq unique dir")
-					opqDirs = append(opqDirs, filepath.Join(dir, file[len("_.wh."):]))
-				default:
-					curfmap[inpath] = path
-				}
+			curfmap[inpath] = path
+		} else if info.Mode().IsRegular() {
+			inpath := path[rootLen:] // include the root "/"
+			dir := filepath.Dir(inpath)
+			file := filepath.Base(inpath)
+			switch {
+			case file == "_.wh..wh..opq":
+				// In a Docker image, there can be an opaque whiteout, ".wh..wh..opq", entry under a directory
+				// which indicates all siblings under that directory should be removed.
+				// log.WithFields(log.Fields{"path": inpath, "rootPath": rootPath}).Info("opq dir")
+				opqDirs = append(opqDirs, dir)
+			case strings.HasPrefix(file, "_.wh."):
+				// In this case, a "unique whiteout file", like ".wh.myapps", is generated for each entry.
+				// If there were more children of this directory in the base layer,
+				// there would be an entry for each. Note that this opaque file will apply to all children,
+				// including sub-directories, other resources and all descendants.
+				// log.WithFields(log.Fields{"path": inpath, "rootPath": rootPath}).Info("opq unique dir")
+				opqDirs = append(opqDirs, filepath.Join(dir, file[len("_.wh."):]))
+			default:
+				curfmap[inpath] = path
 			}
 		}
 		return nil
@@ -110,7 +111,7 @@ func collectImageFileMap(rootPath string, fmap map[string]string) (int, error) {
 	for _, dir := range opqDirs {
 		for path, _ := range fmap {
 			if strings.HasPrefix(path, dir) {
-				// log.WithFields(log.Fields{"path": path, "dir": dir}).Debug("Remove")
+				// log.WithFields(log.Fields{"path": path, "dir": dir}).Info("Remove")
 				delete(fmap, path)
 			}
 		}
@@ -119,7 +120,7 @@ func collectImageFileMap(rootPath string, fmap map[string]string) (int, error) {
 	// (2) add the new added files
 	for path, ref := range curfmap {
 		fmap[path] = ref
-		// log.WithFields(log.Fields{"path": path}).Debug("Add")
+		// log.WithFields(log.Fields{"path": path}).Info("Add")
 	}
 	return len(curfmap), err
 }
