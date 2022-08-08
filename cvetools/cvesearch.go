@@ -57,8 +57,49 @@ var suse_fdb map[string]common.VulFull
 ///////
 const tbPath = "/tmp/neuvector/db/"
 
+type featureVulnWindow struct {
+	featureName      string
+	featureNamespace string
+	minOp            string
+	min              string
+	maxOp            string
+	max              string
+}
+
 ///////
 var cveTools *CveTools
+var overrideMap map[string][]featureVulnWindow = map[string][]featureVulnWindow{
+	"CVE-2019-13509": {
+		{
+			featureName:      "docker-ce",
+			featureNamespace: "centos:7",
+			minOp:            "gteq",
+			min:              "#MINV#",
+			maxOp:            "lt",
+			max:              "18.09.8",
+		}},
+	"CVE-2021-21284": {
+		{
+			featureName:      "docker-ce",
+			featureNamespace: "centos:7",
+			minOp:            "gteq",
+			min:              "#MINV#",
+			maxOp:            "lt",
+			max:              "20.10.3",
+		}},
+	"CVE-2021-21285": {
+		{
+			featureName:      "docker-ce",
+			featureNamespace: "centos:7",
+			minOp:            "gteq",
+			min:              "#MINV#",
+			maxOp:            "lt",
+			max:              "20.10.3",
+		}},
+}
+
+var aliasMap map[string]string = map[string]string{
+	"docker-ce": "docker"}
 
 // NewCveTools establishs the initialization of cve tool
 func NewCveTools(rtSock string, scanTool *scan.ScanUtil) *CveTools {
@@ -839,12 +880,39 @@ func (cv *CveTools) getFeatures(layerFiles *layerScanFiles, imageNs *detectors.N
 	return features, namespace, layerFiles.apps, share.ScanErrorCode_ScanErrNone
 }
 
-// For a given feature ft, return vul list and moduel list
+func isInVulnWindow(window featureVulnWindow, ft detectors.FeatureVersion, minVer utils.Version, maxVer utils.Version) bool {
+	switch window.minOp {
+	case "gt":
+		if ft.Version.Compare(minVer) < 1 {
+			return false
+		}
+	case "gteq":
+		if ft.Version.Compare(minVer) < 0 {
+			return false
+		}
+	}
+	switch window.maxOp {
+	case "lt":
+		if ft.Version.Compare(maxVer) > -1 {
+			return false
+		}
+	case "lteq":
+		if ft.Version.Compare(maxVer) > 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// For a given feature ft, return vul list and module list
 func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft detectors.FeatureVersion) ([]common.VulShort, []detectors.ModuleVul) {
 	// feature name can take format util-linux/libsmartcols1, the source is util-linux and should be used to search cve.
 	name := ft.Feature.Name
 	if a := strings.Index(name, "/"); a > 0 {
 		name = name[:a]
+	}
+	if val, ok := aliasMap[name]; ok {
+		name = val
 	}
 	featName := fmt.Sprintf("%s:%s", namespace, name)
 	vs, _ := mv[featName]
@@ -869,6 +937,53 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 		}
 
 		afStatus := share.ScanVulStatus_Unaffected
+		//if cve in calibrateMap
+		if val, ok := overrideMap[v.Name]; ok {
+			//Remove fixin entries since this CVE will be overwritten.
+			// v.Fixin = nil
+			for _, window := range val {
+				//Check that the vulnerability matches correct window for the vulnerability.
+				if strings.EqualFold(window.featureName, ft.Feature.Name) && strings.EqualFold(window.featureNamespace, namespace) {
+					minVer, err := utils.NewVersion(window.min)
+					if err != nil {
+						log.WithFields(log.Fields{"error": err, "version": window.min}).Error()
+						continue
+					}
+					maxVer, err := utils.NewVersion(window.max)
+					if err != nil {
+						log.WithFields(log.Fields{"error": err, "version": window.max}).Error()
+						continue
+					}
+					if maxVer == utils.MaxVersion {
+						afStatus = share.ScanVulStatus_Unpatched
+					} else if maxVer == utils.MinVersion {
+						afStatus = share.ScanVulStatus_Unaffected
+					} else {
+						afStatus = share.ScanVulStatus_FixExists
+					}
+					//check if module is within version window.
+					if !isInVulnWindow(window, ft, minVer, maxVer) {
+						continue
+					}
+					//is within the window
+					affectVs = append(affectVs, v)
+					if afStatus == share.ScanVulStatus_FixExists ||
+						afStatus == share.ScanVulStatus_Unpatched ||
+						afStatus == share.ScanVulStatus_WillNotFix {
+						mcve := detectors.ModuleVul{Name: v.Name, Status: afStatus}
+
+						if st, ok := matchMap[v.Name]; !ok {
+							moduleVuls = append(moduleVuls, mcve)
+							matchMap[v.Name] = mcve.Status
+						} else if st != mcve.Status {
+							log.WithFields(log.Fields{"v": v, "featName": featName}).Error()
+						}
+					}
+				}
+			}
+			continue
+		}
+
 		for _, fix := range v.Fixin {
 			if namespace == "ubuntu:upstream" && (strings.Contains(fix.Version, ":") || fix.Version == "#MINV#" || fix.Version == "#MAXV#") {
 				continue
