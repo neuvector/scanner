@@ -120,6 +120,7 @@ var UbuntuReleasesMapping = map[string]string{
 	"groovy":           "20.10",
 	"hirsute":          "21.04",
 	"impish":           "21.10",
+	"jammy":            "22.04",
 }
 
 var DebianReleasesMapping = map[string]string{
