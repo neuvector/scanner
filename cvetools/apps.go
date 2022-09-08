@@ -15,7 +15,8 @@ import (
 const log4jModName = "org.apache.logging.log4j.log4j"
 
 var log4jComponents = utils.NewSet("org.apache.logging.log4j:log4j-core",
-	"org.apache.logging.log4j:log4j-api",
+	// NVSHAS-6331: remove log4j-api because it doesn't necessarily carry the same vulnerability
+	// "org.apache.logging.log4j:log4j-api",
 	"org.apache.logging.log4j:log4j-to-slf4j")
 
 func (cv *CveTools) DetectAppVul(path string, apps []detectors.AppFeatureVersion, namespace string) []vulFullReport {
