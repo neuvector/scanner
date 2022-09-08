@@ -137,10 +137,11 @@ func readCveDbMeta(path, osname string, fullDb map[string]*share.ScanVulnerabili
 		if err == nil {
 			if _, ok := fullDb[cveName]; !ok {
 				sv := &share.ScanVulnerability{
-					Score:            float32(v.CVSSv2.Score),
-					Vectors:          v.CVSSv2.Vectors,
 					Description:      v.Description,
 					Link:             v.Link,
+					Severity:         v.Severity,
+					Score:            float32(v.CVSSv2.Score),
+					Vectors:          v.CVSSv2.Vectors,
 					ScoreV3:          float32(v.CVSSv3.Score),
 					VectorsV3:        v.CVSSv3.Vectors,
 					PublishedDate:    v.IssuedDate.Format(time.RFC3339),
@@ -197,15 +198,16 @@ func readAppDbMeta(path string, fullDb map[string]*share.ScanVulnerability, outC
 			cveName := fmt.Sprintf("%s:%s", DBAppName, v.VulName)
 			if _, ok := fullDb[cveName]; !ok {
 				sv := &share.ScanVulnerability{
+					Description:      v.Description,
+					Link:             v.Link,
+					Severity:         v.Severity,
 					Score:            float32(v.Score),
 					Vectors:          v.Vectors,
 					ScoreV3:          float32(v.ScoreV3),
 					VectorsV3:        v.VectorsV3,
-					Severity:         v.Severity,
-					Description:      v.Description,
-					Link:             v.Link,
 					PublishedDate:    v.IssuedDate.Format(time.RFC3339),
 					LastModifiedDate: v.LastModDate.Format(time.RFC3339),
+					FeedRating:       v.Severity,
 				}
 				fullDb[cveName] = sv
 
