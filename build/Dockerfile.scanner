@@ -1,4 +1,4 @@
-FROM 10.1.127.12:5000/neuvector/scanner_base
+FROM neuvector/scanner_base:latest
 
 COPY stage /
 
