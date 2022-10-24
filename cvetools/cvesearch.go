@@ -694,7 +694,8 @@ func selectDB(nsName string) (string, int) {
 			}
 			db = common.DBAmazon
 		case "ol":
-			nsName = removeSubVersion(nsName)
+			majorVersion := majorVersion(r[2])
+			nsName = "oracle:" + majorVersion
 			db = common.DBOracle
 		case "mariner":
 			nsName = r[1] + ":" + r[2]
@@ -1252,6 +1253,12 @@ func removeSubVersion(name string) string {
 		}
 	}
 	return name
+}
+
+//majorVersion returns only the most significant version, ex: 7.8.112 -> 7
+func majorVersion(name string) string {
+	substrings := strings.Split(name, ".")
+	return substrings[0]
 }
 
 func feature2Module(namespace string, features []detectors.FeatureVersion, apps []detectors.AppFeatureVersion) []*share.ScanModule {

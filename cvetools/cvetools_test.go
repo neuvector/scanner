@@ -55,6 +55,14 @@ func TestSelectDB(t *testing.T) {
 		"rhel:8.3":           result{"centos:8", common.DBCentos},
 		"mariner:1.0":        result{"mariner:1.0", common.DBMariner},
 		"opensuse-leap:15.2": result{"sles:l15.2", common.DBSuse},
+		"ol:7.8.2":           result{"oracle:7", common.DBOracle},
+		"ubuntu:7.1":         result{"ubuntu:7.1", common.DBUbuntu},
+		"debian:3.1":         result{"debian:3.1", common.DBDebian},
+		"server:5.4":         result{"centos:5", common.DBCentos},
+		"centos:5.4":         result{"centos:5", common.DBCentos},
+		"amzn:1.8":           result{"amzn:1", common.DBAmazon},
+		"sles:2.7":           result{"sles:2.7", common.DBSuse},
+		"opensuse-leap:2.7":  result{"sles:l2.7", common.DBSuse},
 	}
 
 	for ns, r := range tests {
