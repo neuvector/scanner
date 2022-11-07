@@ -104,10 +104,9 @@ var aliasMap map[string]string = map[string]string{
 // NewCveTools establishs the initialization of cve tool
 func NewCveTools(rtSock string, scanTool *scan.ScanUtil) *CveTools {
 	return &CveTools{ // available inside package
-		TbPath:    tbPath,
-		SupportOs: utils.NewSet("centos", "ubuntu", "debian", "alpine", "amzn", "ol", "sles", "mariner"),
-		RtSock:    rtSock,
-		ScanTool:  scanTool,
+		TbPath:   tbPath,
+		RtSock:   rtSock,
+		ScanTool: scanTool,
 	}
 }
 
@@ -682,6 +681,10 @@ func selectDB(nsName string) (string, int) {
 			}
 			db = common.DBCentos
 			log.Info("namespace map to: ", nsName)
+		case "fedora":
+			// Map to ubuntu upstream: NVSHAS-6723
+			nsName = "ubuntu:upstream"
+			db = common.DBUbuntu
 		case "rhcos":
 			// unsupported
 		case "alpine":
@@ -768,13 +771,6 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 	return share.ScanErrorCode_ScanErrNone, vulList
 }
 
-func (cv *CveTools) isSupportOs(name string) bool {
-	if a := strings.Index(name, ":"); a > 0 {
-		name = name[:a]
-	}
-	return cv.SupportOs.Contains(name)
-}
-
 func updateModuleCVEStatus(nsName string, features []detectors.FeatureVersion, vfs map[string]common.VulFull) {
 	for _, ft := range features {
 		for i, cve := range ft.ModuleVuls {
@@ -857,19 +853,17 @@ func (cv *CveTools) getFeatures(layerFiles *layerScanFiles, imageNs *detectors.N
 			nginx := scan.AppPackage{AppName: "nginx", ModuleName: "nginx", Version: ft.Version.String(), FileName: "nginx"}
 			app := detectors.AppFeatureVersion{AppPackage: nginx, ModuleVuls: make([]detectors.ModuleVul, 0), InBase: ft.InBase}
 			layerFiles.apps = append(layerFiles.apps, app)
-		} else if ft.Feature.Name == "openssl" &&
-			// add the openssl to the app to compare, except ubuntu/debian/centos, because they have their patch themselves
-			(namespace == nil || !cv.isSupportOs(namespace.Name)) {
+		} else if ft.Feature.Name == "openssl" && namespace == nil {
+			// add the openssl to the app to compare
 			ver := ft.Version.String()
 			ssl := scan.AppPackage{AppName: "openssl", ModuleName: "openssl", Version: ver, FileName: "openssl"}
 			app := detectors.AppFeatureVersion{AppPackage: ssl, ModuleVuls: make([]detectors.ModuleVul, 0), InBase: ft.InBase}
 			layerFiles.apps = append(layerFiles.apps, app)
 			features[i].Feature.Name = "opensslxx"
-		} else if ft.Feature.Name == "busybox" && (namespace == nil || !cv.isSupportOs(namespace.Name)) {
-			if namespace == nil {
-				namespace = &detectors.Namespace{Name: "busybox" + ":" + ft.Version.String()}
-				log.WithFields(log.Fields{"busybox": *namespace}).Debug("BusyBox")
-			}
+		} else if ft.Feature.Name == "busybox" && namespace == nil {
+			namespace = &detectors.Namespace{Name: "busybox" + ":" + ft.Version.String()}
+			log.WithFields(log.Fields{"busybox": *namespace}).Debug("BusyBox")
+
 			ver := ft.Version.String()
 			bbox := scan.AppPackage{AppName: "busybox", ModuleName: "busybox", Version: ver, FileName: "busybox"}
 			app := detectors.AppFeatureVersion{AppPackage: bbox, ModuleVuls: make([]detectors.ModuleVul, 0), InBase: ft.InBase}
