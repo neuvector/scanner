@@ -106,6 +106,8 @@ message CLUSConnection {
 	bool Xff = 26;
 	bool SvcExtIP = 27;
 	bool ToSidecar = 28;
+	bool MeshToSvr = 29;
+	bool LinkLocal = 30;
 }
 
 message CLUSConnectionArray {
@@ -211,6 +213,11 @@ message CLUSLoginTokenInfo {
     string LoginToken = 4;
 }
 
+message CLUSKubernetesResInfo {
+    string DocKey = 1;
+    string Data = 2;			
+}
+
 service ControllerCtrlService {
   rpc ReqSync(CLUSSyncRequest) returns (CLUSSyncReply);
   rpc ReqSyncStream(CLUSSyncRequest) returns (stream CLUSSyncReply);
@@ -227,4 +234,5 @@ service ControllerCtrlService {
   rpc KickLoginSessions(CLUSKickLoginSessionsRequest) returns (RPCVoid);
   rpc GetStats(RPCVoid) returns (CLUSStats);
   rpc ResetLoginTokenTimer(share.CLUSLoginTokenInfo) returns (RPCVoid);
+  rpc ReportK8sResToOPA(share.CLUSKubernetesResInfo) returns (RPCVoid);
 }

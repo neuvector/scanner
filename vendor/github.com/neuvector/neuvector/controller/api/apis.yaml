@@ -5,7 +5,7 @@ swagger: '2.0'
 ################################################################################
 info:
   description: Secure Docker and Kubernetes based container deployments with the NeuVector run-time security solution. Access to and support for this API requires the appropriate NeuVector license. Contact support@neuvector.com with any questions.
-  version: 5.0.0
+  version: 5.1.0
   title: NeuVector API
   contact:
     email: support@neuvector.com
@@ -71,6 +71,8 @@ tags:
     description: Operations about waf Rule
   - name: Container
     description: Operations about Container
+  - name: Federation
+    description: Operations about Federation
 
 ################################################################################
 #                                  Paths                                       #
@@ -1154,11 +1156,6 @@ paths:
       summary: Get EULA agreement acceptance status
       produces:
         - application/json
-      parameters:
-        - in: header
-          name: X-Auth-Token
-          required: true
-          type: string
       responses:
         '200':
           description: Success
@@ -2551,6 +2548,14 @@ paths:
           name: X-Auth-Token
           required: true
           type: string
+        - in: query
+          name: scope
+          type: string
+          required: false
+          enum:
+            - fed
+            - local
+          description: "When set to fed, returned fed registries. When set to local, returned local-defined registries. If there is no query string 'scope', all registries will be returned."
       responses:
         '200':
           description: Success
@@ -3399,23 +3404,6 @@ paths:
       responses:
         '200':
           description: Success
-  /v1/system/rbac:
-    get:
-      tags:
-        - System
-      summary: Get missing Kubernetes RBAC
-      produces:
-        - application/json
-      parameters:
-        - in: header
-          name: X-Auth-Token
-          required: true
-          type: string
-      responses:
-        '200':
-          description: Success
-          schema:
-            $ref: '#/definitions/RESTK8sNvRbacStatus'
   /v1/system/request:
     post:
       tags:
@@ -4354,7 +4342,14 @@ paths:
       responses:
         '200':
           description: Success
-
+  /v1/fed/healthcheck:
+    get:
+      tags:
+        - Federation
+      summary: Health Check of Federate Primary REST server
+      responses:
+        '200':
+          description: Success
 
 ################################################################################
 #                                 Definitions                                  #
@@ -4888,6 +4883,15 @@ definitions:
       k8s_env:
         type: boolean
         example: false
+      admission_custom_criteria_options:
+        $ref: '#/definitions/RESTAdminCustomCriteriaOptions'
+      admission_custom_criteria_templates:
+        $ref: '#/definitions/RESTAdminCriteriaTemplate'
+      predefined_risky_roles:
+        type: array
+        items:
+          type: string
+          example: ["risky_role_view_secret","risky_role_create_pod"]
   RESTAdmissionRule:
     type: object
     required:
@@ -5041,6 +5045,18 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/RESTAdmRuleCriterion'
+      type:
+        type: string
+        example: customPath
+      template_kind:
+        type: string
+        example: podTemplate
+      path:
+        type: string
+        example: item.spec.serviceAccountName
+      value_type:
+        type: string
+        example: string
   RESTAdmRuleOptions:
     type: object
     required:
@@ -6954,28 +6970,6 @@ definitions:
       password:
         type: string
         example: "password"
-  RESTK8sNvRbacStatus:
-    type: object
-    required:
-      - clusterrole_errors
-      - clusterrolebinding_errors
-      - rolebinding_errors
-    properties:
-      clusterrole_errors:
-        type: array
-        items:
-          type: string
-          example: "Kubernetes clusterrole \"neuvector-binding-customresourcedefinition\" is required to grant create,get,update,watch permission(s) on customresourcedefinitions resource(s)."
-      clusterrolebinding_errors:
-        type: array
-        items:
-          type: string
-          example: "Cannot find Kubernetes clusterrolebinding \"neuvector-binding-nvwafsecurityrules\"(kubernetes api: Failure 404 clusterrolebindings.rbac.authorization.k8s.io \"neuvector-binding-nvwafsecurityrules\" not found)."
-      rolebinding_errors:
-        type: array
-        items:
-          type: string
-          example: ""
   RESTLicenseInfo:
     type: object
     required:
@@ -12528,3 +12522,34 @@ definitions:
       server_ip:
         type: string
         example: 172.17.0.3
+  RESTAdminCustomCriteriaOptions:
+    type: object
+    required:
+      - ops
+      - valuetype
+    properties:
+      ops:
+        type: array
+        items:
+          type: string
+          example: ["exist","notExist"]
+      values:
+        type: array
+        items:
+          type: string
+          example: ["true", "false"]
+      valuetype:
+        type: string
+        example: "key"
+  RESTAdminCriteriaTemplate:
+    type: object
+    required:
+      - kind
+      - rawjson
+    properties:
+      kind:
+        type: string
+        example: "podTemplate"
+      rawjson:
+        type: string
+        example: "{\"key\": \"value\"}"

@@ -35,6 +35,7 @@ type Driver interface {
 	ApplyPolicyAtIngress() bool
 	SupportKubeCISBench() bool
 	CleanupHostPorts(hostPorts map[string][]share.CLUSIPAddr) error
+	SetFlavor(flavor string) error // for Openshift & Rancher
 }
 
 // --
@@ -57,14 +58,14 @@ type ResourceDriver interface {
 	ListUsers() []UserRBAC
 	RegisterResource(rt string) error
 	ListResource(rt string) ([]interface{}, error)
-	StartWatchResource(rt string, wcb WatchCallback, scb StateCallback) error
+	StartWatchResource(rt, ns string, wcb WatchCallback, scb StateCallback) error
 	StopWatchResource(rt string) error
 	StopWatchAllResources() error
 	GetResource(rt, namespace, name string) (interface{}, error)
 	AddResource(rt string, res interface{}) error
 	UpdateResource(rt string, res interface{}) error
 	DeleteResource(rt string, res interface{}) error
-	SetFlavor(flavor string) error                        // only for Rancher
+	SetFlavor(flavor string) error                        // for Openshift & Rancher
 	GetPlatformUserGroups(token string) ([]string, error) // for OpenShift
 }
 

@@ -174,7 +174,7 @@ github.com/mitchellh/mapstructure
 github.com/neuvector/k8s/apis/meta/v1
 github.com/neuvector/k8s/runtime
 github.com/neuvector/k8s/runtime/schema
-# github.com/neuvector/neuvector v0.0.0-20220616012106-847c3fced01c
+# github.com/neuvector/neuvector v0.0.0-20221129005156-ad4f26023dbe
 ## explicit
 github.com/neuvector/neuvector/controller/api
 github.com/neuvector/neuvector/share
@@ -230,9 +230,9 @@ go.opencensus.io/internal
 go.opencensus.io/trace
 go.opencensus.io/trace/internal
 go.opencensus.io/trace/tracestate
-# golang.org/x/mod v0.4.2
+# golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
 golang.org/x/mod/semver
-# golang.org/x/net v0.0.0-20211216030914-fe4d6282115f => golang.org/x/net v0.0.0-20170421174939-0b588ed7a0cd
+# golang.org/x/net v0.0.0-20220722155237-a158d28d115b => golang.org/x/net v0.0.0-20170421174939-0b588ed7a0cd
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/http2
@@ -254,7 +254,7 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# golang.org/x/tools v0.1.6-0.20210820212750-d4cc65f0b2ff
+# golang.org/x/tools v0.1.10
 golang.org/x/tools/go/gcexportdata
 golang.org/x/tools/go/internal/gcimporter
 golang.org/x/tools/go/internal/packagesdriver
@@ -265,6 +265,7 @@ golang.org/x/tools/internal/event/keys
 golang.org/x/tools/internal/event/label
 golang.org/x/tools/internal/gocommand
 golang.org/x/tools/internal/packagesinternal
+golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
 # golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 golang.org/x/xerrors
@@ -350,7 +351,7 @@ gopkg.in/inf.v0
 # k8s.io/api v0.22.5 => k8s.io/api v0.18.19
 k8s.io/api/admission/v1beta1
 k8s.io/api/authentication/v1
-# k8s.io/apimachinery v0.22.5 => k8s.io/apimachinery v0.17.17
+# k8s.io/apimachinery v0.25.2 => k8s.io/apimachinery v0.17.17
 k8s.io/apimachinery/pkg/api/resource
 k8s.io/apimachinery/pkg/apis/meta/v1
 k8s.io/apimachinery/pkg/conversion

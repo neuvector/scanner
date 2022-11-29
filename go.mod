@@ -43,7 +43,7 @@ require (
 	github.com/aws/aws-sdk-go v1.42.36 // indirect
 	github.com/docker/docker v20.10.12+incompatible // indirect
 	github.com/google/uuid v1.3.0
-	github.com/neuvector/neuvector v0.0.0-20220616012106-847c3fced01c
+	github.com/neuvector/neuvector v0.0.0-20221129005156-ad4f26023dbe
 	github.com/sirupsen/logrus v1.8.1
 	google.golang.org/grpc v1.40.0
 )
