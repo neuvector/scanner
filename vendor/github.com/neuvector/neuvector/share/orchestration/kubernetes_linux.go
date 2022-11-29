@@ -10,8 +10,16 @@ func (d *kubernetes) isTunnelInterface(name, kind string) bool {
 	if strings.HasPrefix(name, "tun") && (kind == "ipip" || kind == "openvswitch") {
 		return true
 	}
+	//antreaCNI's antrea-gw0 i/f
+	if strings.HasPrefix(name, "antrea") &&  kind == "openvswitch" {
+		return true
+	}
 	// flannel.1
 	if strings.HasPrefix(name, "flannel") && kind == "vxlan" {
+		return true
+	}
+	// cilium_vxlan
+	if strings.HasPrefix(name, "cilium") && kind == "vxlan" {
 		return true
 	}
 	//vxlan.calico i/f is transparent to user so we won't see
@@ -29,6 +37,10 @@ func (d *kubernetes) isTunnelInterface(name, kind string) bool {
 	}
 	// azure AKS
 	if name == "cbr0" && kind == "bridge" {
+		return true
+	}
+	//kube-router CNI
+	if name == "kube-bridge" && kind == "bridge" {
 		return true
 	}
 	//NVSHAS-5338, ubuntu with containerd in gke set up

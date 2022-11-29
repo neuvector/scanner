@@ -54,6 +54,7 @@ const (
 	KubeContainerNamePod   string = "POD"
 	KubeContainerNameProxy string = "kube-proxy"
 	KubePodNamePrefixProxy string = "kube-proxy"
+	KubeKeyAppName         string = "app"
 )
 
 const (
@@ -89,6 +90,10 @@ const (
 	ECSTaskDefinition   string = "com.amazonaws.ecs.task-definition-family"
 	ECSContainerName    string = "com.amazonaws.ecs.container-name"
 	ECSCluster          string = "com.amazonaws.ecs.cluster"
+)
+
+const (
+    NeuvectorSetServiceName              = "io.neuvector.service.name"
 )
 
 const (

@@ -32,6 +32,7 @@ const CLUSLockFedKey string = CLUSLockStore + "federation"
 const CLUSLockScannerKey string = CLUSLockStore + "scanner"
 const CLUSLockCrdQueueKey string = CLUSLockStore + "crd_queue"
 const CLUSLockCloudKey string = CLUSLockStore + "cloud"
+const CLUSLockFedScanDataKey string = CLUSLockStore + "fed_scan_data"
 
 //const CLUSLockResponseRuleKey string = CLUSLockStore + "response_rule"
 
@@ -116,6 +117,8 @@ const CLUSCloudStore string = CLUSObjectStore + "cloud/"
 const CLUSCrdProcStore string = "crdcontent/"
 const CLUSCertStore string = CLUSObjectStore + "cert/"
 const CLUSLicenseStore string = CLUSObjectStore + "license/"
+const CLUSTelemetryStore string = CLUSObjectStore + "telemetry/"
+const CLUSThrottledEventStore string = CLUSObjectStore + "throttled/"
 
 // network
 const PolicyIPRulesDefaultName string = "GroupIPRules"
@@ -391,6 +394,10 @@ func CLUSDomainConfigKey(name string) string {
 
 func CLUSRegistryConfigKey(name string) string {
 	return fmt.Sprintf("%s%s", CLUSConfigRegistryStore, name)
+}
+
+func CLUSScanStateKey(name string) string {
+	return fmt.Sprintf("%s%s", CLUSScanStateStore, name)
 }
 
 func CLUSRegistryStateKey(name string) string {
@@ -715,30 +722,38 @@ type CLUSSystemConfig struct {
 	NewServiceProfileBaseline string `json:"new_service_profile_baseline"`
 	UnusedGroupAging          uint8  `json:"unused_group_aging"`
 	CLUSSyslogConfig
-	SingleCVEPerSyslog   bool                 `json:"single_cve_per_syslog"`
-	AuthOrder            []string             `json:"auth_order"`
-	AuthByPlatform       bool                 `json:"auth_by_platform"`
-	RancherEP            string               `json:"rancher_ep"`
-	InternalSubnets      []string             `json:"configured_internal_subnets,omitempty"`
-	WebhookEnable_UNUSED bool                 `json:"webhook_enable"`
-	WebhookUrl_UNUSED    string               `json:"webhook_url"`
-	Webhooks             []CLUSWebhook        `json:"webhooks"`
-	ClusterName          string               `json:"cluster_name"`
-	ControllerDebug      []string             `json:"controller_debug"`
-	TapProxymesh         bool                 `json:"tap_proxymesh"`
-	RegistryHttpProxy    CLUSProxy            `json:"registry_http_proxy"`
-	RegistryHttpsProxy   CLUSProxy            `json:"registry_https_proxy"`
-	IBMSAConfigNV        CLUSIBMSAConfigNV    `json:"ibmsa_config_nv"`
-	IBMSAConfig          CLUSIBMSAConfig      `json:"ibmsa_config"`
-	IBMSAOnboardData     CLUSIBMSAOnboardData `json:"ibmsa_onboard_data"`
-	XffEnabled           bool                 `json:"xff_enabled"`
-	CfgType              TCfgType             `json:"cfg_type"`
-	NetServiceStatus     bool                 `json:"net_service_status"`
-	NetServicePolicyMode string               `json:"net_service_policy_mode"`
-	ModeAutoD2M          bool                 `json:"mode_auto_d2m"`
-	ModeAutoD2MDuration  int64                `json:"mode_auto_d2m_duration"`
-	ModeAutoM2P          bool                 `json:"mode_auto_m2p"`
-	ModeAutoM2PDuration  int64                `json:"mode_auto_m2p_duration"`
+	SingleCVEPerSyslog   bool                      `json:"single_cve_per_syslog"`
+	AuthOrder            []string                  `json:"auth_order"`
+	AuthByPlatform       bool                      `json:"auth_by_platform"`
+	RancherEP            string                    `json:"rancher_ep"`
+	InternalSubnets      []string                  `json:"configured_internal_subnets,omitempty"`
+	WebhookEnable_UNUSED bool                      `json:"webhook_enable"`
+	WebhookUrl_UNUSED    string                    `json:"webhook_url"`
+	Webhooks             []CLUSWebhook             `json:"webhooks"`
+	ClusterName          string                    `json:"cluster_name"`
+	ControllerDebug      []string                  `json:"controller_debug"`
+	TapProxymesh         bool                      `json:"tap_proxymesh"`
+	RegistryHttpProxy    CLUSProxy                 `json:"registry_http_proxy"`
+	RegistryHttpsProxy   CLUSProxy                 `json:"registry_https_proxy"`
+	IBMSAConfigNV        CLUSIBMSAConfigNV         `json:"ibmsa_config_nv"`
+	IBMSAConfig          CLUSIBMSAConfig           `json:"ibmsa_config"`
+	IBMSAOnboardData     CLUSIBMSAOnboardData      `json:"ibmsa_onboard_data"`
+	XffEnabled           bool                      `json:"xff_enabled"`
+	CfgType              TCfgType                  `json:"cfg_type"`
+	NetServiceStatus     bool                      `json:"net_service_status"`
+	NetServicePolicyMode string                    `json:"net_service_policy_mode"`
+	ModeAutoD2M          bool                      `json:"mode_auto_d2m"`
+	ModeAutoD2MDuration  int64                     `json:"mode_auto_d2m_duration"`
+	ModeAutoM2P          bool                      `json:"mode_auto_m2p"`
+	ModeAutoM2PDuration  int64                     `json:"mode_auto_m2p_duration"`
+	ScannerAutoscale     CLUSSystemConfigAutoscale `json:"scanner_autoscale"`
+	NoTelemetryReport    bool                      `json:"no_telemetry_report,omitempty"`
+}
+
+type CLUSSystemConfigAutoscale struct {
+	Strategy string `json:"strategy"`
+	MinPods  uint32 `json:"min_pods"`
+	MaxPods  uint32 `json:"max_pods"`
 }
 
 type CLUSEULA struct {
@@ -964,10 +979,11 @@ type CLUSWorkload struct {
 }
 
 type CLUSDomain struct {
-	Name    string   `json:"name"`
-	Dummy   bool     `json:"dummy"`
-	Disable bool     `json:"disable"`
-	Tags    []string `json:"tags"`
+	Name    string            `json:"name"`
+	Dummy   bool              `json:"dummy"`
+	Disable bool              `json:"disable"`
+	Tags    []string          `json:"tags"`   // compliance tags
+	Labels  map[string]string `json:"labels"` // from k8s
 }
 
 type CLUSCriteriaEntry struct {
@@ -1224,6 +1240,7 @@ const (
 	CLUSEvMemoryPressureController
 	CLUSEvK8sNvRBAC
 	CLUSEvGroupAutoPromote
+	CLUSEvAuthDefAdminPwdUnchanged // default admin's password is not changed yet. reported every 24 hours
 )
 
 const (
@@ -1582,6 +1599,7 @@ type CLUSRegistryConfig struct {
 	GitlabPrivateToken string                `json:"gitlab_private_token,cloak"`
 	IBMCloudAccount    string                `json:"ibmcloud_account"`
 	IBMCloudTokenURL   string                `json:"ibmcloud_token_url"`
+	CfgType            TCfgType              `json:"cfg_type"`
 }
 
 type CLUSImage struct {
@@ -1746,17 +1764,22 @@ type CLUSAdmRuleCriterion struct { // see type RESTAdmRuleCriterion
 	Value       string                  `json:"value"`
 	ValueSlice  []string                `json:"value_slice"`
 	SubCriteria []*CLUSAdmRuleCriterion `json:"sub_criteria,omitempty"`
+	Type        string                  `json:"type,omitempty"`
+	Kind        string                  `json:"template_kind,omitempty"`
+	Path        string                  `json:"path,omitempty"`
+	ValueType   string                  `json:"value_type,omitempty"`
 }
 
 type CLUSAdmissionRule struct { // see type RESTAdmissionRule
-	ID       uint32                  `json:"id"`
-	Category string                  `json:"category"`
-	Comment  string                  `json:"comment"`
-	Criteria []*CLUSAdmRuleCriterion `json:"criteria"`
-	Disable  bool                    `json:"disable"`
-	Critical bool                    `json:"critical"`
-	CfgType  TCfgType                `json:"cfg_type"`
-	RuleType string                  `json:"rule_type"` // "exception", "deny"
+	ID                uint32                  `json:"id"`
+	Category          string                  `json:"category"`
+	Comment           string                  `json:"comment"`
+	Criteria          []*CLUSAdmRuleCriterion `json:"criteria"`
+	Disable           bool                    `json:"disable"`
+	Critical          bool                    `json:"critical"`
+	CfgType           TCfgType                `json:"cfg_type"`
+	RuleType          string                  `json:"rule_type"` // "exception", "deny"
+	UseAsRiskyRoleTag bool                    `json:"use_as_risky_role_tag"`
 }
 
 type CLUSAdmissionRules struct {
@@ -1935,10 +1958,7 @@ const (
 )
 
 const (
-	StartPingFedJoints = iota + 1
-	StopPingFedJoints
-	StartPollFedMaster
-	StopPollFedMaster
+	StartPollFedMaster = iota + 1
 	InstantPollFedMaster
 	InstantPingFedJoints
 	JointLoadOwnKeys
@@ -1949,6 +1969,10 @@ const (
 	StopPostToIBMSA
 	PostToIBMSA
 	RestartWebhookServer
+	StartFedRestServer
+	StopFedRestServer
+	UpdateProxyInfo
+	ReportTelemetryData
 )
 
 const (
@@ -1958,16 +1982,8 @@ const (
 	CLUSFedClustersSubKey       = "clusters"
 	CLUSFedRulesRevisionSubKey  = "rules_revision"
 	CLUSFedToPingPollSubKey     = "ping_poll"
-)
-
-const (
-	CLUSFedMembershipKey     = CLUSConfigFederationStore + CLUSFedMembershipSubKey     // stores CLUSFedMembership
-	CLUSFedClustersListKey   = CLUSConfigFederationStore + CLUSFedClustersListSubKey   // stores CLUSFedJoinedClusterList
-	CLUSFedClustersStatusKey = CLUSConfigFederationStore + CLUSFedClustersStatusSubKey // each subkey stores CLUSFedClusterStatus
-	CLUSFedClustersKey       = CLUSConfigFederationStore + CLUSFedClustersSubKey       // each subkey stores CLUSFedJointClusterInfo
-	CLUSFedRulesRevisionKey  = CLUSConfigFederationStore + CLUSFedRulesRevisionSubKey  // stores CLUSFedRulesRevision
-	CLUSFedToPingPollKey     = CLUSConfigFederationStore + CLUSFedToPingPollSubKey     // stores CLUSFedDoPingPoll
-	CLUSFedSystemKey         = CLUSConfigFederationStore + CFGEndpointSystem           // stores CLUSFedSystemConfig
+	CLUSFedSettingsSubKey       = "settings"
+	CLUSFedScanDataRevSubKey    = "scan_revisions"
 )
 
 func CLUSEmptyFedRulesRevision() *CLUSFedRulesRevision {
@@ -1987,14 +2003,19 @@ func CLUSEmptyFedRulesRevision() *CLUSFedRulesRevision {
 	return fedRev
 }
 
+func CLUSFedKey(name string) string {
+	// ex: object/config/federation/{name}
+	return fmt.Sprintf("%s%s", CLUSConfigFederationStore, name)
+}
+
 func CLUSFedJointClusterKey(id string) string {
 	// ex: object/config/federation/clusters/{000-111-222}
-	return fmt.Sprintf("%s/%s", CLUSFedClustersKey, id)
+	return fmt.Sprintf("%s%s/%s", CLUSConfigFederationStore, CLUSFedClustersSubKey, id)
 }
 
 func CLUSFedJointClusterStatusKey(id string) string {
 	// ex: object/config/federation/clusters_status/{000-111-222}
-	return fmt.Sprintf("%s/%s", CLUSFedClustersStatusKey, id)
+	return fmt.Sprintf("%s%s/%s", CLUSConfigFederationStore, CLUSFedClustersStatusSubKey, id)
 }
 
 func CLUSFedKey2CfgKey(key string) string {
@@ -2024,10 +2045,11 @@ type CLUSFedJointClusterInfo struct {
 	Disabled      bool               `json:"disabled"`
 	Name          string             `json:"name"`
 	ID            string             `json:"id"`
-	Secret        string             `json:"secret,cloak"`      // generated by joint cluster befor joining federation
-	ClientKey     string             `json:"client_key,cloak"`  // base64 encoded
-	ClientCert    string             `json:"client_cert,cloak"` // base64 encoded
-	User          string             `json:"user,omitempty"`    // the user who joins this cluster to federation
+	Secret        string             `json:"secret,cloak"`           // generated by joint cluster befor joining federation
+	ClientKey     string             `json:"client_key,cloak"`       // base64 encoded
+	ClientCert    string             `json:"client_cert,cloak"`      // base64 encoded
+	User          string             `json:"user,omitempty"`         // the user who joins this cluster to federation
+	RestVersion   string             `json:"rest_version,omitempty"` // rest version in the code of joint cluster
 	RestInfo      CLUSRestServerInfo `json:"rest_info"`
 	ProxyRequired bool               `json:"proxy_required"` // a joint cluster may be reachable without proxy even master cluster is configured to use proxy. decided when it joins fed
 }
@@ -2042,6 +2064,11 @@ type CLUSFedMembership struct { // stored on each cluster (master & joint cluste
 	PendingDismiss   bool                     `json:"pending_dismiss"`          // set to true when the cluster is demoted/kicked & leaves fed. set to false when the fed rules cleanup is done
 	PendingDismissAt time.Time                `json:"pending_dismiss_at"`
 	UseProxy         string                   `json:"use_proxy"` // http / https
+}
+
+type CLUSFedSettings struct { // stored on each cluster (master & joint cluster)
+	DeployRegScanData  bool `json:"deploy_reg_scan_data"`  // whether fed registry scan data deployment is enabled
+	DeployRepoScanData bool `json:"deploy_repo_scan_data"` // whether fed repo scan data(for _repo_scan on master cluster) deployment is enabled
 }
 
 type CLUSFedClusterStatus struct {
@@ -2099,6 +2126,17 @@ type CLUSFedProcessProfileData struct {
 type CLUSFedSystemConfigData struct {
 	Revision     uint64            `json:"revision"`
 	SystemConfig *CLUSSystemConfig `json:"system_config"`
+}
+
+type CLUSFedRegistriesData struct {
+	Revision   uint64                `json:"revision"`
+	Registries []*CLUSRegistryConfig `json:"registries,omitempty"`
+}
+
+type CLUSFedScanRevisions struct {
+	RegConfigRev   uint64            `json:"reg_config_rev"`   // fed registry revision
+	ScannedRegRevs map[string]uint64 `json:"scanned_reg_revs"` // increases whenever the scan result of any image in a fed registry is changed (registry name : revision)
+	ScannedRepoRev uint64            `json:"scanned_repo_rev"` // increases whenever there is any change in master cluster's repo scan data
 }
 
 //dlp rule
@@ -2592,3 +2630,21 @@ const (
 	ReviewTypeDisplayDLP       = "DLP Configurations"               // interactive import
 	ReviewTypeDisplayWAF       = "WAF Configurations"               // interactive import
 )
+
+// Telemetry (upgrade responder)
+type CLUSCheckUpgradeVersion struct {
+	Version     string `json:"version"`
+	ReleaseDate string `json:"release_date"`
+	Tag         string `json:"tag"`
+}
+
+type CLUSCheckUpgradeInfo struct {
+	MinUpgradeVersion CLUSCheckUpgradeVersion `json:"min_upgrade_version"`
+	MaxUpgradeVersion CLUSCheckUpgradeVersion `json:"max_upgrade_version"`
+	LastUploadTime    time.Time               `json:"last_upload_time"`
+}
+
+// throttled events/logs
+type CLUSThrottledEvents struct {
+	LastReportTime map[TLogEvent]int64 `json:"last_report_at"` // key is event id, value is time.Unix()
+}

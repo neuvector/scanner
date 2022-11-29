@@ -323,6 +323,10 @@ func (d *kubernetes) GetServiceFromPodLabels(namespace, pod string, labels map[s
 		return nil
 	}
 
+	if seviceName, ok := labels[container.NeuvectorSetServiceName]; ok {
+		return &Service{Domain: namespace, Name: utils.Dns1123NameChg(strings.ToLower(seviceName))}
+	}
+
 	// pod.name can take format such as, frontend-3823415956-853n5, calico-node-m308t, kube-proxy-8vbrs.
 	// For the first case, the pod-template-hash is 3823415956, if the hash label exists, we remove it.
 	if d.flavor == share.FlavorRancher && namespace == container.KubeRancherPodNamespace {
@@ -364,7 +368,7 @@ func (d *kubernetes) GetServiceFromPodLabels(namespace, pod string, labels map[s
 	// rke2: kube-system / kube-proxy-ubuntu2110-k8123master-auto
 	if namespace == container.KubeNamespaceSystem {
 		if component, ok := labels[container.KubeKeyComponent]; ok {
-			return &Service{Domain: namespace, Name: component}
+			return &Service{Domain: namespace, Name: utils.Dns1123NameChg(strings.ToLower(component))}
 		}
 	}
 
@@ -494,7 +498,8 @@ func (d *kubernetes) GetHostTunnelIP(links map[string]sk.NetIface) []net.IPNet {
 			//veth's ip as tunnel ip
 			if link.Type == "veth" {
 				ones, bits := addr.IPNet.Mask.Size()
-				if ones == bits && ones == 32 && addr.Scope == syscall.RT_SCOPE_UNIVERSE {
+				//cilium_host i/f scope is RT_SCOPE_LINK
+				if ones == bits && ones == 32 && (addr.Scope == syscall.RT_SCOPE_UNIVERSE || addr.Scope == syscall.RT_SCOPE_LINK){
 					//log.WithFields(log.Fields{"ones": ones, "bits":bits, "scope":addr.Scope}).Debug("")
 					ret = append(ret, addr.IPNet)
 				}
@@ -623,4 +628,9 @@ func (d *kubernetes) isKubeProxy(wl *share.CLUSWorkload) bool {
 	}
 
 	return false
+}
+
+func (d *kubernetes) SetFlavor(flavor string) error {
+	d.flavor = flavor
+	return nil
 }

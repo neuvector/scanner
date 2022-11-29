@@ -56,11 +56,10 @@ const (
 	dotnetDepsMaxSize = 10 * 1024 * 1024
 )
 
-var javaInvalidVendorIds = map[string]bool{"%providerName": true}
-
 var verRegexp = regexp.MustCompile(`<([a-zA-Z0-9\.]+)>([0-9\.]+)</([a-zA-Z0-9\.]+)>`)
 var pyRegexp = regexp.MustCompile(`/([a-zA-Z0-9_\.]+)-([a-zA-Z0-9\.]+)[\-a-zA-Z0-9\.]*\.(egg-info\/PKG-INFO|dist-info\/WHEEL)$`)
 var rubyRegexp = regexp.MustCompile(`/([a-zA-Z0-9_\-]+)-([0-9\.]+)\.gemspec$`)
+var javaInvalidVendorIds = map[string]bool{"%providerName": true}
 
 type AppPackage struct {
 	AppName    string `json:"app_name"`
@@ -416,7 +415,6 @@ func (s *ScanApps) parseJarPackage(r zip.Reader, tfile, filename, fullpath strin
 				ModuleName: fmt.Sprintf("%s:%s", vendorId, title),
 				Version:    version,
 			}
-
 			pkgs[path] = []AppPackage{pkg}
 		}
 	}
