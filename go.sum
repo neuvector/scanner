@@ -653,6 +653,8 @@ github.com/neuvector/k8s v1.2.1-0.20220214174348-d0b3f377461e h1:y7w21QaxlBzeRNW
 github.com/neuvector/k8s v1.2.1-0.20220214174348-d0b3f377461e/go.mod h1:djxl7Js+tfAJJgxKpeN3lnFZT6jRhl1Ikkgd/wMrLQU=
 github.com/neuvector/neuvector v0.0.0-20230316072623-2c9190bdd7b4 h1:KF8Ic7iBdze7vEF7fTib1Xe4kQ6s8bH4bJrVaUwXlWk=
 github.com/neuvector/neuvector v0.0.0-20230316072623-2c9190bdd7b4/go.mod h1:6MKujtS3y/BQlnSXSelaUID2x3e1cmHq/31HoOQl9TM=
+github.com/neuvector/neuvector v0.0.0-20230317062814-522f0507b1ab h1:BBx+RvAHCbky1OCO6M6YSUBzkiku/ZqJichWVH60v94=
+github.com/neuvector/neuvector v0.0.0-20230317062814-522f0507b1ab/go.mod h1:6MKujtS3y/BQlnSXSelaUID2x3e1cmHq/31HoOQl9TM=
 github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d/go.mod h1:YUTz3bUH2ZwIWBy3CJBeOBEugqcmXREj14T+iG/4k4U=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
