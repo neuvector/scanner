@@ -18,7 +18,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"google.golang.org/grpc"
-	criRT "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
+	criRT "k8s.io/cri-api/pkg/apis/runtime/v1"
 
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/system"
@@ -42,6 +42,11 @@ type containerdDriver struct {
 	snapshotter   string
 }
 
+// patch for the mismatched grpc versions
+func wrapIntoErrorString(err error) error {
+	return errors.New(err.Error())
+}
+
 func containerdConnect(endpoint string, sys *system.SystemTools) (Runtime, error) {
 	log.WithFields(log.Fields{"endpoint": endpoint}).Debug("Connecting to containerd")
 
@@ -49,8 +54,8 @@ func containerdConnect(endpoint string, sys *system.SystemTools) (Runtime, error
 		containerd.WithDefaultNamespace(k8sContainerdNamespace),
 		containerd.WithTimeout(clientConnectTimeout))
 	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("")
-		return nil, err
+		log.WithFields(log.Fields{"error": err.Error()}).Error("")
+		return nil, wrapIntoErrorString(err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -58,16 +63,10 @@ func containerdConnect(endpoint string, sys *system.SystemTools) (Runtime, error
 
 	// optional
 	snapshotter := ""
-	cri, err := newCriClient(endpoint)
+	cri, criVer, err := newCriClient(endpoint, ctx)
 	if err == nil {
-		crt := criRT.NewRuntimeServiceClient(cri)
-		req := &criRT.VersionRequest{}
-		if criVer, err := crt.Version(ctx, req); err == nil {
-			log.WithFields(log.Fields{"version": criVer}).Info("cri")
-		}
-
-		reqStatus := &criRT.StatusRequest{Verbose: true}
-		if status, err := crt.Status(ctx, reqStatus); err == nil {
+		log.WithFields(log.Fields{"version": criVer}).Info("cri")
+		if status, err := criGetStatus(cri, ctx); err == nil {
 			snapshotter, err = decodeSnapshotter(status.Info)
 			if err != nil { // reserved debug for newer versions
 				log.WithFields(log.Fields{"info": status.Info, "error": err}).Error()
@@ -79,7 +78,7 @@ func containerdConnect(endpoint string, sys *system.SystemTools) (Runtime, error
 
 	ver, err := client.Version(ctx)
 	if err != nil {
-		return nil, err
+		return nil, wrapIntoErrorString(err)
 	}
 
 	log.WithFields(log.Fields{"endpoint": endpoint, "version": ver}).Info("containerd connected")
@@ -128,7 +127,7 @@ func (d *containerdDriver) getSpecs(ctx context.Context, c containerd.Container)
 	info, err := c.Info(ctx)
 	if err != nil {
 		log.WithFields(log.Fields{"id": c.ID(), "error": err.Error()}).Error("Failed to get container info")
-		return nil, nil, 0, nil, 0, err
+		return nil, nil, 0, nil, 0, wrapIntoErrorString(err)
 	}
 
 	if info.Labels == nil {
@@ -138,7 +137,7 @@ func (d *containerdDriver) getSpecs(ctx context.Context, c containerd.Container)
 	spec, err := c.Spec(ctx)
 	if err != nil {
 		log.WithFields(log.Fields{"id": c.ID(), "error": err.Error()}).Error("Failed to get container spec")
-		return nil, nil, 0, nil, 0, err
+		return nil, nil, 0, nil, 0, wrapIntoErrorString(err)
 	}
 
 	// if image name is a digest identifier
@@ -291,7 +290,7 @@ func (d *containerdDriver) ListContainers(runningOnly bool) ([]*ContainerMeta, e
 	defer cancel()
 	if err != nil {
 		log.WithFields(log.Fields{"error": err.Error()}).Error("Failed to list containers")
-		return nil, err
+		return nil, wrapIntoErrorString(err)
 	}
 
 	metas := make([]*ContainerMeta, 0, len(containers))
@@ -319,13 +318,13 @@ func (d *containerdDriver) GetContainer(id string) (*ContainerMetaExtra, error) 
 	c, err := d.client.LoadContainer(ctx, id)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err.Error()}).Error("Failed to get container")
-		return nil, err
+		return nil, wrapIntoErrorString(err)
 	}
 
 	info, spec, pid, status, attempt, err := d.getSpecs(ctx, c)
 	if err != nil {
 		log.WithFields(log.Fields{"id": c.ID(), "error": err.Error()}).Error("Failed to get container info")
-		return nil, err
+		return nil, wrapIntoErrorString(err)
 	}
 
 	bSandBox := false
@@ -382,7 +381,9 @@ func (d *containerdDriver) GetImageHistory(name string) ([]*ImageHistory, error)
 }
 
 func (d *containerdDriver) GetImage(name string) (*ImageMeta, error) {
-	return getCriImageMeta(d.criClient, name)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	return criGetImageMeta(d.criClient, ctx, name)
 }
 
 func (d *containerdDriver) GetImageFile(id string) (io.ReadCloser, error) {
@@ -472,7 +473,7 @@ func (d *containerdDriver) MonitorEvent(cb EventCallback, cpath bool) error {
 				if ev.Event != nil {
 					v, err := typeurl.UnmarshalAny(ev.Event)
 					if err != nil {
-						log.WithFields(log.Fields{"error": err, "event": v}).Error("Unmarshal containderd event error")
+						log.WithFields(log.Fields{"error": err.Error(), "event": v}).Error("Unmarshal containderd event error")
 						break
 					}
 					switch event := v.(type) {
@@ -494,7 +495,7 @@ func (d *containerdDriver) MonitorEvent(cb EventCallback, cpath bool) error {
 				}
 			case err := <-errCh:
 				if err != nil && err != io.EOF {
-					log.WithFields(log.Fields{"error": err}).Error("Containderd event monitor error")
+					log.WithFields(log.Fields{"error": err.Error()}).Error("Containderd event monitor error")
 				}
 				break Loop
 			case <-ctx.Done():
@@ -594,8 +595,7 @@ func (d *containerdDriver) GetContainerCriSupplement(id string) (*ContainerMetaE
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	crt := criRT.NewRuntimeServiceClient(d.criClient) // GRPC
-	pod, err := crt.PodSandboxStatus(ctx, &criRT.PodSandboxStatusRequest{PodSandboxId: id, Verbose: true})
+	pod, err := criPodSandboxStatus(d.criClient, ctx, id)
 	if err == nil && pod != nil {
 		if pod.Status == nil || pod.Info == nil {
 			log.WithFields(log.Fields{"id":id, "pod": pod}).Error("Fail to get pod")
@@ -611,10 +611,10 @@ func (d *containerdDriver) GetContainerCriSupplement(id string) (*ContainerMetaE
 		pid, _ = d.getContainerPid_CRI(pod.GetInfo())
 	} else {
 		// an APP container
-		cs, err2 := crt.ContainerStatus(ctx, &criRT.ContainerStatusRequest{ContainerId: id, Verbose: true})
+		cs, err2 := criContainerStatus(d.criClient, ctx, id)
 		if err2 != nil || cs.Status == nil || cs.Info == nil {
 			log.WithFields(log.Fields{"id": id, "error": err2, "cs": cs}).Error("Fail to get container")
-			return nil, 0, 0, err
+			return nil, 0, 0, err2
 		}
 
 		meta = &ContainerMetaExtra{
@@ -656,8 +656,8 @@ func (d *containerdDriver) isPrivilegedContainer_CRI(id string) bool {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	crt := criRT.NewRuntimeServiceClient(d.criClient) // GRPC
-	if cs, err := crt.ContainerStatus(ctx, &criRT.ContainerStatusRequest{ContainerId: id, Verbose: true}); err == nil {
+
+	if cs, err := criContainerStatus(d.criClient, ctx, id); err == nil {
 		var res criContainerInfoRes
 		jsonInfo := buildJsonFromMap(cs.GetInfo()) // from map[string]string
 		if err := json.Unmarshal([]byte(jsonInfo), &res); err != nil {
@@ -679,8 +679,8 @@ func (d *containerdDriver) isPrivilegedPod_CRI(id string) bool {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	crt := criRT.NewRuntimeServiceClient(d.criClient) // GRPC
-	if pod, err := crt.PodSandboxStatus(ctx, &criRT.PodSandboxStatusRequest{PodSandboxId: id, Verbose: true}); err == nil {
+
+	if pod, err := criPodSandboxStatus(d.criClient, ctx, id); err == nil {
 		var res criContainerInfoRes
 		jsonInfo := buildJsonFromMap(pod.GetInfo()) // from map[string]string
 		if err := json.Unmarshal([]byte(jsonInfo), &res); err != nil {

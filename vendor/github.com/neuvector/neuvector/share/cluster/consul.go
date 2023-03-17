@@ -23,8 +23,8 @@ import (
 
 // const consulUIDir string = "/usr/local/bin/ui"
 const consulExe string = "/usr/local/bin/consul"
-const consulConf string = "/tmp/consul.json"
 const consulDataDir string = "/tmp/neuvector"
+const consulConf string = consulDataDir + "/consul.json"
 const consulPeers string = consulDataDir + "/raft/peers.json"
 
 const defaultRPCPort = 18300
@@ -132,6 +132,7 @@ func createConfigFile(cc *ClusterConfig) error {
 		lanPort = defaultLANPort
 	}
 
+	os.MkdirAll(consulDataDir, os.ModePerm)
 	f, err := os.Create(consulConf)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to create consul config file")
@@ -170,6 +171,9 @@ func createConfigFile(cc *ClusterConfig) error {
 	sa = append(sa, fmt.Sprintf("        \"server\": %d,\n", rpcPort))
 	sa = append(sa, fmt.Sprintf("        \"serf_lan\": %d,\n", lanPort))
 	sa = append(sa, fmt.Sprintf("        \"serf_wan\": %d\n", -1))
+	sa = append(sa, fmt.Sprintf("    },\n"))
+	sa = append(sa, fmt.Sprintf("    \"performance\": {\n"))
+	sa = append(sa, fmt.Sprintf("        \"rpc_hold_timeout\": \"%ds\"\n", 300))
 	sa = append(sa, fmt.Sprintf("    }\n"))
 	sa = append(sa, fmt.Sprintf("}\n"))
 
@@ -550,7 +554,7 @@ func (s *sessionMethod) Associate(key string) error {
 	kv := s.c.KV()
 	pair := &api.KVPair{Key: key, Value: []byte(s.id), Session: s.id}
 	if ok, _, err := kv.Acquire(pair, nil); err != nil {
-		return nil
+		return fmt.Errorf("Failed to hold, err=%s", err.Error())
 	} else if !ok {
 		return fmt.Errorf("Failed to hold")
 	} else {
