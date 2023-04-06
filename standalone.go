@@ -9,8 +9,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/jedib0t/go-pretty/v6/table"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/neuvector/neuvector/controller/api"
@@ -27,6 +29,149 @@ const apiCallTimeout = time.Duration(30 * time.Second)
 type scanOnDemandReportData struct {
 	ErrMsg string                  `json:"error_message"`
 	Report *api.RESTScanRepoReport `json:"report"`
+}
+
+func parseImageValue(value string) (string, string, string) {
+	var parts []string
+	var proto, registry, repository, tag string
+
+	if i := strings.Index(value, "://"); i != -1 {
+		// The input URL includes a protocol (e.g., "http://", "https://", "docker://").
+		// We remove it to parse the rest of the URL.
+		proto = value[:i+3]
+		parts = strings.Split(value[i+3:], "/")
+	} else {
+		// The input URL does not include a protocol.
+		parts = strings.SplitN(value, "/", 2)
+	}
+
+	if len(parts) > 1 {
+		if strings.ContainsAny(parts[0], ":.") {
+			// Image has a registry
+			registry = parts[0]
+			parts = parts[1:]
+		}
+	} else {
+		dot := strings.Index(parts[0], ".")
+		colon := strings.Index(parts[0], ":")
+		if dot != -1 && dot < colon {
+			// example.com:5000, this is a wrong case anyway
+			registry = parts[0]
+			parts = parts[1:]
+		}
+	}
+
+	if len(parts) > 0 {
+		last := parts[len(parts)-1]
+		if i := strings.Index(last, ":"); i == -1 {
+			// no tag
+			tag = "latest"
+		} else {
+			parts[len(parts)-1] = last[:i]
+			tag = last[i+1:]
+		}
+		repository = strings.Join(parts, "/")
+	}
+
+	if registry != "" {
+		// We don't prefix 'library' if registry is empty, as local image doesn't need it
+		if dockerhubRegs.Contains(registry) && !strings.Contains(repository, "/") {
+			repository = fmt.Sprintf("library/%s", repository)
+		}
+
+		if proto != "" {
+			registry = fmt.Sprintf("%s%s", proto, registry)
+		} else {
+			registry = fmt.Sprintf("https://%s", registry)
+		}
+	}
+
+	return registry, repository, tag
+}
+
+func writeResultToFile(req *share.ScanImageRequest, result *share.ScanResult, err error) {
+	var rptData scanOnDemandReportData
+
+	if result == nil {
+		rptData.ErrMsg = err.Error()
+	} else if result.Error != share.ScanErrorCode_ScanErrNone {
+		rptData.ErrMsg = scanUtils.ScanErrorToStr(result.Error)
+	} else {
+		rpt := scanUtils.ScanRepoResult2REST(result, nil)
+		rptData.Report = rpt
+	}
+
+	data, _ := json.MarshalIndent(rptData, "", "    ")
+
+	if _, err = os.Stat(scanOutputDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(scanOutputDir, 0775); err != nil {
+			log.WithFields(log.Fields{
+				"registry": req.Registry, "repo": req.Repository, "tag": req.Tag, "error": err.Error(), "output": scanOutputDir,
+			}).Error("Failed to create output directory")
+			return
+		}
+	}
+
+	output := fmt.Sprintf("%s/%s", scanOutputDir, scanOutputFile)
+	err = ioutil.WriteFile(output, data, 0644)
+	if err == nil {
+		log.WithFields(log.Fields{
+			"registry": req.Registry, "repo": req.Repository, "tag": req.Tag, "output": output,
+		}).Debug("Write scan result to file")
+	} else {
+		log.WithFields(log.Fields{
+			"registry": req.Registry, "repo": req.Repository, "tag": req.Tag, "error": err.Error(), "output": output,
+		}).Error("Failed to write scan result")
+	}
+}
+
+func writeResultToStdout(req *share.ScanImageRequest, result *share.ScanResult, err error) {
+	var rpt *api.RESTScanRepoReport
+	var high, med, low, unk int
+
+	if result != nil && result.Error == share.ScanErrorCode_ScanErrNone {
+		rpt = scanUtils.ScanRepoResult2REST(result, nil)
+	} else {
+		return
+	}
+
+	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"Package", "Vulnerability", "Severity", "Version", "Fixed Version", "Published"})
+	for _, v := range rpt.Vuls {
+		t.AppendRow(table.Row{
+			v.PackageName, v.Name, v.Severity, v.PackageVersion, v.FixedVersion, time.Unix(v.PublishedTS, 0).UTC().Format("2006-01-02"),
+		}, rowConfigAutoMerge)
+
+		switch v.Severity {
+		case share.VulnSeverityHigh:
+			high++
+		case share.VulnSeverityMedium:
+			med++
+		case share.VulnSeverityLow:
+			low++
+		default:
+			unk++
+		}
+	}
+	t.SetColumnConfigs([]table.ColumnConfig{
+		{Name: "Package", AutoMerge: true},
+		{Name: "Severity", AutoMerge: true},
+		{Name: "Version", AutoMerge: true},
+	})
+	t.SortBy([]table.SortBy{
+		{Name: "Package", Mode: table.Asc},
+		{Name: "Severity", Mode: table.Asc},
+		{Name: "Vulnerability", Mode: table.Asc},
+	})
+	t.SetStyle(table.StyleLight)
+	t.Style().Options.SeparateRows = true
+
+	fmt.Printf("Image: %s%s:%s\n", req.Registry, req.Repository, req.Tag)
+	fmt.Printf("Base OS: %s\n", rpt.BaseOS)
+	fmt.Printf("TOTAL: %d, HIGH: %d, MEDIUM: %d, LOW: %d, UNKNOWN: %d\n", len(rpt.Vuls), high, med, low, unk)
+	t.Render()
 }
 
 func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulnerability) *share.ScanResult {
@@ -48,51 +193,38 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 	}
 	cancel()
 
-	var rptData scanOnDemandReportData
+	if req.Registry == "" && result != nil &&
+		(result.Error == share.ScanErrorCode_ScanErrImageNotFound || result.Error == share.ScanErrorCode_ScanErrContainerAPI) {
+		req.Registry = defualtDockerhubReg
+		if !strings.Contains(req.Repository, "/") {
+			req.Repository = fmt.Sprintf("library/%s", req.Repository)
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute*20)
+		if scanTasker != nil {
+			result, err = scanTasker.Run(ctx, *req)
+		} else {
+			result, err = cveTools.ScanImage(ctx, req, "")
+		}
+		cancel()
+	}
 
 	if result == nil {
-		rptData.ErrMsg = err.Error()
-
 		log.WithFields(log.Fields{
-			"registry": req.Registry, "repo": req.Repository, "tag": req.Tag, "error": rptData.ErrMsg,
+			"registry": req.Registry, "repo": req.Repository, "tag": req.Tag, "error": err.Error(),
 		}).Error()
 	} else if result.Error != share.ScanErrorCode_ScanErrNone {
-		rptData.ErrMsg = scanUtils.ScanErrorToStr(result.Error)
-
 		log.WithFields(log.Fields{
-			"registry": req.Registry, "repo": req.Repository, "tag": req.Tag, "error": rptData.ErrMsg,
+			"registry": req.Registry, "repo": req.Repository, "tag": req.Tag, "error": scanUtils.ScanErrorToStr(result.Error),
 		}).Error("Failed to scan repository")
 	} else {
-		log.WithFields(log.Fields{
-			"registry": req.Registry, "repo": req.Repository, "tag": req.Tag,
-		}).Info("Scan repository finish")
-
-		rpt := scanUtils.ScanRepoResult2REST(result, nil)
-		rptData.Report = rpt
+		// log.WithFields(log.Fields{
+		// 	"registry": req.Registry, "repo": req.Repository, "tag": req.Tag,
+		// }).Info("Scan repository finish")
 	}
 
-	data, _ := json.MarshalIndent(rptData, "", "    ")
-
-	if _, err = os.Stat(scanOutputDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(scanOutputDir, 0775); err != nil {
-			log.WithFields(log.Fields{
-				"registry": req.Registry, "repo": req.Repository, "tag": req.Tag, "error": err.Error(), "output": scanOutputDir,
-			}).Error("Failed to create output directory")
-			return result
-		}
-	}
-
-	output := fmt.Sprintf("%s/%s", scanOutputDir, scanOutputFile)
-	err = ioutil.WriteFile(output, data, 0644)
-	if err == nil {
-		log.WithFields(log.Fields{
-			"registry": req.Registry, "repo": req.Repository, "tag": req.Tag, "output": output,
-		}).Info("Write scan result to file")
-	} else {
-		log.WithFields(log.Fields{
-			"registry": req.Registry, "repo": req.Repository, "tag": req.Tag, "error": err.Error(), "output": output,
-		}).Error("Failed to write scan result")
-	}
+	writeResultToFile(req, result, err)
+	writeResultToStdout(req, result, err)
 
 	return result
 }

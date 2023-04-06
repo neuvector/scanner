@@ -7,4 +7,4 @@ LABEL neuvector.image="neuvector/scanner" \
       neuvector.role="scanner" \
       neuvector.vuln_db="vuln.xxxx"
 
-ENTRYPOINT ["/usr/local/bin/monitor", "-s"]
+ENTRYPOINT ["/usr/local/bin/monitor"]

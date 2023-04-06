@@ -35,7 +35,7 @@ type Tasker struct {
 
 /////
 func newTasker(taskPath, rtSock string, showDebug bool, sys *system.SystemTools) *Tasker {
-	log.WithFields(log.Fields{"showDebug": showDebug}).Info()
+	log.WithFields(log.Fields{"showDebug": showDebug}).Debug()
 	if _, err := os.Stat(taskPath); err != nil {
 		return nil
 	}
@@ -184,7 +184,7 @@ func (ts *Tasker) Run(ctx context.Context, request interface{}) (*share.ScanResu
 
 /////
 func (ts *Tasker) Close() {
-	log.Info()
+	log.Debug()
 
 	ts.mutex.Lock()
 	defer ts.mutex.Unlock()

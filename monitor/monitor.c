@@ -80,6 +80,8 @@ static proc_info_t g_procs[PROC_MAX] = {
 };
 
 static int g_mode = MODE_SCANNER;
+static int g_debug = 0;
+static char *g_image = NULL;
 static volatile sig_atomic_t g_exit_signal = 0;
 static int g_exit_monitor_on_proc_exit = 0;
 
@@ -98,25 +100,18 @@ static void debug_ts(FILE *logfp)
 
 static void debug(const char *fmt, ...)
 {
-    static FILE *logfp = NULL;
-    va_list args;
+    if (g_debug != 0) {
+        static FILE *logfp = NULL;
+        va_list args;
 
-/*
-    if (logfp == NULL) {
-        logfp = fopen(DEBUG_FILE, "a");
+        logfp = stdout;
 
-        if (logfp == NULL) {
-            return;
-        }
+        debug_ts(logfp);
+        va_start(args, fmt);
+        vfprintf(logfp, fmt, args);
+        va_end(args);
+        fflush(logfp);
     }
-*/
-    logfp = stdout;
-
-    debug_ts(logfp);
-    va_start(args, fmt);
-    vfprintf(logfp, fmt, args);
-    va_end(args);
-    fflush(logfp);
 }
 
 static int checkImplicitEnableFlag(char *enable)
@@ -143,44 +138,64 @@ static pid_t fork_exec(int i)
         a = 1;
         args[a ++] = "-d";
         args[a ++] = "/etc/neuvector/db/";
-        if ((url = getenv(ENV_SCANNER_DOCKER_URL)) != NULL) {
-            args[a ++] = "-u";
-            args[a ++] = url;
-        }
-        if ((join = getenv(ENV_CLUSTER_JOIN)) != NULL) {
-            args[a ++] = "-j";
-            args[a ++] = join;
-        }
-        if ((join_port = getenv(ENV_CLUSTER_JOIN_PORT)) != NULL) {
-            args[a ++] = "--join_port";
-            args[a ++] = join_port;
-        }
-        if ((adv = getenv(ENV_CLUSTER_ADVERTISE)) != NULL) {
-            args[a ++] = "-a";
-            args[a ++] = adv;
-        }
-        if ((adv_port = getenv(ENV_CLUSTER_ADV_PORT)) != NULL) {
-            args[a ++] = "--adv_port";
-            args[a ++] = adv_port;
-        }
-        if (((license = getenv(ENV_SCANNER_LICENSE)) != NULL) || (on_demand = getenv(ENV_SCANNER_ON_DEMAND)) != NULL) {
+
+        if (g_image != NULL) {
+            // automatically set to standalone mode
             args[a ++] = "--license";
-            args[a++] = "on_demand";
+            args[a ++] = "on_demand";
 
             g_exit_monitor_on_proc_exit = 1;
+
+            args[a ++] = "--image";
+            args[a ++] = g_image;
+
+            if ((url = getenv(ENV_SCANNER_DOCKER_URL)) != NULL) {
+                args[a ++] = "-u";
+                args[a ++] = url;
+            }
+        } else {
+            // options for non-standalone mode
+            if ((url = getenv(ENV_SCANNER_DOCKER_URL)) != NULL) {
+                args[a ++] = "-u";
+                args[a ++] = url;
+            }
+            if ((join = getenv(ENV_CLUSTER_JOIN)) != NULL) {
+                args[a ++] = "-j";
+                args[a ++] = join;
+            }
+            if ((join_port = getenv(ENV_CLUSTER_JOIN_PORT)) != NULL) {
+                args[a ++] = "--join_port";
+                args[a ++] = join_port;
+            }
+            if ((adv = getenv(ENV_CLUSTER_ADVERTISE)) != NULL) {
+                args[a ++] = "-a";
+                args[a ++] = adv;
+            }
+            if ((adv_port = getenv(ENV_CLUSTER_ADV_PORT)) != NULL) {
+                args[a ++] = "--adv_port";
+                args[a ++] = adv_port;
+            }
+            if (((license = getenv(ENV_SCANNER_LICENSE)) != NULL) || (on_demand = getenv(ENV_SCANNER_ON_DEMAND)) != NULL) {
+                args[a ++] = "--license";
+                args[a ++] = "on_demand";
+
+                g_exit_monitor_on_proc_exit = 1;
+            }
+            if ((registry = getenv(ENV_SCANNER_REGISTRY)) != NULL) {
+                args[a ++] = "--registry";
+                args[a ++] = registry;
+            }
+            if ((repository = getenv(ENV_SCANNER_REPOSITORY)) != NULL) {
+                args[a ++] = "--repository";
+                args[a ++] = repository;
+            }
+            if ((tag = getenv(ENV_SCANNER_TAG)) != NULL) {
+                args[a ++] = "--tag";
+                args[a ++] = tag;
+            }
         }
-        if ((registry = getenv(ENV_SCANNER_REGISTRY)) != NULL) {
-            args[a ++] = "--registry";
-            args[a ++] = registry;
-        }
-        if ((repository = getenv(ENV_SCANNER_REPOSITORY)) != NULL) {
-            args[a ++] = "--repository";
-            args[a ++] = repository;
-        }
-        if ((tag = getenv(ENV_SCANNER_TAG)) != NULL) {
-            args[a ++] = "--tag";
-            args[a ++] = tag;
-        }
+
+        // The following options apply to both standalone or non-standalone mode
         if ((user = getenv(ENV_SCANNER_REG_USER)) != NULL) {
             args[a ++] = "--registry_username";
             args[a ++] = user;
@@ -206,6 +221,7 @@ static pid_t fork_exec(int i)
             args[a ++] = "--ctrl_password";
             args[a ++] = api_pass;
         }
+
         args[a] = NULL;
         break;
     default:
@@ -323,7 +339,7 @@ static void help(const char *prog)
 {
     printf("%s:\n", prog);
     printf("    h: help\n");
-    printf("    s: start scanner\n");
+    printf("    i: <image>, scan image in standalone mode\n");
 }
 
 int main (int argc, char **argv)
@@ -334,13 +350,16 @@ int main (int argc, char **argv)
 
     int arg = 0;
     while (arg != -1) {
-        arg = getopt(argc, argv, "hcdrs");
+        arg = getopt(argc, argv, "hdi:");
 
         switch (arg) {
         case -1:
             break;
-        case 's':
-            g_mode = MODE_SCANNER;
+        case 'd':
+            g_debug = 1;
+            break;
+        case 'i':
+            g_image = optarg;
             break;
         case 'h':
         default:
