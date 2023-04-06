@@ -2,14 +2,17 @@
 
 NeuVector vulnerability scanner for the SUSE NeuVector Container Security Platform.
 
-A viewable version of docs can be seen at https://open-docs.neuvector.com.
+The scanner has multiple working modes.
 
-The images are on the NeuVector Docker Hub registry. Use the appropriate version tag for the manager, controller, enforcer, and leave the version as 'latest' for scanner and updater. For example:
-+ neuvector/manager:5.0.0
-+ neuvector/controller:5.0.0
-+ neuvector/enforcer:5.0.0
-+ neuvector/scanner:latest
-+ neuvector/updater:latest
+The scanner runs with the NeuVector controller to provide registry scan and runtime scan functions. Please see the [document](https://open-docs.neuvector.com) and the [helm chart](https://github.com/neuvector/neuvector-helm) of how to deploy scanners in this mode.
+
+The scanner runs in standalone mode, print the scan results to the screen and save it to the file at the same time. Run the scanner in the standalone mode with the following command.
+
+```
+docker run --rm  neuvector/scanner -i ubuntu:18.04
+```
+
+The scanner can also be used in the CI/CD pipeline though various of plugins.
 
 Note: Deploying from the Rancher Manager 2.6.5+ NeuVector chart pulls from the rancher-mirrored repo and deploys into the cattle-neuvector-system namespace.
 
