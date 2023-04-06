@@ -31,6 +31,10 @@ func usage() {
 const taskerPath = "/usr/local/bin/scannerTask"
 const registerWaitTime = time.Duration(time.Second * 10)
 const licenseTimeFormat string = "2006-01-02"
+const dockerSocket = "unix:///var/run/docker.sock"
+const defualtDockerhubReg = "https://registry.hub.docker.com"
+
+var dockerhubRegs utils.Set = utils.NewSet("registry.hub.docker.com", "index.docker.io", "registry-1.docker.io", "docker.io")
 
 var ntChan chan uint32 = make(chan uint32, 1)
 var cveTools *cvetools.CveTools // available inside package
@@ -138,11 +142,12 @@ func main() {
 	joinPort := flag.Uint("join_port", 0, "Controller join port")
 	adv := flag.String("a", "", "Advertise address")
 	advPort := flag.Uint("adv_port", 0, "Advertise port")
-	rtSock := flag.String("u", "unix:///var/run/docker.sock", "Container socket URL") // used for scan local image
+	rtSock := flag.String("u", dockerSocket, "Container socket URL") // used for scan local image
 	showTaskDebug := flag.Bool("g", true, "Show task debug information")
 	getVer := flag.Bool("v", false, "show cve database version")
 	// for on demand ci/cd scan
 	license := flag.String("license", "", "Scanner license") // it means on-demand stand-alone scanner
+	image := flag.String("image", "", "Scan image")          // overwrite registry, repository and tag
 	registry := flag.String("registry", "", "Scan image registry")
 	repository := flag.String("repository", "", "Scan image repository")
 	tag := flag.String("tag", "latest", "Scan image tag")
@@ -178,12 +183,16 @@ func main() {
 	// If license parameter is given, this is an on-demand scanner, no register to the controller,
 	// but if join address is given, the scan result are sent to the controller.
 	if *license != "" {
-		if *repository == "" || *tag == "" {
+		if (*repository == "" || *tag == "") && *image == "" {
 			log.Error("Missing the repository name and tag of the image to be scanned")
 			os.Exit(-2)
 		}
 
 		onDemand = true
+
+		// Less debug in standalone mode
+		log.SetLevel(log.InfoLevel)
+		*showTaskDebug = false
 	}
 
 	// recovered, clean up all possible previous image folders
@@ -198,20 +207,18 @@ func main() {
 			os.Exit(-2)
 		}
 	} else {
-		log.Info("Not running in container.")
+		log.Debug("Not running in container.")
 	}
 
-	if rtSock != nil {
-		if platform, _, _, containers, err := global.SetGlobalObjects(*rtSock, nil); err == nil {
-			if platform == share.PlatformKubernetes {
-				selfID = adjustContainerPod(selfID, containers)
-			}
+	if platform, _, _, containers, err := global.SetGlobalObjects(*rtSock, nil); err == nil {
+		if platform == share.PlatformKubernetes {
+			selfID = adjustContainerPod(selfID, containers)
 		}
 	}
 
 	scanTasker = newTasker(taskerPath, *rtSock, *showTaskDebug, sys)
 	if scanTasker != nil {
-		log.Info("Use scannerTask")
+		log.Debug("Use scannerTask")
 		defer scanTasker.Close()
 	}
 
@@ -225,15 +232,36 @@ func main() {
 	}()
 
 	if onDemand {
-		req := &share.ScanImageRequest{
-			Registry:    *registry,
-			Repository:  *repository,
-			Tag:         *tag,
-			Username:    *regUser,
-			Password:    *regPass,
-			ScanLayers:  *scanLayers,
-			ScanSecrets: true,
-			BaseImage:   *baseImage,
+		var req *share.ScanImageRequest
+
+		if *image != "" {
+			reg, repo, tag := parseImageValue(*image)
+			if repo == "" || tag == "" {
+				log.Error("Invalid image value.")
+				return
+			}
+
+			req = &share.ScanImageRequest{
+				Registry:    reg,
+				Repository:  repo,
+				Tag:         tag,
+				Username:    *regUser,
+				Password:    *regPass,
+				ScanLayers:  *scanLayers,
+				ScanSecrets: true,
+				BaseImage:   *baseImage,
+			}
+		} else {
+			req = &share.ScanImageRequest{
+				Registry:    *registry,
+				Repository:  *repository,
+				Tag:         *tag,
+				Username:    *regUser,
+				Password:    *regPass,
+				ScanLayers:  *scanLayers,
+				ScanSecrets: true,
+				BaseImage:   *baseImage,
+			}
 		}
 
 		// DB read error printed inside dbRead()
