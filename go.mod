@@ -42,7 +42,10 @@ replace (
 require (
 	github.com/aws/aws-sdk-go v1.42.36 // indirect
 	github.com/docker/docker v20.10.12+incompatible // indirect
+	github.com/go-openapi/strfmt v0.21.7 // indirect
 	github.com/google/uuid v1.3.0
+	github.com/jedib0t/go-pretty/v6 v6.4.6
+	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/neuvector/neuvector v0.0.0-20230317062814-522f0507b1ab
 	github.com/sirupsen/logrus v1.8.1
 	google.golang.org/grpc v1.40.0
