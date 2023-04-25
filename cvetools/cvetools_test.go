@@ -67,7 +67,7 @@ func TestSelectDB(t *testing.T) {
 
 	for ns, r := range tests {
 		var db int
-		ns, db = selectDB(ns)
+		ns, db = os2DB(ns)
 		if ns != r.ns || db != r.db {
 			t.Errorf("Incorrect result:  %s != %s or %d != %d", ns, r.ns, db, r.db)
 		}

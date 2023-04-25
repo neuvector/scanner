@@ -77,6 +77,7 @@ type AppModuleVersion struct {
 
 type AppModuleVul struct {
 	VulName       string             `json:"VN"`
+	AppName       string             `json:"AN"`
 	ModuleName    string             `json:"MN"`
 	Description   string             `json:"D"`
 	Link          string             `json:"L"`

@@ -135,15 +135,7 @@ func writeResultToStdout(req *share.ScanImageRequest, result *share.ScanResult, 
 		return
 	}
 
-	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
-	t := table.NewWriter()
-	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"Package", "Vulnerability", "Severity", "Version", "Fixed Version", "Published"})
 	for _, v := range rpt.Vuls {
-		t.AppendRow(table.Row{
-			v.PackageName, v.Name, v.Severity, v.PackageVersion, v.FixedVersion, time.Unix(v.PublishedTS, 0).UTC().Format("2006-01-02"),
-		}, rowConfigAutoMerge)
-
 		switch v.Severity {
 		case share.VulnSeverityHigh:
 			high++
@@ -155,23 +147,36 @@ func writeResultToStdout(req *share.ScanImageRequest, result *share.ScanResult, 
 			unk++
 		}
 	}
-	t.SetColumnConfigs([]table.ColumnConfig{
-		{Name: "Package", AutoMerge: true},
-		{Name: "Severity", AutoMerge: true},
-		{Name: "Version", AutoMerge: true},
-	})
-	t.SortBy([]table.SortBy{
-		{Name: "Package", Mode: table.Asc},
-		{Name: "Severity", Mode: table.Asc},
-		{Name: "Vulnerability", Mode: table.Asc},
-	})
-	t.SetStyle(table.StyleLight)
-	t.Style().Options.SeparateRows = true
 
 	fmt.Printf("Image: %s%s:%s\n", req.Registry, req.Repository, req.Tag)
 	fmt.Printf("Base OS: %s\n", rpt.BaseOS)
 	fmt.Printf("TOTAL: %d, HIGH: %d, MEDIUM: %d, LOW: %d, UNKNOWN: %d\n", len(rpt.Vuls), high, med, low, unk)
-	t.Render()
+
+	if len(rpt.Vuls) > 0 {
+		rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
+		t := table.NewWriter()
+		t.SetOutputMirror(os.Stdout)
+		t.AppendHeader(table.Row{"Package", "Vulnerability", "Severity", "Version", "Fixed Version", "Published"})
+		for _, v := range rpt.Vuls {
+			t.AppendRow(table.Row{
+				v.PackageName, v.Name, v.Severity, v.PackageVersion, v.FixedVersion, time.Unix(v.PublishedTS, 0).UTC().Format("2006-01-02"),
+			}, rowConfigAutoMerge)
+		}
+		t.SetColumnConfigs([]table.ColumnConfig{
+			{Name: "Package", AutoMerge: true},
+			{Name: "Severity", AutoMerge: true},
+			{Name: "Version", AutoMerge: true},
+		})
+		t.SortBy([]table.SortBy{
+			{Name: "Package", Mode: table.Asc},
+			{Name: "Severity", Mode: table.Asc},
+			{Name: "Vulnerability", Mode: table.Asc},
+		})
+		t.SetStyle(table.StyleLight)
+		t.Style().Options.SeparateRows = true
+
+		t.Render()
+	}
 }
 
 func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulnerability) *share.ScanResult {
@@ -195,7 +200,7 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 
 	if req.Registry == "" && result != nil &&
 		(result.Error == share.ScanErrorCode_ScanErrImageNotFound || result.Error == share.ScanErrorCode_ScanErrContainerAPI) {
-		req.Registry = defualtDockerhubReg
+		req.Registry = defaultDockerhubReg
 		if !strings.Contains(req.Repository, "/") {
 			req.Repository = fmt.Sprintf("library/%s", req.Repository)
 		}

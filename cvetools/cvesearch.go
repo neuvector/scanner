@@ -664,7 +664,7 @@ func (cv *CveTools) doScan(layerFiles *layerScanFiles, imageNs *detectors.Namesp
 	return namespace, errCode, vuls, features, apps
 }
 
-func selectDB(nsName string) (string, int) {
+func os2DB(nsName string) (string, int) {
 	db := common.DBMax
 	r := releaseRegexp.FindStringSubmatch(nsName)
 	if len(r) == 3 {
@@ -719,7 +719,7 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string
 	var vfs map[string]common.VulFull
 	var err error
 
-	nsName, db = selectDB(nsName)
+	nsName, db = os2DB(nsName)
 	if db == common.DBMax {
 		log.WithFields(log.Fields{"os": nsName}).Info("Unsupported OS")
 		return share.ScanErrorCode_ScanErrNone, make([]*share.ScanVulnerability, 0)
