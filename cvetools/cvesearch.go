@@ -288,6 +288,16 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 			return result, nil
 		}
 
+		signatureData, err := rc.GetSignatureDataForImage(ctx, req.Repository, info.Digest)
+		if err != nil {
+			return result, fmt.Errorf("error getting signature data for image: %s", err.Error())
+		}
+
+		result.Verifiers, err = verifyImageSignatures(info.Digest, *req.SigstoreConfig, signatureData)
+		if err != nil {
+			return result, fmt.Errorf("error verifying signatures for image: %s", err.Error())
+		}
+
 		layers = info.Layers
 		for _, lf := range layerFiles {
 			result.Size += lf.Size
