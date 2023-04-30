@@ -121,6 +121,7 @@ const AllContainerGroup string = "containers"
 const LearnedHostPrefix string = "Host:"
 const LearnedWorkloadPrefix string = "Workload:"
 const WorkloadTunnelIF string = "Workload:ingress"
+const AddrGrpValVhPrefix string = "vh:"
 
 const PolicyDomainNameMaxLen int = 256
 const DlpSensorNameMaxLen int = 256
@@ -326,11 +327,19 @@ type RESTServerLDAP struct {
 	GroupMappedRoles []*share.GroupRoleMapping `json:"group_mapped_roles,omitempty"` // group -> (role -> domains)
 }
 
+type RESTX509CertInfo struct {
+	X509Cert          string `json:"x509_cert"`
+	IssuerCommonName  string `json:"issuer_cn"`
+	SubjectCommonName string `json:"subject_cn"`
+	ValidityNotAfter  uint64 `json:"subject_notafter"`
+}
+
 type RESTServerSAML struct {
-	SSOURL     string `json:"sso_url"`
-	Issuer     string `json:"issuer"`
-	X509Cert   string `json:"x509_cert,cloak"`
-	GroupClaim string `json:"group_claim"`
+	SSOURL     string             `json:"sso_url"`
+	Issuer     string             `json:"issuer"`
+	X509Cert   string             `json:"x509_cert,cloak"`
+	GroupClaim string             `json:"group_claim"`
+	X509Certs  []RESTX509CertInfo `json:"x509_certs"`
 
 	Enable           bool                      `json:"enable"`
 	DefaultRole      string                    `json:"default_role"`
@@ -409,6 +418,7 @@ type RESTServerSAMLConfig struct {
 	DefaultRole      *string                    `json:"default_role,omitempty"`
 	RoleGroups       *map[string][]string       `json:"role_groups,omitempty"`        // role -> groups. deprecated since 4.2
 	GroupMappedRoles *[]*share.GroupRoleMapping `json:"group_mapped_roles,omitempty"` // group -> (role -> domains)
+	X509CertExtra    *[]string                  `json:"x509_cert_extra,omitempty"`
 }
 
 type RESTServerSAMLConfigCfgMap struct {
@@ -2809,7 +2819,7 @@ type RESTDerivedDlpRuleMacData struct {
 	Macs []*RESTDerivedDlpRuleMac `json:"macs"`
 }
 
-//waf
+// waf
 const MinWafRuleID = 40000
 const MaxWafRuleID = 50000
 
@@ -3142,6 +3152,7 @@ type RESTAdmissionRule struct { // see type CLUSAdmissionRule
 	Critical bool                    `json:"critical"`
 	CfgType  string                  `json:"cfg_type"`  // CfgTypeLearned / CfgTypeUserCreated / CfgTypeGround / CfgTypeFederal (see above)
 	RuleType string                  `json:"rule_type"` // ValidatingExceptRuleType / ValidatingDenyRuleType (see above)
+	RuleMode string                  `json:"rule_mode"` // "" / share.AdmCtrlModeMonitor / share.AdmCtrlModeProtect
 }
 
 type RESTAdmissionRuleData struct {
@@ -3160,8 +3171,9 @@ type RESTAdmissionRuleConfig struct {
 	Criteria []*RESTAdmRuleCriterion `json:"criteria,omitempty"`
 	Disable  *bool                   `json:"disable,omitempty"`
 	Actions  *[]string               `json:"actions,omitempty"`
-	CfgType  string                  `json:"cfg_type"`  // CfgTypeLearned / CfgTypeUserCreated / CfgTypeGround / CfgTypeFederal (see above)
-	RuleType string                  `json:"rule_type"` // ValidatingExceptRuleType / ValidatingDenyRuleType (see above)
+	CfgType  string                  `json:"cfg_type"`            // CfgTypeLearned / CfgTypeUserCreated / CfgTypeGround / CfgTypeFederal (see above)
+	RuleType string                  `json:"rule_type"`           // ValidatingExceptRuleType / ValidatingDenyRuleType (see above)
+	RuleMode *string                 `json:"rule_mode,omitempty"` // only for deny rules: "" / share.AdmCtrlModeMonitor / share.AdmCtrlModeProtect
 }
 
 type RESTAdmissionRuleConfigData struct {
@@ -3384,4 +3396,20 @@ type RESTAdminCustomCriteriaOptions struct {
 type RESTAdminCriteriaTemplate struct {
 	Kind    string `json:"kind"`
 	RawJson string `json:"rawjson"`
+}
+
+type RESTSigstoreGlobalConfig struct {
+	RekorPublicKey string `json:"rekor_public_key"`
+	RootCert       string `json:"root_cert"`
+	SCTPublicKey   string `json:"sct_public_key"`
+}
+
+type RESTSigstoreVerifierConfig struct {
+	Name                       string `json:"name"`
+	Type                       string `json:"type"`
+	PublicKey                  string `json:"public_key"`
+	CheckTransparencyLogBundle bool   `json:"check_transparency_log_bundle"`
+	CertIssuer                 string `json:"cert_issuer"`
+	CertSubject                string `json:"cert_subject"`
+	CheckSCT                   bool   `json:"check_sct"`
 }

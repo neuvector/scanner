@@ -17,22 +17,51 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 type ScanImageRequest struct {
-	Registry    string `protobuf:"bytes,1,opt,name=Registry" json:"Registry,omitempty"`
-	Username    string `protobuf:"bytes,2,opt,name=Username" json:"Username,omitempty"`
-	Password    string `protobuf:"bytes,3,opt,name=Password" json:"Password,omitempty"`
-	Repository  string `protobuf:"bytes,4,opt,name=Repository" json:"Repository,omitempty"`
-	Tag         string `protobuf:"bytes,5,opt,name=Tag" json:"Tag,omitempty"`
-	Proxy       string `protobuf:"bytes,6,opt,name=Proxy" json:"Proxy,omitempty"`
-	ScanLayers  bool   `protobuf:"varint,7,opt,name=ScanLayers" json:"ScanLayers,omitempty"`
-	ScanSecrets bool   `protobuf:"varint,8,opt,name=ScanSecrets" json:"ScanSecrets,omitempty"`
-	BaseImage   string `protobuf:"bytes,9,opt,name=BaseImage" json:"BaseImage,omitempty"`
+	Registry             string          `protobuf:"bytes,1,opt,name=Registry,proto3" json:"Registry,omitempty"`
+	Username             string          `protobuf:"bytes,2,opt,name=Username,proto3" json:"Username,omitempty"`
+	Password             string          `protobuf:"bytes,3,opt,name=Password,proto3" json:"Password,omitempty"`
+	Repository           string          `protobuf:"bytes,4,opt,name=Repository,proto3" json:"Repository,omitempty"`
+	Tag                  string          `protobuf:"bytes,5,opt,name=Tag,proto3" json:"Tag,omitempty"`
+	Proxy                string          `protobuf:"bytes,6,opt,name=Proxy,proto3" json:"Proxy,omitempty"`
+	ScanLayers           bool            `protobuf:"varint,7,opt,name=ScanLayers,proto3" json:"ScanLayers,omitempty"`
+	ScanSecrets          bool            `protobuf:"varint,8,opt,name=ScanSecrets,proto3" json:"ScanSecrets,omitempty"`
+	BaseImage            string          `protobuf:"bytes,9,opt,name=BaseImage,proto3" json:"BaseImage,omitempty"`
+	SigstoreConfig       *SigstoreConfig `protobuf:"bytes,10,opt,name=SigstoreConfig,proto3" json:"SigstoreConfig,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *ScanImageRequest) Reset()                    { *m = ScanImageRequest{} }
-func (m *ScanImageRequest) String() string            { return proto.CompactTextString(m) }
-func (*ScanImageRequest) ProtoMessage()               {}
-func (*ScanImageRequest) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (m *ScanImageRequest) Reset()         { *m = ScanImageRequest{} }
+func (m *ScanImageRequest) String() string { return proto.CompactTextString(m) }
+func (*ScanImageRequest) ProtoMessage()    {}
+func (*ScanImageRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_scanner_service_1942e606b1829cbe, []int{0}
+}
+func (m *ScanImageRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ScanImageRequest.Unmarshal(m, b)
+}
+func (m *ScanImageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ScanImageRequest.Marshal(b, m, deterministic)
+}
+func (dst *ScanImageRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ScanImageRequest.Merge(dst, src)
+}
+func (m *ScanImageRequest) XXX_Size() int {
+	return xxx_messageInfo_ScanImageRequest.Size(m)
+}
+func (m *ScanImageRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ScanImageRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ScanImageRequest proto.InternalMessageInfo
 
 func (m *ScanImageRequest) GetRegistry() string {
 	if m != nil {
@@ -97,8 +126,282 @@ func (m *ScanImageRequest) GetBaseImage() string {
 	return ""
 }
 
+func (m *ScanImageRequest) GetSigstoreConfig() *SigstoreConfig {
+	if m != nil {
+		return m.SigstoreConfig
+	}
+	return nil
+}
+
+type SigstoreConfig struct {
+	RootOfTrust          *SigstoreRootOfTrust `protobuf:"bytes,1,opt,name=RootOfTrust,proto3" json:"RootOfTrust,omitempty"`
+	Verifiers            []*SigstoreVerifier  `protobuf:"bytes,4,rep,name=Verifiers,proto3" json:"Verifiers,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *SigstoreConfig) Reset()         { *m = SigstoreConfig{} }
+func (m *SigstoreConfig) String() string { return proto.CompactTextString(m) }
+func (*SigstoreConfig) ProtoMessage()    {}
+func (*SigstoreConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptor_scanner_service_1942e606b1829cbe, []int{1}
+}
+func (m *SigstoreConfig) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SigstoreConfig.Unmarshal(m, b)
+}
+func (m *SigstoreConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SigstoreConfig.Marshal(b, m, deterministic)
+}
+func (dst *SigstoreConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SigstoreConfig.Merge(dst, src)
+}
+func (m *SigstoreConfig) XXX_Size() int {
+	return xxx_messageInfo_SigstoreConfig.Size(m)
+}
+func (m *SigstoreConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_SigstoreConfig.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SigstoreConfig proto.InternalMessageInfo
+
+func (m *SigstoreConfig) GetRootOfTrust() *SigstoreRootOfTrust {
+	if m != nil {
+		return m.RootOfTrust
+	}
+	return nil
+}
+
+func (m *SigstoreConfig) GetVerifiers() []*SigstoreVerifier {
+	if m != nil {
+		return m.Verifiers
+	}
+	return nil
+}
+
+type SigstoreRootOfTrust struct {
+	RekorPublicKey       string   `protobuf:"bytes,1,opt,name=RekorPublicKey,proto3" json:"RekorPublicKey,omitempty"`
+	RootCert             string   `protobuf:"bytes,2,opt,name=RootCert,proto3" json:"RootCert,omitempty"`
+	SCTPublicKey         string   `protobuf:"bytes,3,opt,name=SCTPublicKey,proto3" json:"SCTPublicKey,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SigstoreRootOfTrust) Reset()         { *m = SigstoreRootOfTrust{} }
+func (m *SigstoreRootOfTrust) String() string { return proto.CompactTextString(m) }
+func (*SigstoreRootOfTrust) ProtoMessage()    {}
+func (*SigstoreRootOfTrust) Descriptor() ([]byte, []int) {
+	return fileDescriptor_scanner_service_1942e606b1829cbe, []int{2}
+}
+func (m *SigstoreRootOfTrust) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SigstoreRootOfTrust.Unmarshal(m, b)
+}
+func (m *SigstoreRootOfTrust) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SigstoreRootOfTrust.Marshal(b, m, deterministic)
+}
+func (dst *SigstoreRootOfTrust) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SigstoreRootOfTrust.Merge(dst, src)
+}
+func (m *SigstoreRootOfTrust) XXX_Size() int {
+	return xxx_messageInfo_SigstoreRootOfTrust.Size(m)
+}
+func (m *SigstoreRootOfTrust) XXX_DiscardUnknown() {
+	xxx_messageInfo_SigstoreRootOfTrust.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SigstoreRootOfTrust proto.InternalMessageInfo
+
+func (m *SigstoreRootOfTrust) GetRekorPublicKey() string {
+	if m != nil {
+		return m.RekorPublicKey
+	}
+	return ""
+}
+
+func (m *SigstoreRootOfTrust) GetRootCert() string {
+	if m != nil {
+		return m.RootCert
+	}
+	return ""
+}
+
+func (m *SigstoreRootOfTrust) GetSCTPublicKey() string {
+	if m != nil {
+		return m.SCTPublicKey
+	}
+	return ""
+}
+
+type SigstoreVerifier struct {
+	Name                 string                  `protobuf:"bytes,1,opt,name=Name,proto3" json:"Name,omitempty"`
+	Type                 string                  `protobuf:"bytes,2,opt,name=Type,proto3" json:"Type,omitempty"`
+	IgnoreTLog           bool                    `protobuf:"varint,3,opt,name=IgnoreTLog,proto3" json:"IgnoreTLog,omitempty"`
+	IgnoreSCT            bool                    `protobuf:"varint,4,opt,name=IgnoreSCT,proto3" json:"IgnoreSCT,omitempty"`
+	KeypairOptions       *SigstoreKeypairOptions `protobuf:"bytes,5,opt,name=KeypairOptions,proto3" json:"KeypairOptions,omitempty"`
+	KeylessOptions       *SigstoreKeylessOptions `protobuf:"bytes,6,opt,name=KeylessOptions,proto3" json:"KeylessOptions,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
+	XXX_unrecognized     []byte                  `json:"-"`
+	XXX_sizecache        int32                   `json:"-"`
+}
+
+func (m *SigstoreVerifier) Reset()         { *m = SigstoreVerifier{} }
+func (m *SigstoreVerifier) String() string { return proto.CompactTextString(m) }
+func (*SigstoreVerifier) ProtoMessage()    {}
+func (*SigstoreVerifier) Descriptor() ([]byte, []int) {
+	return fileDescriptor_scanner_service_1942e606b1829cbe, []int{3}
+}
+func (m *SigstoreVerifier) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SigstoreVerifier.Unmarshal(m, b)
+}
+func (m *SigstoreVerifier) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SigstoreVerifier.Marshal(b, m, deterministic)
+}
+func (dst *SigstoreVerifier) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SigstoreVerifier.Merge(dst, src)
+}
+func (m *SigstoreVerifier) XXX_Size() int {
+	return xxx_messageInfo_SigstoreVerifier.Size(m)
+}
+func (m *SigstoreVerifier) XXX_DiscardUnknown() {
+	xxx_messageInfo_SigstoreVerifier.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SigstoreVerifier proto.InternalMessageInfo
+
+func (m *SigstoreVerifier) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *SigstoreVerifier) GetType() string {
+	if m != nil {
+		return m.Type
+	}
+	return ""
+}
+
+func (m *SigstoreVerifier) GetIgnoreTLog() bool {
+	if m != nil {
+		return m.IgnoreTLog
+	}
+	return false
+}
+
+func (m *SigstoreVerifier) GetIgnoreSCT() bool {
+	if m != nil {
+		return m.IgnoreSCT
+	}
+	return false
+}
+
+func (m *SigstoreVerifier) GetKeypairOptions() *SigstoreKeypairOptions {
+	if m != nil {
+		return m.KeypairOptions
+	}
+	return nil
+}
+
+func (m *SigstoreVerifier) GetKeylessOptions() *SigstoreKeylessOptions {
+	if m != nil {
+		return m.KeylessOptions
+	}
+	return nil
+}
+
+type SigstoreKeypairOptions struct {
+	PublicKey            string   `protobuf:"bytes,1,opt,name=PublicKey,proto3" json:"PublicKey,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SigstoreKeypairOptions) Reset()         { *m = SigstoreKeypairOptions{} }
+func (m *SigstoreKeypairOptions) String() string { return proto.CompactTextString(m) }
+func (*SigstoreKeypairOptions) ProtoMessage()    {}
+func (*SigstoreKeypairOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptor_scanner_service_1942e606b1829cbe, []int{4}
+}
+func (m *SigstoreKeypairOptions) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SigstoreKeypairOptions.Unmarshal(m, b)
+}
+func (m *SigstoreKeypairOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SigstoreKeypairOptions.Marshal(b, m, deterministic)
+}
+func (dst *SigstoreKeypairOptions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SigstoreKeypairOptions.Merge(dst, src)
+}
+func (m *SigstoreKeypairOptions) XXX_Size() int {
+	return xxx_messageInfo_SigstoreKeypairOptions.Size(m)
+}
+func (m *SigstoreKeypairOptions) XXX_DiscardUnknown() {
+	xxx_messageInfo_SigstoreKeypairOptions.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SigstoreKeypairOptions proto.InternalMessageInfo
+
+func (m *SigstoreKeypairOptions) GetPublicKey() string {
+	if m != nil {
+		return m.PublicKey
+	}
+	return ""
+}
+
+type SigstoreKeylessOptions struct {
+	CertIssuer           string   `protobuf:"bytes,1,opt,name=CertIssuer,proto3" json:"CertIssuer,omitempty"`
+	CertSubject          string   `protobuf:"bytes,2,opt,name=CertSubject,proto3" json:"CertSubject,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SigstoreKeylessOptions) Reset()         { *m = SigstoreKeylessOptions{} }
+func (m *SigstoreKeylessOptions) String() string { return proto.CompactTextString(m) }
+func (*SigstoreKeylessOptions) ProtoMessage()    {}
+func (*SigstoreKeylessOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptor_scanner_service_1942e606b1829cbe, []int{5}
+}
+func (m *SigstoreKeylessOptions) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SigstoreKeylessOptions.Unmarshal(m, b)
+}
+func (m *SigstoreKeylessOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SigstoreKeylessOptions.Marshal(b, m, deterministic)
+}
+func (dst *SigstoreKeylessOptions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SigstoreKeylessOptions.Merge(dst, src)
+}
+func (m *SigstoreKeylessOptions) XXX_Size() int {
+	return xxx_messageInfo_SigstoreKeylessOptions.Size(m)
+}
+func (m *SigstoreKeylessOptions) XXX_DiscardUnknown() {
+	xxx_messageInfo_SigstoreKeylessOptions.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SigstoreKeylessOptions proto.InternalMessageInfo
+
+func (m *SigstoreKeylessOptions) GetCertIssuer() string {
+	if m != nil {
+		return m.CertIssuer
+	}
+	return ""
+}
+
+func (m *SigstoreKeylessOptions) GetCertSubject() string {
+	if m != nil {
+		return m.CertSubject
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*ScanImageRequest)(nil), "share.ScanImageRequest")
+	proto.RegisterType((*SigstoreConfig)(nil), "share.SigstoreConfig")
+	proto.RegisterType((*SigstoreRootOfTrust)(nil), "share.SigstoreRootOfTrust")
+	proto.RegisterType((*SigstoreVerifier)(nil), "share.SigstoreVerifier")
+	proto.RegisterType((*SigstoreKeypairOptions)(nil), "share.SigstoreKeypairOptions")
+	proto.RegisterType((*SigstoreKeylessOptions)(nil), "share.SigstoreKeylessOptions")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -109,8 +412,9 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for ScannerService service
-
+// ScannerServiceClient is the client API for ScannerService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type ScannerServiceClient interface {
 	ScanRunning(ctx context.Context, in *ScanRunningRequest, opts ...grpc.CallOption) (*ScanResult, error)
 	ScanImageData(ctx context.Context, in *ScanData, opts ...grpc.CallOption) (*ScanResult, error)
@@ -130,7 +434,7 @@ func NewScannerServiceClient(cc *grpc.ClientConn) ScannerServiceClient {
 
 func (c *scannerServiceClient) ScanRunning(ctx context.Context, in *ScanRunningRequest, opts ...grpc.CallOption) (*ScanResult, error) {
 	out := new(ScanResult)
-	err := grpc.Invoke(ctx, "/share.ScannerService/ScanRunning", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.ScannerService/ScanRunning", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +443,7 @@ func (c *scannerServiceClient) ScanRunning(ctx context.Context, in *ScanRunningR
 
 func (c *scannerServiceClient) ScanImageData(ctx context.Context, in *ScanData, opts ...grpc.CallOption) (*ScanResult, error) {
 	out := new(ScanResult)
-	err := grpc.Invoke(ctx, "/share.ScannerService/ScanImageData", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.ScannerService/ScanImageData", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +452,7 @@ func (c *scannerServiceClient) ScanImageData(ctx context.Context, in *ScanData, 
 
 func (c *scannerServiceClient) ScanImage(ctx context.Context, in *ScanImageRequest, opts ...grpc.CallOption) (*ScanResult, error) {
 	out := new(ScanResult)
-	err := grpc.Invoke(ctx, "/share.ScannerService/ScanImage", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.ScannerService/ScanImage", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +461,7 @@ func (c *scannerServiceClient) ScanImage(ctx context.Context, in *ScanImageReque
 
 func (c *scannerServiceClient) ScanAppPackage(ctx context.Context, in *ScanAppRequest, opts ...grpc.CallOption) (*ScanResult, error) {
 	out := new(ScanResult)
-	err := grpc.Invoke(ctx, "/share.ScannerService/ScanAppPackage", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.ScannerService/ScanAppPackage", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +470,7 @@ func (c *scannerServiceClient) ScanAppPackage(ctx context.Context, in *ScanAppRe
 
 func (c *scannerServiceClient) Ping(ctx context.Context, in *RPCVoid, opts ...grpc.CallOption) (*RPCVoid, error) {
 	out := new(RPCVoid)
-	err := grpc.Invoke(ctx, "/share.ScannerService/Ping", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.ScannerService/Ping", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -175,15 +479,14 @@ func (c *scannerServiceClient) Ping(ctx context.Context, in *RPCVoid, opts ...gr
 
 func (c *scannerServiceClient) ScanAwsLambda(ctx context.Context, in *ScanAwsLambdaRequest, opts ...grpc.CallOption) (*ScanResult, error) {
 	out := new(ScanResult)
-	err := grpc.Invoke(ctx, "/share.ScannerService/ScanAwsLambda", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.ScannerService/ScanAwsLambda", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for ScannerService service
-
+// ScannerServiceServer is the server API for ScannerService service.
 type ScannerServiceServer interface {
 	ScanRunning(context.Context, *ScanRunningRequest) (*ScanResult, error)
 	ScanImageData(context.Context, *ScanData) (*ScanResult, error)
@@ -338,31 +641,50 @@ var _ScannerService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "scanner_service.proto",
 }
 
-func init() { proto.RegisterFile("scanner_service.proto", fileDescriptor4) }
+func init() {
+	proto.RegisterFile("scanner_service.proto", fileDescriptor_scanner_service_1942e606b1829cbe)
+}
 
-var fileDescriptor4 = []byte{
-	// 362 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x92, 0xbf, 0x4e, 0xc3, 0x30,
-	0x10, 0xc6, 0xd5, 0xbf, 0x34, 0x06, 0x4a, 0xb1, 0xa8, 0x30, 0x01, 0xa1, 0x8a, 0x01, 0x75, 0xea,
-	0x40, 0x07, 0x24, 0x18, 0x50, 0x81, 0x05, 0xa9, 0x43, 0x94, 0x00, 0x2b, 0x72, 0xd3, 0x53, 0x88,
-	0x20, 0x76, 0xf0, 0xa5, 0x94, 0xbc, 0x04, 0xcf, 0xc8, 0xa3, 0x20, 0xdb, 0x6d, 0xb1, 0x50, 0x61,
-	0xf3, 0xf7, 0xfd, 0xee, 0xce, 0xbe, 0x2f, 0x21, 0x5d, 0x8c, 0xb9, 0x10, 0xa0, 0x9e, 0x10, 0xd4,
-	0x7b, 0x1a, 0xc3, 0x20, 0x57, 0xb2, 0x90, 0xb4, 0x81, 0xcf, 0x5c, 0x81, 0xbf, 0x15, 0xcb, 0x2c,
-	0x93, 0xc2, 0x9a, 0x3e, 0xd1, 0xb5, 0xf6, 0x7c, 0xf2, 0x59, 0x25, 0x9d, 0x28, 0xe6, 0xe2, 0x2e,
-	0xe3, 0x09, 0x84, 0xf0, 0x36, 0x03, 0x2c, 0xa8, 0x4f, 0x5a, 0x21, 0x24, 0x29, 0x16, 0xaa, 0x64,
-	0x95, 0x5e, 0xa5, 0xef, 0x85, 0x2b, 0xad, 0xd9, 0x03, 0x82, 0x12, 0x3c, 0x03, 0x56, 0xb5, 0x6c,
-	0xa9, 0x35, 0x0b, 0x38, 0xe2, 0x5c, 0xaa, 0x29, 0xab, 0x59, 0xb6, 0xd4, 0xf4, 0x98, 0x90, 0x10,
-	0x72, 0x89, 0x69, 0x21, 0x55, 0xc9, 0xea, 0x86, 0x3a, 0x0e, 0xed, 0x90, 0xda, 0x3d, 0x4f, 0x58,
-	0xc3, 0x00, 0x7d, 0xa4, 0x7b, 0xa4, 0x11, 0x28, 0xf9, 0x51, 0xb2, 0xa6, 0xf1, 0xac, 0xd0, 0x73,
-	0xf4, 0x7b, 0xc7, 0xbc, 0x04, 0x85, 0x6c, 0xa3, 0x57, 0xe9, 0xb7, 0x42, 0xc7, 0xa1, 0x3d, 0xb2,
-	0xa9, 0x55, 0x04, 0xb1, 0x82, 0x02, 0x59, 0xcb, 0x14, 0xb8, 0x16, 0x3d, 0x22, 0xde, 0x35, 0x47,
-	0x30, 0x1b, 0x33, 0xcf, 0xcc, 0xfe, 0x31, 0xce, 0xbe, 0xaa, 0xa4, 0x1d, 0xd9, 0x2c, 0x23, 0x1b,
-	0x25, 0xbd, 0xb4, 0x23, 0xc3, 0x99, 0x10, 0xa9, 0x48, 0xe8, 0xc1, 0xc0, 0x84, 0x3a, 0x70, 0xbc,
-	0x45, 0x70, 0xfe, 0xae, 0x8b, 0x00, 0x67, 0xaf, 0x05, 0x1d, 0x92, 0xed, 0x55, 0xbe, 0xb7, 0xbc,
-	0xe0, 0x74, 0xc7, 0xa9, 0xd1, 0xc6, 0xba, 0xa6, 0x73, 0xe2, 0xad, 0x9a, 0xe8, 0xbe, 0xc3, 0xdd,
-	0xcf, 0xb4, 0xae, 0xf1, 0xc2, 0x3e, 0x7e, 0x94, 0xe7, 0x01, 0x8f, 0x5f, 0x74, 0x77, 0xd7, 0x29,
-	0x1a, 0xe5, 0xf9, 0x3f, 0xbd, 0xa7, 0xa4, 0x1e, 0xe8, 0xfd, 0xda, 0x0b, 0x14, 0x06, 0x37, 0x8f,
-	0x32, 0x9d, 0xfa, 0xbf, 0x34, 0xbd, 0xb2, 0x1b, 0x8d, 0xe6, 0x38, 0xe6, 0xd9, 0x64, 0xca, 0xe9,
-	0xa1, 0x7b, 0xc5, 0xd2, 0xfd, 0xfb, 0xa2, 0x49, 0xd3, 0xfc, 0x7a, 0xc3, 0xef, 0x00, 0x00, 0x00,
-	0xff, 0xff, 0x5a, 0x15, 0x54, 0xef, 0xb4, 0x02, 0x00, 0x00,
+var fileDescriptor_scanner_service_1942e606b1829cbe = []byte{
+	// 627 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x54, 0x4f, 0x6f, 0x13, 0x3f,
+	0x10, 0x55, 0xda, 0xb4, 0xbf, 0x64, 0xd2, 0x5f, 0x28, 0x86, 0xd2, 0x25, 0xfc, 0x51, 0xb4, 0x87,
+	0x2a, 0xa7, 0x1e, 0x52, 0x01, 0x12, 0x7f, 0x84, 0x4a, 0xe0, 0x50, 0xb5, 0xa2, 0x91, 0x37, 0xf4,
+	0xc0, 0x05, 0x39, 0xdb, 0xe9, 0x62, 0xda, 0xac, 0x17, 0xdb, 0x4b, 0xd9, 0x03, 0x47, 0xf8, 0x76,
+	0x7c, 0x07, 0x3e, 0x0a, 0xb2, 0x9d, 0xcd, 0x3a, 0xab, 0x94, 0x9b, 0xe7, 0xbd, 0x79, 0xcf, 0x3b,
+	0x9e, 0xd9, 0x81, 0x1d, 0x15, 0xb3, 0x34, 0x45, 0xf9, 0x49, 0xa1, 0xfc, 0xc6, 0x63, 0xdc, 0xcf,
+	0xa4, 0xd0, 0x82, 0x6c, 0xa8, 0xcf, 0x4c, 0x62, 0x6f, 0x2b, 0x16, 0xb3, 0x99, 0x48, 0x1d, 0xd8,
+	0x03, 0x93, 0xeb, 0xce, 0xe1, 0xef, 0x35, 0xd8, 0x8e, 0x62, 0x96, 0x1e, 0xcd, 0x58, 0x82, 0x14,
+	0xbf, 0xe6, 0xa8, 0x34, 0xe9, 0x41, 0x8b, 0x62, 0xc2, 0x95, 0x96, 0x45, 0xd0, 0xe8, 0x37, 0x06,
+	0x6d, 0xba, 0x88, 0x0d, 0xf7, 0x41, 0xa1, 0x4c, 0xd9, 0x0c, 0x83, 0x35, 0xc7, 0x95, 0xb1, 0xe1,
+	0xc6, 0x4c, 0xa9, 0x6b, 0x21, 0xcf, 0x83, 0x75, 0xc7, 0x95, 0x31, 0x79, 0x0c, 0x40, 0x31, 0x13,
+	0x8a, 0x6b, 0x21, 0x8b, 0xa0, 0x69, 0x59, 0x0f, 0x21, 0xdb, 0xb0, 0x3e, 0x61, 0x49, 0xb0, 0x61,
+	0x09, 0x73, 0x24, 0x77, 0x61, 0x63, 0x2c, 0xc5, 0xf7, 0x22, 0xd8, 0xb4, 0x98, 0x0b, 0x8c, 0x8f,
+	0xf9, 0xde, 0x13, 0x56, 0xa0, 0x54, 0xc1, 0x7f, 0xfd, 0xc6, 0xa0, 0x45, 0x3d, 0x84, 0xf4, 0xa1,
+	0x63, 0xa2, 0x08, 0x63, 0x89, 0x5a, 0x05, 0x2d, 0x9b, 0xe0, 0x43, 0xe4, 0x21, 0xb4, 0xdf, 0x30,
+	0x85, 0xb6, 0xe2, 0xa0, 0x6d, 0xbd, 0x2b, 0x80, 0xbc, 0x82, 0x6e, 0xc4, 0x13, 0xa5, 0x85, 0xc4,
+	0x91, 0x48, 0x2f, 0x78, 0x12, 0x40, 0xbf, 0x31, 0xe8, 0x0c, 0x77, 0xf6, 0xed, 0x53, 0xee, 0x2f,
+	0x93, 0xb4, 0x96, 0x1c, 0xfe, 0x6c, 0xd4, 0xf5, 0xe4, 0x25, 0x74, 0xa8, 0x10, 0xfa, 0xf4, 0x62,
+	0x22, 0x73, 0xa5, 0xed, 0x83, 0x76, 0x86, 0xbd, 0x9a, 0x9d, 0x97, 0x41, 0xfd, 0x74, 0xf2, 0x04,
+	0xda, 0x67, 0x28, 0xf9, 0x05, 0x37, 0xe5, 0x36, 0xfb, 0xeb, 0x83, 0xce, 0x70, 0xb7, 0xa6, 0x2d,
+	0x79, 0x5a, 0x65, 0x86, 0x3f, 0xe0, 0xce, 0x0a, 0x6b, 0xb2, 0x07, 0x5d, 0x8a, 0x97, 0x42, 0x8e,
+	0xf3, 0xe9, 0x15, 0x8f, 0x8f, 0xb1, 0xec, 0x6f, 0x0d, 0xb5, 0x13, 0x20, 0x84, 0x1e, 0xa1, 0xd4,
+	0x65, 0x97, 0xcb, 0x98, 0x84, 0xb0, 0x15, 0x8d, 0x26, 0x95, 0x83, 0xeb, 0xf4, 0x12, 0x16, 0xfe,
+	0x32, 0x63, 0x55, 0xfb, 0x3c, 0x42, 0xa0, 0xf9, 0xde, 0x8c, 0x8d, 0xbb, 0xd2, 0x9e, 0x0d, 0x36,
+	0x29, 0xb2, 0x72, 0x94, 0xec, 0xd9, 0xb4, 0xf8, 0x28, 0x49, 0x85, 0xc4, 0xc9, 0x89, 0x48, 0xac,
+	0x7d, 0x8b, 0x7a, 0x88, 0x69, 0xa0, 0x8b, 0xa2, 0xd1, 0xc4, 0x4e, 0x52, 0x8b, 0x56, 0x00, 0x79,
+	0x07, 0xdd, 0x63, 0x2c, 0x32, 0xc6, 0xe5, 0x69, 0xa6, 0xb9, 0x48, 0x95, 0x9d, 0xa9, 0xce, 0xf0,
+	0x51, 0xed, 0xd5, 0x96, 0x93, 0x68, 0x4d, 0x34, 0xb7, 0xb9, 0x42, 0xa5, 0x4a, 0x9b, 0xcd, 0x9b,
+	0x6c, 0xbc, 0x24, 0x5a, 0x13, 0x85, 0x4f, 0xe1, 0xde, 0xea, 0x0b, 0x4d, 0x15, 0xf5, 0x2e, 0x54,
+	0x40, 0xf8, 0x71, 0x49, 0xe7, 0x39, 0x9a, 0xd7, 0x31, 0x6d, 0x38, 0x52, 0x2a, 0x47, 0x39, 0x17,
+	0x7a, 0x88, 0xf9, 0x01, 0x4c, 0x14, 0xe5, 0xd3, 0x2f, 0x18, 0x97, 0xdd, 0xf3, 0xa1, 0xe1, 0x9f,
+	0x35, 0xe8, 0x46, 0x6e, 0x5d, 0x44, 0x6e, 0x5b, 0x90, 0x17, 0xee, 0xaf, 0xa1, 0x79, 0x9a, 0xf2,
+	0x34, 0x21, 0xf7, 0xcb, 0x22, 0x2b, 0x6c, 0xbe, 0x1b, 0x7a, 0xb7, 0x7d, 0x0a, 0x55, 0x7e, 0xa5,
+	0xc9, 0x01, 0xfc, 0xbf, 0x58, 0x21, 0x6f, 0x99, 0x66, 0xe4, 0x96, 0x97, 0x63, 0x80, 0x55, 0xa2,
+	0x67, 0xd0, 0x5e, 0x88, 0xc8, 0xae, 0xc7, 0xfb, 0x9b, 0x68, 0x95, 0xf0, 0xb9, 0xfb, 0xf8, 0xc3,
+	0x2c, 0x1b, 0xb3, 0xf8, 0xd2, 0xa8, 0x77, 0xbc, 0xa4, 0xc3, 0x2c, 0xfb, 0x87, 0x76, 0x0f, 0x9a,
+	0x63, 0x53, 0x5f, 0x77, 0x4e, 0xd1, 0xf1, 0xe8, 0x4c, 0xf0, 0xf3, 0x5e, 0x2d, 0x26, 0xaf, 0x5d,
+	0x45, 0x87, 0xd7, 0xea, 0x84, 0xcd, 0xa6, 0xe7, 0x8c, 0x3c, 0xf0, 0xaf, 0x28, 0xd1, 0x9b, 0x2f,
+	0x9a, 0x6e, 0xda, 0xed, 0x7a, 0xf0, 0x37, 0x00, 0x00, 0xff, 0xff, 0xf5, 0xe0, 0x49, 0x83, 0x97,
+	0x05, 0x00, 0x00,
 }

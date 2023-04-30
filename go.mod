@@ -37,6 +37,7 @@ replace (
 	k8s.io/mount-utils => k8s.io/mount-utils v0.20.14
 	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.22.5
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.20.15
+	github.com/neuvector/neuvector => github.com/alopez-suse/neuvector v0.0.0-20230430125100-acd531428c50
 )
 
 require (

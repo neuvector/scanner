@@ -17,6 +17,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 type SnifferCmd int32
 
 const (
@@ -39,7 +45,9 @@ var SnifferCmd_value = map[string]int32{
 func (x SnifferCmd) String() string {
 	return proto.EnumName(SnifferCmd_name, int32(x))
 }
-func (SnifferCmd) EnumDescriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (SnifferCmd) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{0}
+}
 
 type SnifferStatus int32
 
@@ -63,17 +71,41 @@ var SnifferStatus_value = map[string]int32{
 func (x SnifferStatus) String() string {
 	return proto.EnumName(SnifferStatus_name, int32(x))
 }
-func (SnifferStatus) EnumDescriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
-
-type CLUSKick struct {
-	CtrlID string `protobuf:"bytes,1,opt,name=CtrlID" json:"CtrlID,omitempty"`
-	Reason string `protobuf:"bytes,2,opt,name=Reason" json:"Reason,omitempty"`
+func (SnifferStatus) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{1}
 }
 
-func (m *CLUSKick) Reset()                    { *m = CLUSKick{} }
-func (m *CLUSKick) String() string            { return proto.CompactTextString(m) }
-func (*CLUSKick) ProtoMessage()               {}
-func (*CLUSKick) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+type CLUSKick struct {
+	CtrlID               string   `protobuf:"bytes,1,opt,name=CtrlID,proto3" json:"CtrlID,omitempty"`
+	Reason               string   `protobuf:"bytes,2,opt,name=Reason,proto3" json:"Reason,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CLUSKick) Reset()         { *m = CLUSKick{} }
+func (m *CLUSKick) String() string { return proto.CompactTextString(m) }
+func (*CLUSKick) ProtoMessage()    {}
+func (*CLUSKick) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{0}
+}
+func (m *CLUSKick) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSKick.Unmarshal(m, b)
+}
+func (m *CLUSKick) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSKick.Marshal(b, m, deterministic)
+}
+func (dst *CLUSKick) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSKick.Merge(dst, src)
+}
+func (m *CLUSKick) XXX_Size() int {
+	return xxx_messageInfo_CLUSKick.Size(m)
+}
+func (m *CLUSKick) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSKick.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSKick proto.InternalMessageInfo
 
 func (m *CLUSKick) GetCtrlID() string {
 	if m != nil {
@@ -90,16 +122,38 @@ func (m *CLUSKick) GetReason() string {
 }
 
 type CLUSFilter struct {
-	Workload string `protobuf:"bytes,1,opt,name=Workload" json:"Workload,omitempty"`
-	ID       uint32 `protobuf:"varint,2,opt,name=ID" json:"ID,omitempty"`
-	Start    uint32 `protobuf:"varint,3,opt,name=Start" json:"Start,omitempty"`
-	Limit    uint32 `protobuf:"varint,4,opt,name=Limit" json:"Limit,omitempty"`
+	Workload             string   `protobuf:"bytes,1,opt,name=Workload,proto3" json:"Workload,omitempty"`
+	ID                   uint32   `protobuf:"varint,2,opt,name=ID,proto3" json:"ID,omitempty"`
+	Start                uint32   `protobuf:"varint,3,opt,name=Start,proto3" json:"Start,omitempty"`
+	Limit                uint32   `protobuf:"varint,4,opt,name=Limit,proto3" json:"Limit,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSFilter) Reset()                    { *m = CLUSFilter{} }
-func (m *CLUSFilter) String() string            { return proto.CompactTextString(m) }
-func (*CLUSFilter) ProtoMessage()               {}
-func (*CLUSFilter) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
+func (m *CLUSFilter) Reset()         { *m = CLUSFilter{} }
+func (m *CLUSFilter) String() string { return proto.CompactTextString(m) }
+func (*CLUSFilter) ProtoMessage()    {}
+func (*CLUSFilter) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{1}
+}
+func (m *CLUSFilter) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSFilter.Unmarshal(m, b)
+}
+func (m *CLUSFilter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSFilter.Marshal(b, m, deterministic)
+}
+func (dst *CLUSFilter) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSFilter.Merge(dst, src)
+}
+func (m *CLUSFilter) XXX_Size() int {
+	return xxx_messageInfo_CLUSFilter.Size(m)
+}
+func (m *CLUSFilter) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSFilter.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSFilter proto.InternalMessageInfo
 
 func (m *CLUSFilter) GetWorkload() string {
 	if m != nil {
@@ -130,47 +184,69 @@ func (m *CLUSFilter) GetLimit() uint32 {
 }
 
 type CLUSSession struct {
-	ID             uint32 `protobuf:"varint,1,opt,name=ID" json:"ID,omitempty"`
-	Workload       string `protobuf:"bytes,2,opt,name=Workload" json:"Workload,omitempty"`
-	EtherType      uint32 `protobuf:"varint,3,opt,name=EtherType" json:"EtherType,omitempty"`
-	IPProto        uint32 `protobuf:"varint,4,opt,name=IPProto" json:"IPProto,omitempty"`
-	ClientMAC      []byte `protobuf:"bytes,5,opt,name=ClientMAC,proto3" json:"ClientMAC,omitempty"`
-	ServerMAC      []byte `protobuf:"bytes,6,opt,name=ServerMAC,proto3" json:"ServerMAC,omitempty"`
-	ClientIP       []byte `protobuf:"bytes,7,opt,name=ClientIP,proto3" json:"ClientIP,omitempty"`
-	ServerIP       []byte `protobuf:"bytes,8,opt,name=ServerIP,proto3" json:"ServerIP,omitempty"`
-	ClientPort     uint32 `protobuf:"varint,9,opt,name=ClientPort" json:"ClientPort,omitempty"`
-	ServerPort     uint32 `protobuf:"varint,10,opt,name=ServerPort" json:"ServerPort,omitempty"`
-	ICMPCode       uint32 `protobuf:"varint,11,opt,name=ICMPCode" json:"ICMPCode,omitempty"`
-	ICMPType       uint32 `protobuf:"varint,12,opt,name=ICMPType" json:"ICMPType,omitempty"`
-	ClientState    uint32 `protobuf:"varint,13,opt,name=ClientState" json:"ClientState,omitempty"`
-	ServerState    uint32 `protobuf:"varint,14,opt,name=ServerState" json:"ServerState,omitempty"`
-	ClientPkts     uint32 `protobuf:"varint,15,opt,name=ClientPkts" json:"ClientPkts,omitempty"`
-	ServerPkts     uint32 `protobuf:"varint,16,opt,name=ServerPkts" json:"ServerPkts,omitempty"`
-	ClientBytes    uint64 `protobuf:"varint,17,opt,name=ClientBytes" json:"ClientBytes,omitempty"`
-	ServerBytes    uint64 `protobuf:"varint,18,opt,name=ServerBytes" json:"ServerBytes,omitempty"`
-	Application    uint32 `protobuf:"varint,19,opt,name=Application" json:"Application,omitempty"`
-	Age            uint32 `protobuf:"varint,20,opt,name=Age" json:"Age,omitempty"`
-	Idle           uint32 `protobuf:"varint,21,opt,name=Idle" json:"Idle,omitempty"`
-	Life           uint32 `protobuf:"varint,22,opt,name=Life" json:"Life,omitempty"`
-	Ingress        bool   `protobuf:"varint,23,opt,name=Ingress" json:"Ingress,omitempty"`
-	Tap            bool   `protobuf:"varint,24,opt,name=Tap" json:"Tap,omitempty"`
-	Mid            bool   `protobuf:"varint,25,opt,name=Mid" json:"Mid,omitempty"`
-	PolicyId       uint32 `protobuf:"varint,26,opt,name=PolicyId" json:"PolicyId,omitempty"`
-	PolicyAction   uint32 `protobuf:"varint,27,opt,name=PolicyAction" json:"PolicyAction,omitempty"`
-	ClientAsmPkts  uint32 `protobuf:"varint,28,opt,name=ClientAsmPkts" json:"ClientAsmPkts,omitempty"`
-	ServerAsmPkts  uint32 `protobuf:"varint,29,opt,name=ServerAsmPkts" json:"ServerAsmPkts,omitempty"`
-	ClientAsmBytes uint64 `protobuf:"varint,30,opt,name=ClientAsmBytes" json:"ClientAsmBytes,omitempty"`
-	ServerAsmBytes uint64 `protobuf:"varint,31,opt,name=ServerAsmBytes" json:"ServerAsmBytes,omitempty"`
-	HostMode       bool   `protobuf:"varint,32,opt,name=HostMode" json:"HostMode,omitempty"`
-	XffIP          []byte `protobuf:"bytes,33,opt,name=XffIP,proto3" json:"XffIP,omitempty"`
-	XffApp         uint32 `protobuf:"varint,34,opt,name=XffApp" json:"XffApp,omitempty"`
-	XffPort        uint32 `protobuf:"varint,35,opt,name=XffPort" json:"XffPort,omitempty"`
+	ID                   uint32   `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	Workload             string   `protobuf:"bytes,2,opt,name=Workload,proto3" json:"Workload,omitempty"`
+	EtherType            uint32   `protobuf:"varint,3,opt,name=EtherType,proto3" json:"EtherType,omitempty"`
+	IPProto              uint32   `protobuf:"varint,4,opt,name=IPProto,proto3" json:"IPProto,omitempty"`
+	ClientMAC            []byte   `protobuf:"bytes,5,opt,name=ClientMAC,proto3" json:"ClientMAC,omitempty"`
+	ServerMAC            []byte   `protobuf:"bytes,6,opt,name=ServerMAC,proto3" json:"ServerMAC,omitempty"`
+	ClientIP             []byte   `protobuf:"bytes,7,opt,name=ClientIP,proto3" json:"ClientIP,omitempty"`
+	ServerIP             []byte   `protobuf:"bytes,8,opt,name=ServerIP,proto3" json:"ServerIP,omitempty"`
+	ClientPort           uint32   `protobuf:"varint,9,opt,name=ClientPort,proto3" json:"ClientPort,omitempty"`
+	ServerPort           uint32   `protobuf:"varint,10,opt,name=ServerPort,proto3" json:"ServerPort,omitempty"`
+	ICMPCode             uint32   `protobuf:"varint,11,opt,name=ICMPCode,proto3" json:"ICMPCode,omitempty"`
+	ICMPType             uint32   `protobuf:"varint,12,opt,name=ICMPType,proto3" json:"ICMPType,omitempty"`
+	ClientState          uint32   `protobuf:"varint,13,opt,name=ClientState,proto3" json:"ClientState,omitempty"`
+	ServerState          uint32   `protobuf:"varint,14,opt,name=ServerState,proto3" json:"ServerState,omitempty"`
+	ClientPkts           uint32   `protobuf:"varint,15,opt,name=ClientPkts,proto3" json:"ClientPkts,omitempty"`
+	ServerPkts           uint32   `protobuf:"varint,16,opt,name=ServerPkts,proto3" json:"ServerPkts,omitempty"`
+	ClientBytes          uint64   `protobuf:"varint,17,opt,name=ClientBytes,proto3" json:"ClientBytes,omitempty"`
+	ServerBytes          uint64   `protobuf:"varint,18,opt,name=ServerBytes,proto3" json:"ServerBytes,omitempty"`
+	Application          uint32   `protobuf:"varint,19,opt,name=Application,proto3" json:"Application,omitempty"`
+	Age                  uint32   `protobuf:"varint,20,opt,name=Age,proto3" json:"Age,omitempty"`
+	Idle                 uint32   `protobuf:"varint,21,opt,name=Idle,proto3" json:"Idle,omitempty"`
+	Life                 uint32   `protobuf:"varint,22,opt,name=Life,proto3" json:"Life,omitempty"`
+	Ingress              bool     `protobuf:"varint,23,opt,name=Ingress,proto3" json:"Ingress,omitempty"`
+	Tap                  bool     `protobuf:"varint,24,opt,name=Tap,proto3" json:"Tap,omitempty"`
+	Mid                  bool     `protobuf:"varint,25,opt,name=Mid,proto3" json:"Mid,omitempty"`
+	PolicyId             uint32   `protobuf:"varint,26,opt,name=PolicyId,proto3" json:"PolicyId,omitempty"`
+	PolicyAction         uint32   `protobuf:"varint,27,opt,name=PolicyAction,proto3" json:"PolicyAction,omitempty"`
+	ClientAsmPkts        uint32   `protobuf:"varint,28,opt,name=ClientAsmPkts,proto3" json:"ClientAsmPkts,omitempty"`
+	ServerAsmPkts        uint32   `protobuf:"varint,29,opt,name=ServerAsmPkts,proto3" json:"ServerAsmPkts,omitempty"`
+	ClientAsmBytes       uint64   `protobuf:"varint,30,opt,name=ClientAsmBytes,proto3" json:"ClientAsmBytes,omitempty"`
+	ServerAsmBytes       uint64   `protobuf:"varint,31,opt,name=ServerAsmBytes,proto3" json:"ServerAsmBytes,omitempty"`
+	HostMode             bool     `protobuf:"varint,32,opt,name=HostMode,proto3" json:"HostMode,omitempty"`
+	XffIP                []byte   `protobuf:"bytes,33,opt,name=XffIP,proto3" json:"XffIP,omitempty"`
+	XffApp               uint32   `protobuf:"varint,34,opt,name=XffApp,proto3" json:"XffApp,omitempty"`
+	XffPort              uint32   `protobuf:"varint,35,opt,name=XffPort,proto3" json:"XffPort,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSSession) Reset()                    { *m = CLUSSession{} }
-func (m *CLUSSession) String() string            { return proto.CompactTextString(m) }
-func (*CLUSSession) ProtoMessage()               {}
-func (*CLUSSession) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
+func (m *CLUSSession) Reset()         { *m = CLUSSession{} }
+func (m *CLUSSession) String() string { return proto.CompactTextString(m) }
+func (*CLUSSession) ProtoMessage()    {}
+func (*CLUSSession) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{2}
+}
+func (m *CLUSSession) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSSession.Unmarshal(m, b)
+}
+func (m *CLUSSession) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSSession.Marshal(b, m, deterministic)
+}
+func (dst *CLUSSession) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSSession.Merge(dst, src)
+}
+func (m *CLUSSession) XXX_Size() int {
+	return xxx_messageInfo_CLUSSession.Size(m)
+}
+func (m *CLUSSession) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSSession.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSSession proto.InternalMessageInfo
 
 func (m *CLUSSession) GetID() uint32 {
 	if m != nil {
@@ -418,13 +494,35 @@ func (m *CLUSSession) GetXffPort() uint32 {
 }
 
 type CLUSSessionArray struct {
-	Sessions []*CLUSSession `protobuf:"bytes,1,rep,name=Sessions" json:"Sessions,omitempty"`
+	Sessions             []*CLUSSession `protobuf:"bytes,1,rep,name=Sessions,proto3" json:"Sessions,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
 }
 
-func (m *CLUSSessionArray) Reset()                    { *m = CLUSSessionArray{} }
-func (m *CLUSSessionArray) String() string            { return proto.CompactTextString(m) }
-func (*CLUSSessionArray) ProtoMessage()               {}
-func (*CLUSSessionArray) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
+func (m *CLUSSessionArray) Reset()         { *m = CLUSSessionArray{} }
+func (m *CLUSSessionArray) String() string { return proto.CompactTextString(m) }
+func (*CLUSSessionArray) ProtoMessage()    {}
+func (*CLUSSessionArray) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{3}
+}
+func (m *CLUSSessionArray) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSSessionArray.Unmarshal(m, b)
+}
+func (m *CLUSSessionArray) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSSessionArray.Marshal(b, m, deterministic)
+}
+func (dst *CLUSSessionArray) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSSessionArray.Merge(dst, src)
+}
+func (m *CLUSSessionArray) XXX_Size() int {
+	return xxx_messageInfo_CLUSSessionArray.Size(m)
+}
+func (m *CLUSSessionArray) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSSessionArray.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSSessionArray proto.InternalMessageInfo
 
 func (m *CLUSSessionArray) GetSessions() []*CLUSSession {
 	if m != nil {
@@ -434,17 +532,39 @@ func (m *CLUSSessionArray) GetSessions() []*CLUSSession {
 }
 
 type CLUSSessionCounter struct {
-	CurSessions     uint32 `protobuf:"varint,1,opt,name=CurSessions" json:"CurSessions,omitempty"`
-	CurTCPSessions  uint32 `protobuf:"varint,2,opt,name=CurTCPSessions" json:"CurTCPSessions,omitempty"`
-	CurUDPSessions  uint32 `protobuf:"varint,3,opt,name=CurUDPSessions" json:"CurUDPSessions,omitempty"`
-	CurICMPSessions uint32 `protobuf:"varint,4,opt,name=CurICMPSessions" json:"CurICMPSessions,omitempty"`
-	CurIPSessions   uint32 `protobuf:"varint,5,opt,name=CurIPSessions" json:"CurIPSessions,omitempty"`
+	CurSessions          uint32   `protobuf:"varint,1,opt,name=CurSessions,proto3" json:"CurSessions,omitempty"`
+	CurTCPSessions       uint32   `protobuf:"varint,2,opt,name=CurTCPSessions,proto3" json:"CurTCPSessions,omitempty"`
+	CurUDPSessions       uint32   `protobuf:"varint,3,opt,name=CurUDPSessions,proto3" json:"CurUDPSessions,omitempty"`
+	CurICMPSessions      uint32   `protobuf:"varint,4,opt,name=CurICMPSessions,proto3" json:"CurICMPSessions,omitempty"`
+	CurIPSessions        uint32   `protobuf:"varint,5,opt,name=CurIPSessions,proto3" json:"CurIPSessions,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSSessionCounter) Reset()                    { *m = CLUSSessionCounter{} }
-func (m *CLUSSessionCounter) String() string            { return proto.CompactTextString(m) }
-func (*CLUSSessionCounter) ProtoMessage()               {}
-func (*CLUSSessionCounter) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
+func (m *CLUSSessionCounter) Reset()         { *m = CLUSSessionCounter{} }
+func (m *CLUSSessionCounter) String() string { return proto.CompactTextString(m) }
+func (*CLUSSessionCounter) ProtoMessage()    {}
+func (*CLUSSessionCounter) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{4}
+}
+func (m *CLUSSessionCounter) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSSessionCounter.Unmarshal(m, b)
+}
+func (m *CLUSSessionCounter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSSessionCounter.Marshal(b, m, deterministic)
+}
+func (dst *CLUSSessionCounter) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSSessionCounter.Merge(dst, src)
+}
+func (m *CLUSSessionCounter) XXX_Size() int {
+	return xxx_messageInfo_CLUSSessionCounter.Size(m)
+}
+func (m *CLUSSessionCounter) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSSessionCounter.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSSessionCounter proto.InternalMessageInfo
 
 func (m *CLUSSessionCounter) GetCurSessions() uint32 {
 	if m != nil {
@@ -482,50 +602,72 @@ func (m *CLUSSessionCounter) GetCurIPSessions() uint32 {
 }
 
 type CLUSDatapathCounter struct {
-	RXPackets           uint64   `protobuf:"varint,1,opt,name=RXPackets" json:"RXPackets,omitempty"`
-	RXDropPackets       uint64   `protobuf:"varint,2,opt,name=RXDropPackets" json:"RXDropPackets,omitempty"`
-	TXPackets           uint64   `protobuf:"varint,3,opt,name=TXPackets" json:"TXPackets,omitempty"`
-	TXDropPackets       uint64   `protobuf:"varint,4,opt,name=TXDropPackets" json:"TXDropPackets,omitempty"`
-	ErrorPackets        uint64   `protobuf:"varint,5,opt,name=ErrorPackets" json:"ErrorPackets,omitempty"`
-	NoWorkloadPackets   uint64   `protobuf:"varint,6,opt,name=NoWorkloadPackets" json:"NoWorkloadPackets,omitempty"`
-	IPv4Packets         uint64   `protobuf:"varint,7,opt,name=IPv4Packets" json:"IPv4Packets,omitempty"`
-	IPv6Packets         uint64   `protobuf:"varint,8,opt,name=IPv6Packets" json:"IPv6Packets,omitempty"`
-	TCPPackets          uint64   `protobuf:"varint,9,opt,name=TCPPackets" json:"TCPPackets,omitempty"`
-	TCPNoSessionPackets uint64   `protobuf:"varint,10,opt,name=TCPNoSessionPackets" json:"TCPNoSessionPackets,omitempty"`
-	UDPPackets          uint64   `protobuf:"varint,11,opt,name=UDPPackets" json:"UDPPackets,omitempty"`
-	ICMPPackets         uint64   `protobuf:"varint,12,opt,name=ICMPPackets" json:"ICMPPackets,omitempty"`
-	OtherPackets        uint64   `protobuf:"varint,13,opt,name=OtherPackets" json:"OtherPackets,omitempty"`
-	Fragments           uint64   `protobuf:"varint,14,opt,name=Fragments" json:"Fragments,omitempty"`
-	TimeoutFragments    uint64   `protobuf:"varint,15,opt,name=TimeoutFragments" json:"TimeoutFragments,omitempty"`
-	TotalSessions       uint64   `protobuf:"varint,16,opt,name=TotalSessions" json:"TotalSessions,omitempty"`
-	TCPSessions         uint64   `protobuf:"varint,17,opt,name=TCPSessions" json:"TCPSessions,omitempty"`
-	UDPSessions         uint64   `protobuf:"varint,18,opt,name=UDPSessions" json:"UDPSessions,omitempty"`
-	ICMPSessions        uint64   `protobuf:"varint,19,opt,name=ICMPSessions" json:"ICMPSessions,omitempty"`
-	IPSessions          uint64   `protobuf:"varint,20,opt,name=IPSessions" json:"IPSessions,omitempty"`
-	DropMeters          uint64   `protobuf:"varint,21,opt,name=DropMeters" json:"DropMeters,omitempty"`
-	ProxyMeters         uint64   `protobuf:"varint,22,opt,name=ProxyMeters" json:"ProxyMeters,omitempty"`
-	CurMeters           uint64   `protobuf:"varint,23,opt,name=CurMeters" json:"CurMeters,omitempty"`
-	CurLogCaches        uint64   `protobuf:"varint,24,opt,name=CurLogCaches" json:"CurLogCaches,omitempty"`
-	FreedFragments      uint64   `protobuf:"varint,25,opt,name=FreedFragments" json:"FreedFragments,omitempty"`
-	Assemblys           uint64   `protobuf:"varint,26,opt,name=Assemblys" json:"Assemblys,omitempty"`
-	FreedAssemblys      uint64   `protobuf:"varint,27,opt,name=FreedAssemblys" json:"FreedAssemblys,omitempty"`
-	ParserSessions      []uint64 `protobuf:"varint,28,rep,packed,name=ParserSessions" json:"ParserSessions,omitempty"`
-	ParserPackets       []uint64 `protobuf:"varint,29,rep,packed,name=ParserPackets" json:"ParserPackets,omitempty"`
-	PolicyType1Rules    uint32   `protobuf:"varint,30,opt,name=PolicyType1Rules" json:"PolicyType1Rules,omitempty"`
-	PolicyType2Rules    uint32   `protobuf:"varint,31,opt,name=PolicyType2Rules" json:"PolicyType2Rules,omitempty"`
-	PolicyDomains       uint32   `protobuf:"varint,32,opt,name=PolicyDomains" json:"PolicyDomains,omitempty"`
-	PolicyDomainIPs     uint32   `protobuf:"varint,33,opt,name=PolicyDomainIPs" json:"PolicyDomainIPs,omitempty"`
-	GoRoutines          uint32   `protobuf:"varint,34,opt,name=GoRoutines" json:"GoRoutines,omitempty"`
-	Lsof                []byte   `protobuf:"bytes,35,opt,name=Lsof,proto3" json:"Lsof,omitempty"`
-	PS                  []byte   `protobuf:"bytes,36,opt,name=PS,proto3" json:"PS,omitempty"`
-	LimitDropConns      uint64   `protobuf:"varint,37,opt,name=LimitDropConns" json:"LimitDropConns,omitempty"`
-	LimitPassConns      uint64   `protobuf:"varint,38,opt,name=LimitPassConns" json:"LimitPassConns,omitempty"`
+	RXPackets            uint64   `protobuf:"varint,1,opt,name=RXPackets,proto3" json:"RXPackets,omitempty"`
+	RXDropPackets        uint64   `protobuf:"varint,2,opt,name=RXDropPackets,proto3" json:"RXDropPackets,omitempty"`
+	TXPackets            uint64   `protobuf:"varint,3,opt,name=TXPackets,proto3" json:"TXPackets,omitempty"`
+	TXDropPackets        uint64   `protobuf:"varint,4,opt,name=TXDropPackets,proto3" json:"TXDropPackets,omitempty"`
+	ErrorPackets         uint64   `protobuf:"varint,5,opt,name=ErrorPackets,proto3" json:"ErrorPackets,omitempty"`
+	NoWorkloadPackets    uint64   `protobuf:"varint,6,opt,name=NoWorkloadPackets,proto3" json:"NoWorkloadPackets,omitempty"`
+	IPv4Packets          uint64   `protobuf:"varint,7,opt,name=IPv4Packets,proto3" json:"IPv4Packets,omitempty"`
+	IPv6Packets          uint64   `protobuf:"varint,8,opt,name=IPv6Packets,proto3" json:"IPv6Packets,omitempty"`
+	TCPPackets           uint64   `protobuf:"varint,9,opt,name=TCPPackets,proto3" json:"TCPPackets,omitempty"`
+	TCPNoSessionPackets  uint64   `protobuf:"varint,10,opt,name=TCPNoSessionPackets,proto3" json:"TCPNoSessionPackets,omitempty"`
+	UDPPackets           uint64   `protobuf:"varint,11,opt,name=UDPPackets,proto3" json:"UDPPackets,omitempty"`
+	ICMPPackets          uint64   `protobuf:"varint,12,opt,name=ICMPPackets,proto3" json:"ICMPPackets,omitempty"`
+	OtherPackets         uint64   `protobuf:"varint,13,opt,name=OtherPackets,proto3" json:"OtherPackets,omitempty"`
+	Fragments            uint64   `protobuf:"varint,14,opt,name=Fragments,proto3" json:"Fragments,omitempty"`
+	TimeoutFragments     uint64   `protobuf:"varint,15,opt,name=TimeoutFragments,proto3" json:"TimeoutFragments,omitempty"`
+	TotalSessions        uint64   `protobuf:"varint,16,opt,name=TotalSessions,proto3" json:"TotalSessions,omitempty"`
+	TCPSessions          uint64   `protobuf:"varint,17,opt,name=TCPSessions,proto3" json:"TCPSessions,omitempty"`
+	UDPSessions          uint64   `protobuf:"varint,18,opt,name=UDPSessions,proto3" json:"UDPSessions,omitempty"`
+	ICMPSessions         uint64   `protobuf:"varint,19,opt,name=ICMPSessions,proto3" json:"ICMPSessions,omitempty"`
+	IPSessions           uint64   `protobuf:"varint,20,opt,name=IPSessions,proto3" json:"IPSessions,omitempty"`
+	DropMeters           uint64   `protobuf:"varint,21,opt,name=DropMeters,proto3" json:"DropMeters,omitempty"`
+	ProxyMeters          uint64   `protobuf:"varint,22,opt,name=ProxyMeters,proto3" json:"ProxyMeters,omitempty"`
+	CurMeters            uint64   `protobuf:"varint,23,opt,name=CurMeters,proto3" json:"CurMeters,omitempty"`
+	CurLogCaches         uint64   `protobuf:"varint,24,opt,name=CurLogCaches,proto3" json:"CurLogCaches,omitempty"`
+	FreedFragments       uint64   `protobuf:"varint,25,opt,name=FreedFragments,proto3" json:"FreedFragments,omitempty"`
+	Assemblys            uint64   `protobuf:"varint,26,opt,name=Assemblys,proto3" json:"Assemblys,omitempty"`
+	FreedAssemblys       uint64   `protobuf:"varint,27,opt,name=FreedAssemblys,proto3" json:"FreedAssemblys,omitempty"`
+	ParserSessions       []uint64 `protobuf:"varint,28,rep,packed,name=ParserSessions,proto3" json:"ParserSessions,omitempty"`
+	ParserPackets        []uint64 `protobuf:"varint,29,rep,packed,name=ParserPackets,proto3" json:"ParserPackets,omitempty"`
+	PolicyType1Rules     uint32   `protobuf:"varint,30,opt,name=PolicyType1Rules,proto3" json:"PolicyType1Rules,omitempty"`
+	PolicyType2Rules     uint32   `protobuf:"varint,31,opt,name=PolicyType2Rules,proto3" json:"PolicyType2Rules,omitempty"`
+	PolicyDomains        uint32   `protobuf:"varint,32,opt,name=PolicyDomains,proto3" json:"PolicyDomains,omitempty"`
+	PolicyDomainIPs      uint32   `protobuf:"varint,33,opt,name=PolicyDomainIPs,proto3" json:"PolicyDomainIPs,omitempty"`
+	GoRoutines           uint32   `protobuf:"varint,34,opt,name=GoRoutines,proto3" json:"GoRoutines,omitempty"`
+	Lsof                 []byte   `protobuf:"bytes,35,opt,name=Lsof,proto3" json:"Lsof,omitempty"`
+	PS                   []byte   `protobuf:"bytes,36,opt,name=PS,proto3" json:"PS,omitempty"`
+	LimitDropConns       uint64   `protobuf:"varint,37,opt,name=LimitDropConns,proto3" json:"LimitDropConns,omitempty"`
+	LimitPassConns       uint64   `protobuf:"varint,38,opt,name=LimitPassConns,proto3" json:"LimitPassConns,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSDatapathCounter) Reset()                    { *m = CLUSDatapathCounter{} }
-func (m *CLUSDatapathCounter) String() string            { return proto.CompactTextString(m) }
-func (*CLUSDatapathCounter) ProtoMessage()               {}
-func (*CLUSDatapathCounter) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{5} }
+func (m *CLUSDatapathCounter) Reset()         { *m = CLUSDatapathCounter{} }
+func (m *CLUSDatapathCounter) String() string { return proto.CompactTextString(m) }
+func (*CLUSDatapathCounter) ProtoMessage()    {}
+func (*CLUSDatapathCounter) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{5}
+}
+func (m *CLUSDatapathCounter) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSDatapathCounter.Unmarshal(m, b)
+}
+func (m *CLUSDatapathCounter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSDatapathCounter.Marshal(b, m, deterministic)
+}
+func (dst *CLUSDatapathCounter) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSDatapathCounter.Merge(dst, src)
+}
+func (m *CLUSDatapathCounter) XXX_Size() int {
+	return xxx_messageInfo_CLUSDatapathCounter.Size(m)
+}
+func (m *CLUSDatapathCounter) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSDatapathCounter.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSDatapathCounter proto.InternalMessageInfo
 
 func (m *CLUSDatapathCounter) GetRXPackets() uint64 {
 	if m != nil {
@@ -794,15 +936,37 @@ func (m *CLUSDatapathCounter) GetLimitPassConns() uint64 {
 }
 
 type CLUSDerivedPolicyApp struct {
-	App    uint32 `protobuf:"varint,1,opt,name=App" json:"App,omitempty"`
-	Action uint32 `protobuf:"varint,2,opt,name=Action" json:"Action,omitempty"`
-	RuleID uint32 `protobuf:"varint,3,opt,name=RuleID" json:"RuleID,omitempty"`
+	App                  uint32   `protobuf:"varint,1,opt,name=App,proto3" json:"App,omitempty"`
+	Action               uint32   `protobuf:"varint,2,opt,name=Action,proto3" json:"Action,omitempty"`
+	RuleID               uint32   `protobuf:"varint,3,opt,name=RuleID,proto3" json:"RuleID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSDerivedPolicyApp) Reset()                    { *m = CLUSDerivedPolicyApp{} }
-func (m *CLUSDerivedPolicyApp) String() string            { return proto.CompactTextString(m) }
-func (*CLUSDerivedPolicyApp) ProtoMessage()               {}
-func (*CLUSDerivedPolicyApp) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{6} }
+func (m *CLUSDerivedPolicyApp) Reset()         { *m = CLUSDerivedPolicyApp{} }
+func (m *CLUSDerivedPolicyApp) String() string { return proto.CompactTextString(m) }
+func (*CLUSDerivedPolicyApp) ProtoMessage()    {}
+func (*CLUSDerivedPolicyApp) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{6}
+}
+func (m *CLUSDerivedPolicyApp) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSDerivedPolicyApp.Unmarshal(m, b)
+}
+func (m *CLUSDerivedPolicyApp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSDerivedPolicyApp.Marshal(b, m, deterministic)
+}
+func (dst *CLUSDerivedPolicyApp) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSDerivedPolicyApp.Merge(dst, src)
+}
+func (m *CLUSDerivedPolicyApp) XXX_Size() int {
+	return xxx_messageInfo_CLUSDerivedPolicyApp.Size(m)
+}
+func (m *CLUSDerivedPolicyApp) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSDerivedPolicyApp.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSDerivedPolicyApp proto.InternalMessageInfo
 
 func (m *CLUSDerivedPolicyApp) GetApp() uint32 {
 	if m != nil {
@@ -826,24 +990,46 @@ func (m *CLUSDerivedPolicyApp) GetRuleID() uint32 {
 }
 
 type CLUSDerivedPolicyRule struct {
-	ID      uint32                  `protobuf:"varint,1,opt,name=ID" json:"ID,omitempty"`
-	SrcIP   []byte                  `protobuf:"bytes,2,opt,name=SrcIP,proto3" json:"SrcIP,omitempty"`
-	DstIP   []byte                  `protobuf:"bytes,3,opt,name=DstIP,proto3" json:"DstIP,omitempty"`
-	SrcIPR  []byte                  `protobuf:"bytes,4,opt,name=SrcIPR,proto3" json:"SrcIPR,omitempty"`
-	DstIPR  []byte                  `protobuf:"bytes,5,opt,name=DstIPR,proto3" json:"DstIPR,omitempty"`
-	Port    uint32                  `protobuf:"varint,6,opt,name=Port" json:"Port,omitempty"`
-	PortR   uint32                  `protobuf:"varint,7,opt,name=PortR" json:"PortR,omitempty"`
-	IPProto uint32                  `protobuf:"varint,8,opt,name=IPProto" json:"IPProto,omitempty"`
-	Action  uint32                  `protobuf:"varint,9,opt,name=Action" json:"Action,omitempty"`
-	Ingress bool                    `protobuf:"varint,10,opt,name=Ingress" json:"Ingress,omitempty"`
-	FQDN    string                  `protobuf:"bytes,11,opt,name=FQDN" json:"FQDN,omitempty"`
-	Apps    []*CLUSDerivedPolicyApp `protobuf:"bytes,12,rep,name=Apps" json:"Apps,omitempty"`
+	ID                   uint32                  `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	SrcIP                []byte                  `protobuf:"bytes,2,opt,name=SrcIP,proto3" json:"SrcIP,omitempty"`
+	DstIP                []byte                  `protobuf:"bytes,3,opt,name=DstIP,proto3" json:"DstIP,omitempty"`
+	SrcIPR               []byte                  `protobuf:"bytes,4,opt,name=SrcIPR,proto3" json:"SrcIPR,omitempty"`
+	DstIPR               []byte                  `protobuf:"bytes,5,opt,name=DstIPR,proto3" json:"DstIPR,omitempty"`
+	Port                 uint32                  `protobuf:"varint,6,opt,name=Port,proto3" json:"Port,omitempty"`
+	PortR                uint32                  `protobuf:"varint,7,opt,name=PortR,proto3" json:"PortR,omitempty"`
+	IPProto              uint32                  `protobuf:"varint,8,opt,name=IPProto,proto3" json:"IPProto,omitempty"`
+	Action               uint32                  `protobuf:"varint,9,opt,name=Action,proto3" json:"Action,omitempty"`
+	Ingress              bool                    `protobuf:"varint,10,opt,name=Ingress,proto3" json:"Ingress,omitempty"`
+	FQDN                 string                  `protobuf:"bytes,11,opt,name=FQDN,proto3" json:"FQDN,omitempty"`
+	Apps                 []*CLUSDerivedPolicyApp `protobuf:"bytes,12,rep,name=Apps,proto3" json:"Apps,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
+	XXX_unrecognized     []byte                  `json:"-"`
+	XXX_sizecache        int32                   `json:"-"`
 }
 
-func (m *CLUSDerivedPolicyRule) Reset()                    { *m = CLUSDerivedPolicyRule{} }
-func (m *CLUSDerivedPolicyRule) String() string            { return proto.CompactTextString(m) }
-func (*CLUSDerivedPolicyRule) ProtoMessage()               {}
-func (*CLUSDerivedPolicyRule) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{7} }
+func (m *CLUSDerivedPolicyRule) Reset()         { *m = CLUSDerivedPolicyRule{} }
+func (m *CLUSDerivedPolicyRule) String() string { return proto.CompactTextString(m) }
+func (*CLUSDerivedPolicyRule) ProtoMessage()    {}
+func (*CLUSDerivedPolicyRule) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{7}
+}
+func (m *CLUSDerivedPolicyRule) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSDerivedPolicyRule.Unmarshal(m, b)
+}
+func (m *CLUSDerivedPolicyRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSDerivedPolicyRule.Marshal(b, m, deterministic)
+}
+func (dst *CLUSDerivedPolicyRule) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSDerivedPolicyRule.Merge(dst, src)
+}
+func (m *CLUSDerivedPolicyRule) XXX_Size() int {
+	return xxx_messageInfo_CLUSDerivedPolicyRule.Size(m)
+}
+func (m *CLUSDerivedPolicyRule) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSDerivedPolicyRule.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSDerivedPolicyRule proto.InternalMessageInfo
 
 func (m *CLUSDerivedPolicyRule) GetID() uint32 {
 	if m != nil {
@@ -930,13 +1116,35 @@ func (m *CLUSDerivedPolicyRule) GetApps() []*CLUSDerivedPolicyApp {
 }
 
 type CLUSDerivedPolicyRuleArray struct {
-	Rules []*CLUSDerivedPolicyRule `protobuf:"bytes,1,rep,name=Rules" json:"Rules,omitempty"`
+	Rules                []*CLUSDerivedPolicyRule `protobuf:"bytes,1,rep,name=Rules,proto3" json:"Rules,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
+	XXX_unrecognized     []byte                   `json:"-"`
+	XXX_sizecache        int32                    `json:"-"`
 }
 
-func (m *CLUSDerivedPolicyRuleArray) Reset()                    { *m = CLUSDerivedPolicyRuleArray{} }
-func (m *CLUSDerivedPolicyRuleArray) String() string            { return proto.CompactTextString(m) }
-func (*CLUSDerivedPolicyRuleArray) ProtoMessage()               {}
-func (*CLUSDerivedPolicyRuleArray) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{8} }
+func (m *CLUSDerivedPolicyRuleArray) Reset()         { *m = CLUSDerivedPolicyRuleArray{} }
+func (m *CLUSDerivedPolicyRuleArray) String() string { return proto.CompactTextString(m) }
+func (*CLUSDerivedPolicyRuleArray) ProtoMessage()    {}
+func (*CLUSDerivedPolicyRuleArray) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{8}
+}
+func (m *CLUSDerivedPolicyRuleArray) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSDerivedPolicyRuleArray.Unmarshal(m, b)
+}
+func (m *CLUSDerivedPolicyRuleArray) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSDerivedPolicyRuleArray.Marshal(b, m, deterministic)
+}
+func (dst *CLUSDerivedPolicyRuleArray) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSDerivedPolicyRuleArray.Merge(dst, src)
+}
+func (m *CLUSDerivedPolicyRuleArray) XXX_Size() int {
+	return xxx_messageInfo_CLUSDerivedPolicyRuleArray.Size(m)
+}
+func (m *CLUSDerivedPolicyRuleArray) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSDerivedPolicyRuleArray.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSDerivedPolicyRuleArray proto.InternalMessageInfo
 
 func (m *CLUSDerivedPolicyRuleArray) GetRules() []*CLUSDerivedPolicyRule {
 	if m != nil {
@@ -946,13 +1154,35 @@ func (m *CLUSDerivedPolicyRuleArray) GetRules() []*CLUSDerivedPolicyRule {
 }
 
 type CLUSDerivedPolicyRuleMap struct {
-	RuleMap map[string]*CLUSDerivedPolicyRuleArray `protobuf:"bytes,1,rep,name=RuleMap" json:"RuleMap,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	RuleMap              map[string]*CLUSDerivedPolicyRuleArray `protobuf:"bytes,1,rep,name=RuleMap,proto3" json:"RuleMap,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	XXX_NoUnkeyedLiteral struct{}                               `json:"-"`
+	XXX_unrecognized     []byte                                 `json:"-"`
+	XXX_sizecache        int32                                  `json:"-"`
 }
 
-func (m *CLUSDerivedPolicyRuleMap) Reset()                    { *m = CLUSDerivedPolicyRuleMap{} }
-func (m *CLUSDerivedPolicyRuleMap) String() string            { return proto.CompactTextString(m) }
-func (*CLUSDerivedPolicyRuleMap) ProtoMessage()               {}
-func (*CLUSDerivedPolicyRuleMap) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{9} }
+func (m *CLUSDerivedPolicyRuleMap) Reset()         { *m = CLUSDerivedPolicyRuleMap{} }
+func (m *CLUSDerivedPolicyRuleMap) String() string { return proto.CompactTextString(m) }
+func (*CLUSDerivedPolicyRuleMap) ProtoMessage()    {}
+func (*CLUSDerivedPolicyRuleMap) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{9}
+}
+func (m *CLUSDerivedPolicyRuleMap) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSDerivedPolicyRuleMap.Unmarshal(m, b)
+}
+func (m *CLUSDerivedPolicyRuleMap) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSDerivedPolicyRuleMap.Marshal(b, m, deterministic)
+}
+func (dst *CLUSDerivedPolicyRuleMap) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSDerivedPolicyRuleMap.Merge(dst, src)
+}
+func (m *CLUSDerivedPolicyRuleMap) XXX_Size() int {
+	return xxx_messageInfo_CLUSDerivedPolicyRuleMap.Size(m)
+}
+func (m *CLUSDerivedPolicyRuleMap) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSDerivedPolicyRuleMap.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSDerivedPolicyRuleMap proto.InternalMessageInfo
 
 func (m *CLUSDerivedPolicyRuleMap) GetRuleMap() map[string]*CLUSDerivedPolicyRuleArray {
 	if m != nil {
@@ -962,39 +1192,61 @@ func (m *CLUSDerivedPolicyRuleMap) GetRuleMap() map[string]*CLUSDerivedPolicyRul
 }
 
 type CLUSProbeSummary struct {
-	ContainerMap       uint32 `protobuf:"varint,1,opt,name=ContainerMap" json:"ContainerMap,omitempty"`
-	PidContainerMap    uint32 `protobuf:"varint,2,opt,name=PidContainerMap" json:"PidContainerMap,omitempty"`
-	PidProcMap         uint32 `protobuf:"varint,3,opt,name=PidProcMap" json:"PidProcMap,omitempty"`
-	NewProcesses       uint32 `protobuf:"varint,4,opt,name=NewProcesses" json:"NewProcesses,omitempty"`
-	NewSuspicProc      uint32 `protobuf:"varint,5,opt,name=NewSuspicProc" json:"NewSuspicProc,omitempty"`
-	ContainerStops     uint32 `protobuf:"varint,6,opt,name=ContainerStops" json:"ContainerStops,omitempty"`
-	WLStorageWatch     uint32 `protobuf:"varint,7,opt,name=WLStorageWatch" json:"WLStorageWatch,omitempty"`
-	PidSet             uint32 `protobuf:"varint,8,opt,name=PidSet" json:"PidSet,omitempty"`
-	SessionTable       uint32 `protobuf:"varint,9,opt,name=SessionTable" json:"SessionTable,omitempty"`
-	InotifyWatches     uint32 `protobuf:"varint,10,opt,name=InotifyWatches" json:"InotifyWatches,omitempty"`
-	ProcBlockRoots     uint32 `protobuf:"varint,11,opt,name=ProcBlockRoots" json:"ProcBlockRoots,omitempty"`
-	ProcBlockMarks     uint32 `protobuf:"varint,12,opt,name=ProcBlockMarks" json:"ProcBlockMarks,omitempty"`
-	ProcBlockEntryCnt  uint32 `protobuf:"varint,13,opt,name=ProcBlockEntryCnt" json:"ProcBlockEntryCnt,omitempty"`
-	ProcBlockDirMonCnt uint32 `protobuf:"varint,14,opt,name=ProcBlockDirMonCnt" json:"ProcBlockDirMonCnt,omitempty"`
-	FileMonEvents      uint32 `protobuf:"varint,15,opt,name=FileMonEvents" json:"FileMonEvents,omitempty"`
-	FileMonGroups      uint32 `protobuf:"varint,16,opt,name=FileMonGroups" json:"FileMonGroups,omitempty"`
-	FileMonFaRoots     uint32 `protobuf:"varint,17,opt,name=FileMonFaRoots" json:"FileMonFaRoots,omitempty"`
-	FileMonFaMntRoots  uint32 `protobuf:"varint,18,opt,name=FileMonFaMntRoots" json:"FileMonFaMntRoots,omitempty"`
-	FileMonFaDirMarks  uint32 `protobuf:"varint,19,opt,name=FileMonFaDirMarks" json:"FileMonFaDirMarks,omitempty"`
-	FileMonFaRules     uint32 `protobuf:"varint,20,opt,name=FileMonFaRules" json:"FileMonFaRules,omitempty"`
-	FileMonFaPaths     uint32 `protobuf:"varint,21,opt,name=FileMonFaPaths" json:"FileMonFaPaths,omitempty"`
-	FileMonFaDirs      uint32 `protobuf:"varint,22,opt,name=FileMonFaDirs" json:"FileMonFaDirs,omitempty"`
-	FileMonInWds       uint32 `protobuf:"varint,23,opt,name=FileMonInWds" json:"FileMonInWds,omitempty"`
-	FileMonInPaths     uint32 `protobuf:"varint,24,opt,name=FileMonInPaths" json:"FileMonInPaths,omitempty"`
-	FileMonInDirs      uint32 `protobuf:"varint,25,opt,name=FileMonInDirs" json:"FileMonInDirs,omitempty"`
-	MaxEvalChanQueued  uint32 `protobuf:"varint,26,opt,name=MaxEvalChanQueued" json:"MaxEvalChanQueued,omitempty"`
-	MaxGoroutines      uint32 `protobuf:"varint,27,opt,name=MaxGoroutines" json:"MaxGoroutines,omitempty"`
+	ContainerMap         uint32   `protobuf:"varint,1,opt,name=ContainerMap,proto3" json:"ContainerMap,omitempty"`
+	PidContainerMap      uint32   `protobuf:"varint,2,opt,name=PidContainerMap,proto3" json:"PidContainerMap,omitempty"`
+	PidProcMap           uint32   `protobuf:"varint,3,opt,name=PidProcMap,proto3" json:"PidProcMap,omitempty"`
+	NewProcesses         uint32   `protobuf:"varint,4,opt,name=NewProcesses,proto3" json:"NewProcesses,omitempty"`
+	NewSuspicProc        uint32   `protobuf:"varint,5,opt,name=NewSuspicProc,proto3" json:"NewSuspicProc,omitempty"`
+	ContainerStops       uint32   `protobuf:"varint,6,opt,name=ContainerStops,proto3" json:"ContainerStops,omitempty"`
+	WLStorageWatch       uint32   `protobuf:"varint,7,opt,name=WLStorageWatch,proto3" json:"WLStorageWatch,omitempty"` // Deprecated: Do not use.
+	PidSet               uint32   `protobuf:"varint,8,opt,name=PidSet,proto3" json:"PidSet,omitempty"`
+	SessionTable         uint32   `protobuf:"varint,9,opt,name=SessionTable,proto3" json:"SessionTable,omitempty"`
+	InotifyWatches       uint32   `protobuf:"varint,10,opt,name=InotifyWatches,proto3" json:"InotifyWatches,omitempty"`
+	ProcBlockRoots       uint32   `protobuf:"varint,11,opt,name=ProcBlockRoots,proto3" json:"ProcBlockRoots,omitempty"`
+	ProcBlockMarks       uint32   `protobuf:"varint,12,opt,name=ProcBlockMarks,proto3" json:"ProcBlockMarks,omitempty"`
+	ProcBlockEntryCnt    uint32   `protobuf:"varint,13,opt,name=ProcBlockEntryCnt,proto3" json:"ProcBlockEntryCnt,omitempty"`
+	ProcBlockDirMonCnt   uint32   `protobuf:"varint,14,opt,name=ProcBlockDirMonCnt,proto3" json:"ProcBlockDirMonCnt,omitempty"`
+	FileMonEvents        uint32   `protobuf:"varint,15,opt,name=FileMonEvents,proto3" json:"FileMonEvents,omitempty"`
+	FileMonGroups        uint32   `protobuf:"varint,16,opt,name=FileMonGroups,proto3" json:"FileMonGroups,omitempty"`
+	FileMonFaRoots       uint32   `protobuf:"varint,17,opt,name=FileMonFaRoots,proto3" json:"FileMonFaRoots,omitempty"`
+	FileMonFaMntRoots    uint32   `protobuf:"varint,18,opt,name=FileMonFaMntRoots,proto3" json:"FileMonFaMntRoots,omitempty"`
+	FileMonFaDirMarks    uint32   `protobuf:"varint,19,opt,name=FileMonFaDirMarks,proto3" json:"FileMonFaDirMarks,omitempty"`
+	FileMonFaRules       uint32   `protobuf:"varint,20,opt,name=FileMonFaRules,proto3" json:"FileMonFaRules,omitempty"`
+	FileMonFaPaths       uint32   `protobuf:"varint,21,opt,name=FileMonFaPaths,proto3" json:"FileMonFaPaths,omitempty"`
+	FileMonFaDirs        uint32   `protobuf:"varint,22,opt,name=FileMonFaDirs,proto3" json:"FileMonFaDirs,omitempty"`
+	FileMonInWds         uint32   `protobuf:"varint,23,opt,name=FileMonInWds,proto3" json:"FileMonInWds,omitempty"`
+	FileMonInPaths       uint32   `protobuf:"varint,24,opt,name=FileMonInPaths,proto3" json:"FileMonInPaths,omitempty"`
+	FileMonInDirs        uint32   `protobuf:"varint,25,opt,name=FileMonInDirs,proto3" json:"FileMonInDirs,omitempty"`
+	MaxEvalChanQueued    uint32   `protobuf:"varint,26,opt,name=MaxEvalChanQueued,proto3" json:"MaxEvalChanQueued,omitempty"`
+	MaxGoroutines        uint32   `protobuf:"varint,27,opt,name=MaxGoroutines,proto3" json:"MaxGoroutines,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSProbeSummary) Reset()                    { *m = CLUSProbeSummary{} }
-func (m *CLUSProbeSummary) String() string            { return proto.CompactTextString(m) }
-func (*CLUSProbeSummary) ProtoMessage()               {}
-func (*CLUSProbeSummary) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{10} }
+func (m *CLUSProbeSummary) Reset()         { *m = CLUSProbeSummary{} }
+func (m *CLUSProbeSummary) String() string { return proto.CompactTextString(m) }
+func (*CLUSProbeSummary) ProtoMessage()    {}
+func (*CLUSProbeSummary) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{10}
+}
+func (m *CLUSProbeSummary) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSProbeSummary.Unmarshal(m, b)
+}
+func (m *CLUSProbeSummary) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSProbeSummary.Marshal(b, m, deterministic)
+}
+func (dst *CLUSProbeSummary) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSProbeSummary.Merge(dst, src)
+}
+func (m *CLUSProbeSummary) XXX_Size() int {
+	return xxx_messageInfo_CLUSProbeSummary.Size(m)
+}
+func (m *CLUSProbeSummary) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSProbeSummary.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSProbeSummary proto.InternalMessageInfo
 
 func (m *CLUSProbeSummary) GetContainerMap() uint32 {
 	if m != nil {
@@ -1038,6 +1290,7 @@ func (m *CLUSProbeSummary) GetContainerStops() uint32 {
 	return 0
 }
 
+// Deprecated: Do not use.
 func (m *CLUSProbeSummary) GetWLStorageWatch() uint32 {
 	if m != nil {
 		return m.WLStorageWatch
@@ -1186,21 +1439,43 @@ func (m *CLUSProbeSummary) GetMaxGoroutines() uint32 {
 }
 
 type CLUSProbeProcess struct {
-	Pid       int32  `protobuf:"varint,1,opt,name=Pid" json:"Pid,omitempty"`
-	Ppid      int32  `protobuf:"varint,2,opt,name=Ppid" json:"Ppid,omitempty"`
-	Name      string `protobuf:"bytes,3,opt,name=Name" json:"Name,omitempty"`
-	Ruid      uint32 `protobuf:"varint,4,opt,name=Ruid" json:"Ruid,omitempty"`
-	Euid      uint32 `protobuf:"varint,5,opt,name=Euid" json:"Euid,omitempty"`
-	ScanTimes uint32 `protobuf:"varint,6,opt,name=ScanTimes" json:"ScanTimes,omitempty"`
-	StartTime uint64 `protobuf:"varint,7,opt,name=StartTime" json:"StartTime,omitempty"`
-	Reported  uint32 `protobuf:"varint,8,opt,name=Reported" json:"Reported,omitempty"`
-	Container string `protobuf:"bytes,9,opt,name=Container" json:"Container,omitempty"`
+	Pid                  int32    `protobuf:"varint,1,opt,name=Pid,proto3" json:"Pid,omitempty"`
+	Ppid                 int32    `protobuf:"varint,2,opt,name=Ppid,proto3" json:"Ppid,omitempty"`
+	Name                 string   `protobuf:"bytes,3,opt,name=Name,proto3" json:"Name,omitempty"`
+	Ruid                 uint32   `protobuf:"varint,4,opt,name=Ruid,proto3" json:"Ruid,omitempty"`
+	Euid                 uint32   `protobuf:"varint,5,opt,name=Euid,proto3" json:"Euid,omitempty"`
+	ScanTimes            uint32   `protobuf:"varint,6,opt,name=ScanTimes,proto3" json:"ScanTimes,omitempty"`
+	StartTime            uint64   `protobuf:"varint,7,opt,name=StartTime,proto3" json:"StartTime,omitempty"`
+	Reported             uint32   `protobuf:"varint,8,opt,name=Reported,proto3" json:"Reported,omitempty"`
+	Container            string   `protobuf:"bytes,9,opt,name=Container,proto3" json:"Container,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSProbeProcess) Reset()                    { *m = CLUSProbeProcess{} }
-func (m *CLUSProbeProcess) String() string            { return proto.CompactTextString(m) }
-func (*CLUSProbeProcess) ProtoMessage()               {}
-func (*CLUSProbeProcess) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{11} }
+func (m *CLUSProbeProcess) Reset()         { *m = CLUSProbeProcess{} }
+func (m *CLUSProbeProcess) String() string { return proto.CompactTextString(m) }
+func (*CLUSProbeProcess) ProtoMessage()    {}
+func (*CLUSProbeProcess) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{11}
+}
+func (m *CLUSProbeProcess) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSProbeProcess.Unmarshal(m, b)
+}
+func (m *CLUSProbeProcess) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSProbeProcess.Marshal(b, m, deterministic)
+}
+func (dst *CLUSProbeProcess) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSProbeProcess.Merge(dst, src)
+}
+func (m *CLUSProbeProcess) XXX_Size() int {
+	return xxx_messageInfo_CLUSProbeProcess.Size(m)
+}
+func (m *CLUSProbeProcess) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSProbeProcess.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSProbeProcess proto.InternalMessageInfo
 
 func (m *CLUSProbeProcess) GetPid() int32 {
 	if m != nil {
@@ -1266,13 +1541,35 @@ func (m *CLUSProbeProcess) GetContainer() string {
 }
 
 type CLUSProbeProcessArray struct {
-	Processes []*CLUSProbeProcess `protobuf:"bytes,1,rep,name=Processes" json:"Processes,omitempty"`
+	Processes            []*CLUSProbeProcess `protobuf:"bytes,1,rep,name=Processes,proto3" json:"Processes,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
+	XXX_unrecognized     []byte              `json:"-"`
+	XXX_sizecache        int32               `json:"-"`
 }
 
-func (m *CLUSProbeProcessArray) Reset()                    { *m = CLUSProbeProcessArray{} }
-func (m *CLUSProbeProcessArray) String() string            { return proto.CompactTextString(m) }
-func (*CLUSProbeProcessArray) ProtoMessage()               {}
-func (*CLUSProbeProcessArray) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{12} }
+func (m *CLUSProbeProcessArray) Reset()         { *m = CLUSProbeProcessArray{} }
+func (m *CLUSProbeProcessArray) String() string { return proto.CompactTextString(m) }
+func (*CLUSProbeProcessArray) ProtoMessage()    {}
+func (*CLUSProbeProcessArray) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{12}
+}
+func (m *CLUSProbeProcessArray) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSProbeProcessArray.Unmarshal(m, b)
+}
+func (m *CLUSProbeProcessArray) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSProbeProcessArray.Marshal(b, m, deterministic)
+}
+func (dst *CLUSProbeProcessArray) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSProbeProcessArray.Merge(dst, src)
+}
+func (m *CLUSProbeProcessArray) XXX_Size() int {
+	return xxx_messageInfo_CLUSProbeProcessArray.Size(m)
+}
+func (m *CLUSProbeProcessArray) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSProbeProcessArray.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSProbeProcessArray proto.InternalMessageInfo
 
 func (m *CLUSProbeProcessArray) GetProcesses() []*CLUSProbeProcess {
 	if m != nil {
@@ -1282,16 +1579,38 @@ func (m *CLUSProbeProcessArray) GetProcesses() []*CLUSProbeProcess {
 }
 
 type CLUSProbeContainer struct {
-	Id       string  `protobuf:"bytes,1,opt,name=Id" json:"Id,omitempty"`
-	Pid      int32   `protobuf:"varint,2,opt,name=Pid" json:"Pid,omitempty"`
-	Children []int32 `protobuf:"varint,3,rep,packed,name=Children" json:"Children,omitempty"`
-	PortsMap string  `protobuf:"bytes,4,opt,name=PortsMap" json:"PortsMap,omitempty"`
+	Id                   string   `protobuf:"bytes,1,opt,name=Id,proto3" json:"Id,omitempty"`
+	Pid                  int32    `protobuf:"varint,2,opt,name=Pid,proto3" json:"Pid,omitempty"`
+	Children             []int32  `protobuf:"varint,3,rep,packed,name=Children,proto3" json:"Children,omitempty"`
+	PortsMap             string   `protobuf:"bytes,4,opt,name=PortsMap,proto3" json:"PortsMap,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSProbeContainer) Reset()                    { *m = CLUSProbeContainer{} }
-func (m *CLUSProbeContainer) String() string            { return proto.CompactTextString(m) }
-func (*CLUSProbeContainer) ProtoMessage()               {}
-func (*CLUSProbeContainer) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{13} }
+func (m *CLUSProbeContainer) Reset()         { *m = CLUSProbeContainer{} }
+func (m *CLUSProbeContainer) String() string { return proto.CompactTextString(m) }
+func (*CLUSProbeContainer) ProtoMessage()    {}
+func (*CLUSProbeContainer) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{13}
+}
+func (m *CLUSProbeContainer) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSProbeContainer.Unmarshal(m, b)
+}
+func (m *CLUSProbeContainer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSProbeContainer.Marshal(b, m, deterministic)
+}
+func (dst *CLUSProbeContainer) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSProbeContainer.Merge(dst, src)
+}
+func (m *CLUSProbeContainer) XXX_Size() int {
+	return xxx_messageInfo_CLUSProbeContainer.Size(m)
+}
+func (m *CLUSProbeContainer) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSProbeContainer.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSProbeContainer proto.InternalMessageInfo
 
 func (m *CLUSProbeContainer) GetId() string {
 	if m != nil {
@@ -1322,13 +1641,35 @@ func (m *CLUSProbeContainer) GetPortsMap() string {
 }
 
 type CLUSProbeContainerArray struct {
-	Containers []*CLUSProbeContainer `protobuf:"bytes,1,rep,name=Containers" json:"Containers,omitempty"`
+	Containers           []*CLUSProbeContainer `protobuf:"bytes,1,rep,name=Containers,proto3" json:"Containers,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *CLUSProbeContainerArray) Reset()                    { *m = CLUSProbeContainerArray{} }
-func (m *CLUSProbeContainerArray) String() string            { return proto.CompactTextString(m) }
-func (*CLUSProbeContainerArray) ProtoMessage()               {}
-func (*CLUSProbeContainerArray) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{14} }
+func (m *CLUSProbeContainerArray) Reset()         { *m = CLUSProbeContainerArray{} }
+func (m *CLUSProbeContainerArray) String() string { return proto.CompactTextString(m) }
+func (*CLUSProbeContainerArray) ProtoMessage()    {}
+func (*CLUSProbeContainerArray) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{14}
+}
+func (m *CLUSProbeContainerArray) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSProbeContainerArray.Unmarshal(m, b)
+}
+func (m *CLUSProbeContainerArray) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSProbeContainerArray.Marshal(b, m, deterministic)
+}
+func (dst *CLUSProbeContainerArray) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSProbeContainerArray.Merge(dst, src)
+}
+func (m *CLUSProbeContainerArray) XXX_Size() int {
+	return xxx_messageInfo_CLUSProbeContainerArray.Size(m)
+}
+func (m *CLUSProbeContainerArray) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSProbeContainerArray.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSProbeContainerArray proto.InternalMessageInfo
 
 func (m *CLUSProbeContainerArray) GetContainers() []*CLUSProbeContainer {
 	if m != nil {
@@ -1338,17 +1679,39 @@ func (m *CLUSProbeContainerArray) GetContainers() []*CLUSProbeContainer {
 }
 
 type CLUSFileMonitorFile struct {
-	Path    string   `protobuf:"bytes,1,opt,name=Path" json:"Path,omitempty"`
-	Mask    uint64   `protobuf:"varint,2,opt,name=Mask" json:"Mask,omitempty"`
-	IsDir   bool     `protobuf:"varint,3,opt,name=IsDir" json:"IsDir,omitempty"`
-	Protect bool     `protobuf:"varint,4,opt,name=Protect" json:"Protect,omitempty"`
-	Files   []string `protobuf:"bytes,5,rep,name=Files" json:"Files,omitempty"`
+	Path                 string   `protobuf:"bytes,1,opt,name=Path,proto3" json:"Path,omitempty"`
+	Mask                 uint64   `protobuf:"varint,2,opt,name=Mask,proto3" json:"Mask,omitempty"`
+	IsDir                bool     `protobuf:"varint,3,opt,name=IsDir,proto3" json:"IsDir,omitempty"`
+	Protect              bool     `protobuf:"varint,4,opt,name=Protect,proto3" json:"Protect,omitempty"`
+	Files                []string `protobuf:"bytes,5,rep,name=Files,proto3" json:"Files,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSFileMonitorFile) Reset()                    { *m = CLUSFileMonitorFile{} }
-func (m *CLUSFileMonitorFile) String() string            { return proto.CompactTextString(m) }
-func (*CLUSFileMonitorFile) ProtoMessage()               {}
-func (*CLUSFileMonitorFile) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{15} }
+func (m *CLUSFileMonitorFile) Reset()         { *m = CLUSFileMonitorFile{} }
+func (m *CLUSFileMonitorFile) String() string { return proto.CompactTextString(m) }
+func (*CLUSFileMonitorFile) ProtoMessage()    {}
+func (*CLUSFileMonitorFile) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{15}
+}
+func (m *CLUSFileMonitorFile) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSFileMonitorFile.Unmarshal(m, b)
+}
+func (m *CLUSFileMonitorFile) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSFileMonitorFile.Marshal(b, m, deterministic)
+}
+func (dst *CLUSFileMonitorFile) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSFileMonitorFile.Merge(dst, src)
+}
+func (m *CLUSFileMonitorFile) XXX_Size() int {
+	return xxx_messageInfo_CLUSFileMonitorFile.Size(m)
+}
+func (m *CLUSFileMonitorFile) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSFileMonitorFile.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSFileMonitorFile proto.InternalMessageInfo
 
 func (m *CLUSFileMonitorFile) GetPath() string {
 	if m != nil {
@@ -1386,13 +1749,35 @@ func (m *CLUSFileMonitorFile) GetFiles() []string {
 }
 
 type CLUSFileMonitorFileArray struct {
-	Files []*CLUSFileMonitorFile `protobuf:"bytes,1,rep,name=Files" json:"Files,omitempty"`
+	Files                []*CLUSFileMonitorFile `protobuf:"bytes,1,rep,name=Files,proto3" json:"Files,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
-func (m *CLUSFileMonitorFileArray) Reset()                    { *m = CLUSFileMonitorFileArray{} }
-func (m *CLUSFileMonitorFileArray) String() string            { return proto.CompactTextString(m) }
-func (*CLUSFileMonitorFileArray) ProtoMessage()               {}
-func (*CLUSFileMonitorFileArray) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{16} }
+func (m *CLUSFileMonitorFileArray) Reset()         { *m = CLUSFileMonitorFileArray{} }
+func (m *CLUSFileMonitorFileArray) String() string { return proto.CompactTextString(m) }
+func (*CLUSFileMonitorFileArray) ProtoMessage()    {}
+func (*CLUSFileMonitorFileArray) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{16}
+}
+func (m *CLUSFileMonitorFileArray) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSFileMonitorFileArray.Unmarshal(m, b)
+}
+func (m *CLUSFileMonitorFileArray) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSFileMonitorFileArray.Marshal(b, m, deterministic)
+}
+func (dst *CLUSFileMonitorFileArray) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSFileMonitorFileArray.Merge(dst, src)
+}
+func (m *CLUSFileMonitorFileArray) XXX_Size() int {
+	return xxx_messageInfo_CLUSFileMonitorFileArray.Size(m)
+}
+func (m *CLUSFileMonitorFileArray) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSFileMonitorFileArray.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSFileMonitorFileArray proto.InternalMessageInfo
 
 func (m *CLUSFileMonitorFileArray) GetFiles() []*CLUSFileMonitorFile {
 	if m != nil {
@@ -1402,19 +1787,41 @@ func (m *CLUSFileMonitorFileArray) GetFiles() []*CLUSFileMonitorFile {
 }
 
 type CLUSSnifferRequest struct {
-	Cmd              SnifferCmd `protobuf:"varint,1,opt,name=Cmd,enum=share.SnifferCmd" json:"Cmd,omitempty"`
-	ID               string     `protobuf:"bytes,2,opt,name=ID" json:"ID,omitempty"`
-	WorkloadID       string     `protobuf:"bytes,3,opt,name=WorkloadID" json:"WorkloadID,omitempty"`
-	FileNumber       uint32     `protobuf:"varint,4,opt,name=FileNumber" json:"FileNumber,omitempty"`
-	FileSizeInMB     uint32     `protobuf:"varint,5,opt,name=FileSizeInMB" json:"FileSizeInMB,omitempty"`
-	Filter           string     `protobuf:"bytes,6,opt,name=Filter" json:"Filter,omitempty"`
-	DurationInSecond uint32     `protobuf:"varint,7,opt,name=DurationInSecond" json:"DurationInSecond,omitempty"`
+	Cmd                  SnifferCmd `protobuf:"varint,1,opt,name=Cmd,proto3,enum=share.SnifferCmd" json:"Cmd,omitempty"`
+	ID                   string     `protobuf:"bytes,2,opt,name=ID,proto3" json:"ID,omitempty"`
+	WorkloadID           string     `protobuf:"bytes,3,opt,name=WorkloadID,proto3" json:"WorkloadID,omitempty"`
+	FileNumber           uint32     `protobuf:"varint,4,opt,name=FileNumber,proto3" json:"FileNumber,omitempty"`
+	FileSizeInMB         uint32     `protobuf:"varint,5,opt,name=FileSizeInMB,proto3" json:"FileSizeInMB,omitempty"`
+	Filter               string     `protobuf:"bytes,6,opt,name=Filter,proto3" json:"Filter,omitempty"`
+	DurationInSecond     uint32     `protobuf:"varint,7,opt,name=DurationInSecond,proto3" json:"DurationInSecond,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
-func (m *CLUSSnifferRequest) Reset()                    { *m = CLUSSnifferRequest{} }
-func (m *CLUSSnifferRequest) String() string            { return proto.CompactTextString(m) }
-func (*CLUSSnifferRequest) ProtoMessage()               {}
-func (*CLUSSnifferRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{17} }
+func (m *CLUSSnifferRequest) Reset()         { *m = CLUSSnifferRequest{} }
+func (m *CLUSSnifferRequest) String() string { return proto.CompactTextString(m) }
+func (*CLUSSnifferRequest) ProtoMessage()    {}
+func (*CLUSSnifferRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{17}
+}
+func (m *CLUSSnifferRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSSnifferRequest.Unmarshal(m, b)
+}
+func (m *CLUSSnifferRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSSnifferRequest.Marshal(b, m, deterministic)
+}
+func (dst *CLUSSnifferRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSSnifferRequest.Merge(dst, src)
+}
+func (m *CLUSSnifferRequest) XXX_Size() int {
+	return xxx_messageInfo_CLUSSnifferRequest.Size(m)
+}
+func (m *CLUSSnifferRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSSnifferRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSSnifferRequest proto.InternalMessageInfo
 
 func (m *CLUSSnifferRequest) GetCmd() SnifferCmd {
 	if m != nil {
@@ -1466,13 +1873,35 @@ func (m *CLUSSnifferRequest) GetDurationInSecond() uint32 {
 }
 
 type CLUSSnifferResponse struct {
-	ID string `protobuf:"bytes,1,opt,name=ID" json:"ID,omitempty"`
+	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSSnifferResponse) Reset()                    { *m = CLUSSnifferResponse{} }
-func (m *CLUSSnifferResponse) String() string            { return proto.CompactTextString(m) }
-func (*CLUSSnifferResponse) ProtoMessage()               {}
-func (*CLUSSnifferResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{18} }
+func (m *CLUSSnifferResponse) Reset()         { *m = CLUSSnifferResponse{} }
+func (m *CLUSSnifferResponse) String() string { return proto.CompactTextString(m) }
+func (*CLUSSnifferResponse) ProtoMessage()    {}
+func (*CLUSSnifferResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{18}
+}
+func (m *CLUSSnifferResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSSnifferResponse.Unmarshal(m, b)
+}
+func (m *CLUSSnifferResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSSnifferResponse.Marshal(b, m, deterministic)
+}
+func (dst *CLUSSnifferResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSSnifferResponse.Merge(dst, src)
+}
+func (m *CLUSSnifferResponse) XXX_Size() int {
+	return xxx_messageInfo_CLUSSnifferResponse.Size(m)
+}
+func (m *CLUSSnifferResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSSnifferResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSSnifferResponse proto.InternalMessageInfo
 
 func (m *CLUSSnifferResponse) GetID() string {
 	if m != nil {
@@ -1482,14 +1911,36 @@ func (m *CLUSSnifferResponse) GetID() string {
 }
 
 type CLUSSnifferFilter struct {
-	ID       string `protobuf:"bytes,1,opt,name=ID" json:"ID,omitempty"`
-	Workload string `protobuf:"bytes,2,opt,name=Workload" json:"Workload,omitempty"`
+	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	Workload             string   `protobuf:"bytes,2,opt,name=Workload,proto3" json:"Workload,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSSnifferFilter) Reset()                    { *m = CLUSSnifferFilter{} }
-func (m *CLUSSnifferFilter) String() string            { return proto.CompactTextString(m) }
-func (*CLUSSnifferFilter) ProtoMessage()               {}
-func (*CLUSSnifferFilter) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{19} }
+func (m *CLUSSnifferFilter) Reset()         { *m = CLUSSnifferFilter{} }
+func (m *CLUSSnifferFilter) String() string { return proto.CompactTextString(m) }
+func (*CLUSSnifferFilter) ProtoMessage()    {}
+func (*CLUSSnifferFilter) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{19}
+}
+func (m *CLUSSnifferFilter) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSSnifferFilter.Unmarshal(m, b)
+}
+func (m *CLUSSnifferFilter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSSnifferFilter.Marshal(b, m, deterministic)
+}
+func (dst *CLUSSnifferFilter) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSSnifferFilter.Merge(dst, src)
+}
+func (m *CLUSSnifferFilter) XXX_Size() int {
+	return xxx_messageInfo_CLUSSnifferFilter.Size(m)
+}
+func (m *CLUSSnifferFilter) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSSnifferFilter.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSSnifferFilter proto.InternalMessageInfo
 
 func (m *CLUSSnifferFilter) GetID() string {
 	if m != nil {
@@ -1506,21 +1957,43 @@ func (m *CLUSSnifferFilter) GetWorkload() string {
 }
 
 type CLUSSniffer struct {
-	ID         string        `protobuf:"bytes,1,opt,name=ID" json:"ID,omitempty"`
-	AgentID    string        `protobuf:"bytes,2,opt,name=AgentID" json:"AgentID,omitempty"`
-	WorkloadID string        `protobuf:"bytes,3,opt,name=WorkloadID" json:"WorkloadID,omitempty"`
-	Status     SnifferStatus `protobuf:"varint,4,opt,name=Status,enum=share.SnifferStatus" json:"Status,omitempty"`
-	Args       string        `protobuf:"bytes,5,opt,name=Args" json:"Args,omitempty"`
-	FileNumber uint32        `protobuf:"varint,6,opt,name=FileNumber" json:"FileNumber,omitempty"`
-	Size       int64         `protobuf:"varint,7,opt,name=Size" json:"Size,omitempty"`
-	StartTime  int64         `protobuf:"varint,8,opt,name=StartTime" json:"StartTime,omitempty"`
-	StopTime   int64         `protobuf:"varint,9,opt,name=StopTime" json:"StopTime,omitempty"`
+	ID                   string        `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	AgentID              string        `protobuf:"bytes,2,opt,name=AgentID,proto3" json:"AgentID,omitempty"`
+	WorkloadID           string        `protobuf:"bytes,3,opt,name=WorkloadID,proto3" json:"WorkloadID,omitempty"`
+	Status               SnifferStatus `protobuf:"varint,4,opt,name=Status,proto3,enum=share.SnifferStatus" json:"Status,omitempty"`
+	Args                 string        `protobuf:"bytes,5,opt,name=Args,proto3" json:"Args,omitempty"`
+	FileNumber           uint32        `protobuf:"varint,6,opt,name=FileNumber,proto3" json:"FileNumber,omitempty"`
+	Size                 int64         `protobuf:"varint,7,opt,name=Size,proto3" json:"Size,omitempty"`
+	StartTime            int64         `protobuf:"varint,8,opt,name=StartTime,proto3" json:"StartTime,omitempty"`
+	StopTime             int64         `protobuf:"varint,9,opt,name=StopTime,proto3" json:"StopTime,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
-func (m *CLUSSniffer) Reset()                    { *m = CLUSSniffer{} }
-func (m *CLUSSniffer) String() string            { return proto.CompactTextString(m) }
-func (*CLUSSniffer) ProtoMessage()               {}
-func (*CLUSSniffer) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{20} }
+func (m *CLUSSniffer) Reset()         { *m = CLUSSniffer{} }
+func (m *CLUSSniffer) String() string { return proto.CompactTextString(m) }
+func (*CLUSSniffer) ProtoMessage()    {}
+func (*CLUSSniffer) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{20}
+}
+func (m *CLUSSniffer) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSSniffer.Unmarshal(m, b)
+}
+func (m *CLUSSniffer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSSniffer.Marshal(b, m, deterministic)
+}
+func (dst *CLUSSniffer) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSSniffer.Merge(dst, src)
+}
+func (m *CLUSSniffer) XXX_Size() int {
+	return xxx_messageInfo_CLUSSniffer.Size(m)
+}
+func (m *CLUSSniffer) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSSniffer.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSSniffer proto.InternalMessageInfo
 
 func (m *CLUSSniffer) GetID() string {
 	if m != nil {
@@ -1586,13 +2059,35 @@ func (m *CLUSSniffer) GetStopTime() int64 {
 }
 
 type CLUSSnifferArray struct {
-	Sniffers []*CLUSSniffer `protobuf:"bytes,1,rep,name=sniffers" json:"sniffers,omitempty"`
+	Sniffers             []*CLUSSniffer `protobuf:"bytes,1,rep,name=sniffers,proto3" json:"sniffers,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
 }
 
-func (m *CLUSSnifferArray) Reset()                    { *m = CLUSSnifferArray{} }
-func (m *CLUSSnifferArray) String() string            { return proto.CompactTextString(m) }
-func (*CLUSSnifferArray) ProtoMessage()               {}
-func (*CLUSSnifferArray) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{21} }
+func (m *CLUSSnifferArray) Reset()         { *m = CLUSSnifferArray{} }
+func (m *CLUSSnifferArray) String() string { return proto.CompactTextString(m) }
+func (*CLUSSnifferArray) ProtoMessage()    {}
+func (*CLUSSnifferArray) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{21}
+}
+func (m *CLUSSnifferArray) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSSnifferArray.Unmarshal(m, b)
+}
+func (m *CLUSSnifferArray) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSSnifferArray.Marshal(b, m, deterministic)
+}
+func (dst *CLUSSnifferArray) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSSnifferArray.Merge(dst, src)
+}
+func (m *CLUSSnifferArray) XXX_Size() int {
+	return xxx_messageInfo_CLUSSnifferArray.Size(m)
+}
+func (m *CLUSSnifferArray) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSSnifferArray.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSSnifferArray proto.InternalMessageInfo
 
 func (m *CLUSSnifferArray) GetSniffers() []*CLUSSniffer {
 	if m != nil {
@@ -1602,13 +2097,35 @@ func (m *CLUSSnifferArray) GetSniffers() []*CLUSSniffer {
 }
 
 type CLUSSnifferDownload struct {
-	ID string `protobuf:"bytes,1,opt,name=ID" json:"ID,omitempty"`
+	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSSnifferDownload) Reset()                    { *m = CLUSSnifferDownload{} }
-func (m *CLUSSnifferDownload) String() string            { return proto.CompactTextString(m) }
-func (*CLUSSnifferDownload) ProtoMessage()               {}
-func (*CLUSSnifferDownload) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{22} }
+func (m *CLUSSnifferDownload) Reset()         { *m = CLUSSnifferDownload{} }
+func (m *CLUSSnifferDownload) String() string { return proto.CompactTextString(m) }
+func (*CLUSSnifferDownload) ProtoMessage()    {}
+func (*CLUSSnifferDownload) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{22}
+}
+func (m *CLUSSnifferDownload) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSSnifferDownload.Unmarshal(m, b)
+}
+func (m *CLUSSnifferDownload) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSSnifferDownload.Marshal(b, m, deterministic)
+}
+func (dst *CLUSSnifferDownload) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSSnifferDownload.Merge(dst, src)
+}
+func (m *CLUSSnifferDownload) XXX_Size() int {
+	return xxx_messageInfo_CLUSSnifferDownload.Size(m)
+}
+func (m *CLUSSnifferDownload) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSSnifferDownload.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSSnifferDownload proto.InternalMessageInfo
 
 func (m *CLUSSnifferDownload) GetID() string {
 	if m != nil {
@@ -1618,13 +2135,35 @@ func (m *CLUSSnifferDownload) GetID() string {
 }
 
 type CLUSSnifferPcap struct {
-	Pcap []byte `protobuf:"bytes,1,opt,name=Pcap,proto3" json:"Pcap,omitempty"`
+	Pcap                 []byte   `protobuf:"bytes,1,opt,name=Pcap,proto3" json:"Pcap,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSSnifferPcap) Reset()                    { *m = CLUSSnifferPcap{} }
-func (m *CLUSSnifferPcap) String() string            { return proto.CompactTextString(m) }
-func (*CLUSSnifferPcap) ProtoMessage()               {}
-func (*CLUSSnifferPcap) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{23} }
+func (m *CLUSSnifferPcap) Reset()         { *m = CLUSSnifferPcap{} }
+func (m *CLUSSnifferPcap) String() string { return proto.CompactTextString(m) }
+func (*CLUSSnifferPcap) ProtoMessage()    {}
+func (*CLUSSnifferPcap) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{23}
+}
+func (m *CLUSSnifferPcap) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSSnifferPcap.Unmarshal(m, b)
+}
+func (m *CLUSSnifferPcap) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSSnifferPcap.Marshal(b, m, deterministic)
+}
+func (dst *CLUSSnifferPcap) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSSnifferPcap.Merge(dst, src)
+}
+func (m *CLUSSnifferPcap) XXX_Size() int {
+	return xxx_messageInfo_CLUSSnifferPcap.Size(m)
+}
+func (m *CLUSSnifferPcap) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSSnifferPcap.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSSnifferPcap proto.InternalMessageInfo
 
 func (m *CLUSSnifferPcap) GetPcap() []byte {
 	if m != nil {
@@ -1634,15 +2173,37 @@ func (m *CLUSSnifferPcap) GetPcap() []byte {
 }
 
 type CLUSContainerLogReq struct {
-	Id    string `protobuf:"bytes,1,opt,name=Id" json:"Id,omitempty"`
-	Start int32  `protobuf:"varint,2,opt,name=Start" json:"Start,omitempty"`
-	Limit uint32 `protobuf:"varint,3,opt,name=Limit" json:"Limit,omitempty"`
+	Id                   string   `protobuf:"bytes,1,opt,name=Id,proto3" json:"Id,omitempty"`
+	Start                int32    `protobuf:"varint,2,opt,name=Start,proto3" json:"Start,omitempty"`
+	Limit                uint32   `protobuf:"varint,3,opt,name=Limit,proto3" json:"Limit,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSContainerLogReq) Reset()                    { *m = CLUSContainerLogReq{} }
-func (m *CLUSContainerLogReq) String() string            { return proto.CompactTextString(m) }
-func (*CLUSContainerLogReq) ProtoMessage()               {}
-func (*CLUSContainerLogReq) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{24} }
+func (m *CLUSContainerLogReq) Reset()         { *m = CLUSContainerLogReq{} }
+func (m *CLUSContainerLogReq) String() string { return proto.CompactTextString(m) }
+func (*CLUSContainerLogReq) ProtoMessage()    {}
+func (*CLUSContainerLogReq) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{24}
+}
+func (m *CLUSContainerLogReq) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSContainerLogReq.Unmarshal(m, b)
+}
+func (m *CLUSContainerLogReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSContainerLogReq.Marshal(b, m, deterministic)
+}
+func (dst *CLUSContainerLogReq) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSContainerLogReq.Merge(dst, src)
+}
+func (m *CLUSContainerLogReq) XXX_Size() int {
+	return xxx_messageInfo_CLUSContainerLogReq.Size(m)
+}
+func (m *CLUSContainerLogReq) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSContainerLogReq.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSContainerLogReq proto.InternalMessageInfo
 
 func (m *CLUSContainerLogReq) GetId() string {
 	if m != nil {
@@ -1666,13 +2227,35 @@ func (m *CLUSContainerLogReq) GetLimit() uint32 {
 }
 
 type CLUSContainerLogRes struct {
-	LogZb []byte `protobuf:"bytes,1,opt,name=LogZb,proto3" json:"LogZb,omitempty"`
+	LogZb                []byte   `protobuf:"bytes,1,opt,name=LogZb,proto3" json:"LogZb,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSContainerLogRes) Reset()                    { *m = CLUSContainerLogRes{} }
-func (m *CLUSContainerLogRes) String() string            { return proto.CompactTextString(m) }
-func (*CLUSContainerLogRes) ProtoMessage()               {}
-func (*CLUSContainerLogRes) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{25} }
+func (m *CLUSContainerLogRes) Reset()         { *m = CLUSContainerLogRes{} }
+func (m *CLUSContainerLogRes) String() string { return proto.CompactTextString(m) }
+func (*CLUSContainerLogRes) ProtoMessage()    {}
+func (*CLUSContainerLogRes) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{25}
+}
+func (m *CLUSContainerLogRes) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSContainerLogRes.Unmarshal(m, b)
+}
+func (m *CLUSContainerLogRes) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSContainerLogRes.Marshal(b, m, deterministic)
+}
+func (dst *CLUSContainerLogRes) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSContainerLogRes.Merge(dst, src)
+}
+func (m *CLUSContainerLogRes) XXX_Size() int {
+	return xxx_messageInfo_CLUSContainerLogRes.Size(m)
+}
+func (m *CLUSContainerLogRes) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSContainerLogRes.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSContainerLogRes proto.InternalMessageInfo
 
 func (m *CLUSContainerLogRes) GetLogZb() []byte {
 	if m != nil {
@@ -1682,25 +2265,47 @@ func (m *CLUSContainerLogRes) GetLogZb() []byte {
 }
 
 type CLUSProcess struct {
-	Name    string   `protobuf:"bytes,1,opt,name=Name" json:"Name,omitempty"`
-	Pid     uint32   `protobuf:"varint,2,opt,name=Pid" json:"Pid,omitempty"`
-	PPid    uint32   `protobuf:"varint,3,opt,name=PPid" json:"PPid,omitempty"`
-	PGid    uint32   `protobuf:"varint,4,opt,name=PGid" json:"PGid,omitempty"`
-	PSid    uint32   `protobuf:"varint,5,opt,name=PSid" json:"PSid,omitempty"`
-	RUid    uint32   `protobuf:"varint,6,opt,name=RUid" json:"RUid,omitempty"`
-	EUid    uint32   `protobuf:"varint,7,opt,name=EUid" json:"EUid,omitempty"`
-	Cmds    []string `protobuf:"bytes,8,rep,name=Cmds" json:"Cmds,omitempty"`
-	Root    bool     `protobuf:"varint,9,opt,name=Root" json:"Root,omitempty"`
-	User    string   `protobuf:"bytes,10,opt,name=User" json:"User,omitempty"`
-	Status  string   `protobuf:"bytes,11,opt,name=Status" json:"Status,omitempty"`
-	StartAt int64    `protobuf:"varint,12,opt,name=StartAt" json:"StartAt,omitempty"`
-	Action  string   `protobuf:"bytes,13,opt,name=Action" json:"Action,omitempty"`
+	Name                 string   `protobuf:"bytes,1,opt,name=Name,proto3" json:"Name,omitempty"`
+	Pid                  uint32   `protobuf:"varint,2,opt,name=Pid,proto3" json:"Pid,omitempty"`
+	PPid                 uint32   `protobuf:"varint,3,opt,name=PPid,proto3" json:"PPid,omitempty"`
+	PGid                 uint32   `protobuf:"varint,4,opt,name=PGid,proto3" json:"PGid,omitempty"`
+	PSid                 uint32   `protobuf:"varint,5,opt,name=PSid,proto3" json:"PSid,omitempty"`
+	RUid                 uint32   `protobuf:"varint,6,opt,name=RUid,proto3" json:"RUid,omitempty"`
+	EUid                 uint32   `protobuf:"varint,7,opt,name=EUid,proto3" json:"EUid,omitempty"`
+	Cmds                 []string `protobuf:"bytes,8,rep,name=Cmds,proto3" json:"Cmds,omitempty"`
+	Root                 bool     `protobuf:"varint,9,opt,name=Root,proto3" json:"Root,omitempty"`
+	User                 string   `protobuf:"bytes,10,opt,name=User,proto3" json:"User,omitempty"`
+	Status               string   `protobuf:"bytes,11,opt,name=Status,proto3" json:"Status,omitempty"`
+	StartAt              int64    `protobuf:"varint,12,opt,name=StartAt,proto3" json:"StartAt,omitempty"`
+	Action               string   `protobuf:"bytes,13,opt,name=Action,proto3" json:"Action,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSProcess) Reset()                    { *m = CLUSProcess{} }
-func (m *CLUSProcess) String() string            { return proto.CompactTextString(m) }
-func (*CLUSProcess) ProtoMessage()               {}
-func (*CLUSProcess) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{26} }
+func (m *CLUSProcess) Reset()         { *m = CLUSProcess{} }
+func (m *CLUSProcess) String() string { return proto.CompactTextString(m) }
+func (*CLUSProcess) ProtoMessage()    {}
+func (*CLUSProcess) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{26}
+}
+func (m *CLUSProcess) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSProcess.Unmarshal(m, b)
+}
+func (m *CLUSProcess) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSProcess.Marshal(b, m, deterministic)
+}
+func (dst *CLUSProcess) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSProcess.Merge(dst, src)
+}
+func (m *CLUSProcess) XXX_Size() int {
+	return xxx_messageInfo_CLUSProcess.Size(m)
+}
+func (m *CLUSProcess) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSProcess.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSProcess proto.InternalMessageInfo
 
 func (m *CLUSProcess) GetName() string {
 	if m != nil {
@@ -1794,13 +2399,35 @@ func (m *CLUSProcess) GetAction() string {
 }
 
 type CLUSProcessArray struct {
-	Processes []*CLUSProcess `protobuf:"bytes,1,rep,name=Processes" json:"Processes,omitempty"`
+	Processes            []*CLUSProcess `protobuf:"bytes,1,rep,name=Processes,proto3" json:"Processes,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
 }
 
-func (m *CLUSProcessArray) Reset()                    { *m = CLUSProcessArray{} }
-func (m *CLUSProcessArray) String() string            { return proto.CompactTextString(m) }
-func (*CLUSProcessArray) ProtoMessage()               {}
-func (*CLUSProcessArray) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{27} }
+func (m *CLUSProcessArray) Reset()         { *m = CLUSProcessArray{} }
+func (m *CLUSProcessArray) String() string { return proto.CompactTextString(m) }
+func (*CLUSProcessArray) ProtoMessage()    {}
+func (*CLUSProcessArray) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{27}
+}
+func (m *CLUSProcessArray) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSProcessArray.Unmarshal(m, b)
+}
+func (m *CLUSProcessArray) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSProcessArray.Marshal(b, m, deterministic)
+}
+func (dst *CLUSProcessArray) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSProcessArray.Merge(dst, src)
+}
+func (m *CLUSProcessArray) XXX_Size() int {
+	return xxx_messageInfo_CLUSProcessArray.Size(m)
+}
+func (m *CLUSProcessArray) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSProcessArray.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSProcessArray proto.InternalMessageInfo
 
 func (m *CLUSProcessArray) GetProcesses() []*CLUSProcess {
 	if m != nil {
@@ -1810,14 +2437,36 @@ func (m *CLUSProcessArray) GetProcesses() []*CLUSProcess {
 }
 
 type CLUSDerivedDlpRule struct {
-	Name   string `protobuf:"bytes,1,opt,name=Name" json:"Name,omitempty"`
-	Action uint32 `protobuf:"varint,2,opt,name=Action" json:"Action,omitempty"`
+	Name                 string   `protobuf:"bytes,1,opt,name=Name,proto3" json:"Name,omitempty"`
+	Action               uint32   `protobuf:"varint,2,opt,name=Action,proto3" json:"Action,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSDerivedDlpRule) Reset()                    { *m = CLUSDerivedDlpRule{} }
-func (m *CLUSDerivedDlpRule) String() string            { return proto.CompactTextString(m) }
-func (*CLUSDerivedDlpRule) ProtoMessage()               {}
-func (*CLUSDerivedDlpRule) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{28} }
+func (m *CLUSDerivedDlpRule) Reset()         { *m = CLUSDerivedDlpRule{} }
+func (m *CLUSDerivedDlpRule) String() string { return proto.CompactTextString(m) }
+func (*CLUSDerivedDlpRule) ProtoMessage()    {}
+func (*CLUSDerivedDlpRule) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{28}
+}
+func (m *CLUSDerivedDlpRule) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSDerivedDlpRule.Unmarshal(m, b)
+}
+func (m *CLUSDerivedDlpRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSDerivedDlpRule.Marshal(b, m, deterministic)
+}
+func (dst *CLUSDerivedDlpRule) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSDerivedDlpRule.Merge(dst, src)
+}
+func (m *CLUSDerivedDlpRule) XXX_Size() int {
+	return xxx_messageInfo_CLUSDerivedDlpRule.Size(m)
+}
+func (m *CLUSDerivedDlpRule) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSDerivedDlpRule.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSDerivedDlpRule proto.InternalMessageInfo
 
 func (m *CLUSDerivedDlpRule) GetName() string {
 	if m != nil {
@@ -1834,21 +2483,43 @@ func (m *CLUSDerivedDlpRule) GetAction() uint32 {
 }
 
 type CLUSDerivedDlpRuleArray struct {
-	Mode     string                `protobuf:"bytes,1,opt,name=Mode" json:"Mode,omitempty"`
-	DefAct   uint32                `protobuf:"varint,2,opt,name=DefAct" json:"DefAct,omitempty"`
-	ApplyDir int32                 `protobuf:"varint,3,opt,name=ApplyDir" json:"ApplyDir,omitempty"`
-	WlMacs   []string              `protobuf:"bytes,4,rep,name=WlMacs" json:"WlMacs,omitempty"`
-	DlpRules []*CLUSDerivedDlpRule `protobuf:"bytes,5,rep,name=DlpRules" json:"DlpRules,omitempty"`
-	WafRules []*CLUSDerivedDlpRule `protobuf:"bytes,6,rep,name=WafRules" json:"WafRules,omitempty"`
-	Rids     []uint32              `protobuf:"varint,7,rep,packed,name=rids" json:"rids,omitempty"`
-	Wafrids  []uint32              `protobuf:"varint,8,rep,packed,name=wafrids" json:"wafrids,omitempty"`
-	RuleType string                `protobuf:"bytes,9,opt,name=RuleType" json:"RuleType,omitempty"`
+	Mode                 string                `protobuf:"bytes,1,opt,name=Mode,proto3" json:"Mode,omitempty"`
+	DefAct               uint32                `protobuf:"varint,2,opt,name=DefAct,proto3" json:"DefAct,omitempty"`
+	ApplyDir             int32                 `protobuf:"varint,3,opt,name=ApplyDir,proto3" json:"ApplyDir,omitempty"`
+	WlMacs               []string              `protobuf:"bytes,4,rep,name=WlMacs,proto3" json:"WlMacs,omitempty"`
+	DlpRules             []*CLUSDerivedDlpRule `protobuf:"bytes,5,rep,name=DlpRules,proto3" json:"DlpRules,omitempty"`
+	WafRules             []*CLUSDerivedDlpRule `protobuf:"bytes,6,rep,name=WafRules,proto3" json:"WafRules,omitempty"`
+	Rids                 []uint32              `protobuf:"varint,7,rep,packed,name=rids,proto3" json:"rids,omitempty"`
+	Wafrids              []uint32              `protobuf:"varint,8,rep,packed,name=wafrids,proto3" json:"wafrids,omitempty"`
+	RuleType             string                `protobuf:"bytes,9,opt,name=RuleType,proto3" json:"RuleType,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *CLUSDerivedDlpRuleArray) Reset()                    { *m = CLUSDerivedDlpRuleArray{} }
-func (m *CLUSDerivedDlpRuleArray) String() string            { return proto.CompactTextString(m) }
-func (*CLUSDerivedDlpRuleArray) ProtoMessage()               {}
-func (*CLUSDerivedDlpRuleArray) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{29} }
+func (m *CLUSDerivedDlpRuleArray) Reset()         { *m = CLUSDerivedDlpRuleArray{} }
+func (m *CLUSDerivedDlpRuleArray) String() string { return proto.CompactTextString(m) }
+func (*CLUSDerivedDlpRuleArray) ProtoMessage()    {}
+func (*CLUSDerivedDlpRuleArray) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{29}
+}
+func (m *CLUSDerivedDlpRuleArray) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSDerivedDlpRuleArray.Unmarshal(m, b)
+}
+func (m *CLUSDerivedDlpRuleArray) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSDerivedDlpRuleArray.Marshal(b, m, deterministic)
+}
+func (dst *CLUSDerivedDlpRuleArray) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSDerivedDlpRuleArray.Merge(dst, src)
+}
+func (m *CLUSDerivedDlpRuleArray) XXX_Size() int {
+	return xxx_messageInfo_CLUSDerivedDlpRuleArray.Size(m)
+}
+func (m *CLUSDerivedDlpRuleArray) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSDerivedDlpRuleArray.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSDerivedDlpRuleArray proto.InternalMessageInfo
 
 func (m *CLUSDerivedDlpRuleArray) GetMode() string {
 	if m != nil {
@@ -1914,13 +2585,35 @@ func (m *CLUSDerivedDlpRuleArray) GetRuleType() string {
 }
 
 type CLUSDerivedDlpRuleMap struct {
-	DlpRuleMap map[string]*CLUSDerivedDlpRuleArray `protobuf:"bytes,1,rep,name=DlpRuleMap" json:"DlpRuleMap,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	DlpRuleMap           map[string]*CLUSDerivedDlpRuleArray `protobuf:"bytes,1,rep,name=DlpRuleMap,proto3" json:"DlpRuleMap,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	XXX_NoUnkeyedLiteral struct{}                            `json:"-"`
+	XXX_unrecognized     []byte                              `json:"-"`
+	XXX_sizecache        int32                               `json:"-"`
 }
 
-func (m *CLUSDerivedDlpRuleMap) Reset()                    { *m = CLUSDerivedDlpRuleMap{} }
-func (m *CLUSDerivedDlpRuleMap) String() string            { return proto.CompactTextString(m) }
-func (*CLUSDerivedDlpRuleMap) ProtoMessage()               {}
-func (*CLUSDerivedDlpRuleMap) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{30} }
+func (m *CLUSDerivedDlpRuleMap) Reset()         { *m = CLUSDerivedDlpRuleMap{} }
+func (m *CLUSDerivedDlpRuleMap) String() string { return proto.CompactTextString(m) }
+func (*CLUSDerivedDlpRuleMap) ProtoMessage()    {}
+func (*CLUSDerivedDlpRuleMap) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{30}
+}
+func (m *CLUSDerivedDlpRuleMap) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSDerivedDlpRuleMap.Unmarshal(m, b)
+}
+func (m *CLUSDerivedDlpRuleMap) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSDerivedDlpRuleMap.Marshal(b, m, deterministic)
+}
+func (dst *CLUSDerivedDlpRuleMap) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSDerivedDlpRuleMap.Merge(dst, src)
+}
+func (m *CLUSDerivedDlpRuleMap) XXX_Size() int {
+	return xxx_messageInfo_CLUSDerivedDlpRuleMap.Size(m)
+}
+func (m *CLUSDerivedDlpRuleMap) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSDerivedDlpRuleMap.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSDerivedDlpRuleMap proto.InternalMessageInfo
 
 func (m *CLUSDerivedDlpRuleMap) GetDlpRuleMap() map[string]*CLUSDerivedDlpRuleArray {
 	if m != nil {
@@ -1930,15 +2623,37 @@ func (m *CLUSDerivedDlpRuleMap) GetDlpRuleMap() map[string]*CLUSDerivedDlpRuleAr
 }
 
 type CLUSDerivedDlpRuleEntry struct {
-	Name     string   `protobuf:"bytes,1,opt,name=Name" json:"Name,omitempty"`
-	ID       uint32   `protobuf:"varint,2,opt,name=ID" json:"ID,omitempty"`
-	Patterns []string `protobuf:"bytes,3,rep,name=Patterns" json:"Patterns,omitempty"`
+	Name                 string   `protobuf:"bytes,1,opt,name=Name,proto3" json:"Name,omitempty"`
+	ID                   uint32   `protobuf:"varint,2,opt,name=ID,proto3" json:"ID,omitempty"`
+	Patterns             []string `protobuf:"bytes,3,rep,name=Patterns,proto3" json:"Patterns,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSDerivedDlpRuleEntry) Reset()                    { *m = CLUSDerivedDlpRuleEntry{} }
-func (m *CLUSDerivedDlpRuleEntry) String() string            { return proto.CompactTextString(m) }
-func (*CLUSDerivedDlpRuleEntry) ProtoMessage()               {}
-func (*CLUSDerivedDlpRuleEntry) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{31} }
+func (m *CLUSDerivedDlpRuleEntry) Reset()         { *m = CLUSDerivedDlpRuleEntry{} }
+func (m *CLUSDerivedDlpRuleEntry) String() string { return proto.CompactTextString(m) }
+func (*CLUSDerivedDlpRuleEntry) ProtoMessage()    {}
+func (*CLUSDerivedDlpRuleEntry) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{31}
+}
+func (m *CLUSDerivedDlpRuleEntry) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSDerivedDlpRuleEntry.Unmarshal(m, b)
+}
+func (m *CLUSDerivedDlpRuleEntry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSDerivedDlpRuleEntry.Marshal(b, m, deterministic)
+}
+func (dst *CLUSDerivedDlpRuleEntry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSDerivedDlpRuleEntry.Merge(dst, src)
+}
+func (m *CLUSDerivedDlpRuleEntry) XXX_Size() int {
+	return xxx_messageInfo_CLUSDerivedDlpRuleEntry.Size(m)
+}
+func (m *CLUSDerivedDlpRuleEntry) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSDerivedDlpRuleEntry.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSDerivedDlpRuleEntry proto.InternalMessageInfo
 
 func (m *CLUSDerivedDlpRuleEntry) GetName() string {
 	if m != nil {
@@ -1962,13 +2677,35 @@ func (m *CLUSDerivedDlpRuleEntry) GetPatterns() []string {
 }
 
 type CLUSDerivedDlpRuleEntryArray struct {
-	DlpRuleEntries []*CLUSDerivedDlpRuleEntry `protobuf:"bytes,1,rep,name=DlpRuleEntries" json:"DlpRuleEntries,omitempty"`
+	DlpRuleEntries       []*CLUSDerivedDlpRuleEntry `protobuf:"bytes,1,rep,name=DlpRuleEntries,proto3" json:"DlpRuleEntries,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
 }
 
-func (m *CLUSDerivedDlpRuleEntryArray) Reset()                    { *m = CLUSDerivedDlpRuleEntryArray{} }
-func (m *CLUSDerivedDlpRuleEntryArray) String() string            { return proto.CompactTextString(m) }
-func (*CLUSDerivedDlpRuleEntryArray) ProtoMessage()               {}
-func (*CLUSDerivedDlpRuleEntryArray) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{32} }
+func (m *CLUSDerivedDlpRuleEntryArray) Reset()         { *m = CLUSDerivedDlpRuleEntryArray{} }
+func (m *CLUSDerivedDlpRuleEntryArray) String() string { return proto.CompactTextString(m) }
+func (*CLUSDerivedDlpRuleEntryArray) ProtoMessage()    {}
+func (*CLUSDerivedDlpRuleEntryArray) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{32}
+}
+func (m *CLUSDerivedDlpRuleEntryArray) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSDerivedDlpRuleEntryArray.Unmarshal(m, b)
+}
+func (m *CLUSDerivedDlpRuleEntryArray) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSDerivedDlpRuleEntryArray.Marshal(b, m, deterministic)
+}
+func (dst *CLUSDerivedDlpRuleEntryArray) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSDerivedDlpRuleEntryArray.Merge(dst, src)
+}
+func (m *CLUSDerivedDlpRuleEntryArray) XXX_Size() int {
+	return xxx_messageInfo_CLUSDerivedDlpRuleEntryArray.Size(m)
+}
+func (m *CLUSDerivedDlpRuleEntryArray) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSDerivedDlpRuleEntryArray.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSDerivedDlpRuleEntryArray proto.InternalMessageInfo
 
 func (m *CLUSDerivedDlpRuleEntryArray) GetDlpRuleEntries() []*CLUSDerivedDlpRuleEntry {
 	if m != nil {
@@ -1978,13 +2715,35 @@ func (m *CLUSDerivedDlpRuleEntryArray) GetDlpRuleEntries() []*CLUSDerivedDlpRule
 }
 
 type CLUSDerivedDlpRuleMac struct {
-	Mac string `protobuf:"bytes,1,opt,name=Mac" json:"Mac,omitempty"`
+	Mac                  string   `protobuf:"bytes,1,opt,name=Mac,proto3" json:"Mac,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSDerivedDlpRuleMac) Reset()                    { *m = CLUSDerivedDlpRuleMac{} }
-func (m *CLUSDerivedDlpRuleMac) String() string            { return proto.CompactTextString(m) }
-func (*CLUSDerivedDlpRuleMac) ProtoMessage()               {}
-func (*CLUSDerivedDlpRuleMac) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{33} }
+func (m *CLUSDerivedDlpRuleMac) Reset()         { *m = CLUSDerivedDlpRuleMac{} }
+func (m *CLUSDerivedDlpRuleMac) String() string { return proto.CompactTextString(m) }
+func (*CLUSDerivedDlpRuleMac) ProtoMessage()    {}
+func (*CLUSDerivedDlpRuleMac) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{33}
+}
+func (m *CLUSDerivedDlpRuleMac) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSDerivedDlpRuleMac.Unmarshal(m, b)
+}
+func (m *CLUSDerivedDlpRuleMac) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSDerivedDlpRuleMac.Marshal(b, m, deterministic)
+}
+func (dst *CLUSDerivedDlpRuleMac) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSDerivedDlpRuleMac.Merge(dst, src)
+}
+func (m *CLUSDerivedDlpRuleMac) XXX_Size() int {
+	return xxx_messageInfo_CLUSDerivedDlpRuleMac.Size(m)
+}
+func (m *CLUSDerivedDlpRuleMac) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSDerivedDlpRuleMac.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSDerivedDlpRuleMac proto.InternalMessageInfo
 
 func (m *CLUSDerivedDlpRuleMac) GetMac() string {
 	if m != nil {
@@ -1994,13 +2753,35 @@ func (m *CLUSDerivedDlpRuleMac) GetMac() string {
 }
 
 type CLUSDerivedDlpRuleMacArray struct {
-	DlpRuleMacs []*CLUSDerivedDlpRuleMac `protobuf:"bytes,1,rep,name=DlpRuleMacs" json:"DlpRuleMacs,omitempty"`
+	DlpRuleMacs          []*CLUSDerivedDlpRuleMac `protobuf:"bytes,1,rep,name=DlpRuleMacs,proto3" json:"DlpRuleMacs,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
+	XXX_unrecognized     []byte                   `json:"-"`
+	XXX_sizecache        int32                    `json:"-"`
 }
 
-func (m *CLUSDerivedDlpRuleMacArray) Reset()                    { *m = CLUSDerivedDlpRuleMacArray{} }
-func (m *CLUSDerivedDlpRuleMacArray) String() string            { return proto.CompactTextString(m) }
-func (*CLUSDerivedDlpRuleMacArray) ProtoMessage()               {}
-func (*CLUSDerivedDlpRuleMacArray) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{34} }
+func (m *CLUSDerivedDlpRuleMacArray) Reset()         { *m = CLUSDerivedDlpRuleMacArray{} }
+func (m *CLUSDerivedDlpRuleMacArray) String() string { return proto.CompactTextString(m) }
+func (*CLUSDerivedDlpRuleMacArray) ProtoMessage()    {}
+func (*CLUSDerivedDlpRuleMacArray) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{34}
+}
+func (m *CLUSDerivedDlpRuleMacArray) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSDerivedDlpRuleMacArray.Unmarshal(m, b)
+}
+func (m *CLUSDerivedDlpRuleMacArray) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSDerivedDlpRuleMacArray.Marshal(b, m, deterministic)
+}
+func (dst *CLUSDerivedDlpRuleMacArray) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSDerivedDlpRuleMacArray.Merge(dst, src)
+}
+func (m *CLUSDerivedDlpRuleMacArray) XXX_Size() int {
+	return xxx_messageInfo_CLUSDerivedDlpRuleMacArray.Size(m)
+}
+func (m *CLUSDerivedDlpRuleMacArray) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSDerivedDlpRuleMacArray.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSDerivedDlpRuleMacArray proto.InternalMessageInfo
 
 func (m *CLUSDerivedDlpRuleMacArray) GetDlpRuleMacs() []*CLUSDerivedDlpRuleMac {
 	if m != nil {
@@ -2010,19 +2791,41 @@ func (m *CLUSDerivedDlpRuleMacArray) GetDlpRuleMacs() []*CLUSDerivedDlpRuleMac {
 }
 
 type CLUSDerivedProcessRule struct {
-	Name      string `protobuf:"bytes,1,opt,name=Name" json:"Name,omitempty"`
-	Path      string `protobuf:"bytes,2,opt,name=Path" json:"Path,omitempty"`
-	Action    string `protobuf:"bytes,3,opt,name=Action" json:"Action,omitempty"`
-	CreatedAt uint64 `protobuf:"varint,4,opt,name=CreatedAt" json:"CreatedAt,omitempty"`
-	UpdateAt  uint64 `protobuf:"varint,5,opt,name=UpdateAt" json:"UpdateAt,omitempty"`
-	GroupName string `protobuf:"bytes,6,opt,name=GroupName" json:"GroupName,omitempty"`
-	CfgType   string `protobuf:"bytes,7,opt,name=CfgType" json:"CfgType,omitempty"`
+	Name                 string   `protobuf:"bytes,1,opt,name=Name,proto3" json:"Name,omitempty"`
+	Path                 string   `protobuf:"bytes,2,opt,name=Path,proto3" json:"Path,omitempty"`
+	Action               string   `protobuf:"bytes,3,opt,name=Action,proto3" json:"Action,omitempty"`
+	CreatedAt            uint64   `protobuf:"varint,4,opt,name=CreatedAt,proto3" json:"CreatedAt,omitempty"`
+	UpdateAt             uint64   `protobuf:"varint,5,opt,name=UpdateAt,proto3" json:"UpdateAt,omitempty"`
+	GroupName            string   `protobuf:"bytes,6,opt,name=GroupName,proto3" json:"GroupName,omitempty"`
+	CfgType              string   `protobuf:"bytes,7,opt,name=CfgType,proto3" json:"CfgType,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSDerivedProcessRule) Reset()                    { *m = CLUSDerivedProcessRule{} }
-func (m *CLUSDerivedProcessRule) String() string            { return proto.CompactTextString(m) }
-func (*CLUSDerivedProcessRule) ProtoMessage()               {}
-func (*CLUSDerivedProcessRule) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{35} }
+func (m *CLUSDerivedProcessRule) Reset()         { *m = CLUSDerivedProcessRule{} }
+func (m *CLUSDerivedProcessRule) String() string { return proto.CompactTextString(m) }
+func (*CLUSDerivedProcessRule) ProtoMessage()    {}
+func (*CLUSDerivedProcessRule) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{35}
+}
+func (m *CLUSDerivedProcessRule) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSDerivedProcessRule.Unmarshal(m, b)
+}
+func (m *CLUSDerivedProcessRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSDerivedProcessRule.Marshal(b, m, deterministic)
+}
+func (dst *CLUSDerivedProcessRule) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSDerivedProcessRule.Merge(dst, src)
+}
+func (m *CLUSDerivedProcessRule) XXX_Size() int {
+	return xxx_messageInfo_CLUSDerivedProcessRule.Size(m)
+}
+func (m *CLUSDerivedProcessRule) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSDerivedProcessRule.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSDerivedProcessRule proto.InternalMessageInfo
 
 func (m *CLUSDerivedProcessRule) GetName() string {
 	if m != nil {
@@ -2074,13 +2877,35 @@ func (m *CLUSDerivedProcessRule) GetCfgType() string {
 }
 
 type CLUSDerivedProcessRuleArray struct {
-	Rules []*CLUSDerivedProcessRule `protobuf:"bytes,1,rep,name=Rules" json:"Rules,omitempty"`
+	Rules                []*CLUSDerivedProcessRule `protobuf:"bytes,1,rep,name=Rules,proto3" json:"Rules,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
+	XXX_unrecognized     []byte                    `json:"-"`
+	XXX_sizecache        int32                     `json:"-"`
 }
 
-func (m *CLUSDerivedProcessRuleArray) Reset()                    { *m = CLUSDerivedProcessRuleArray{} }
-func (m *CLUSDerivedProcessRuleArray) String() string            { return proto.CompactTextString(m) }
-func (*CLUSDerivedProcessRuleArray) ProtoMessage()               {}
-func (*CLUSDerivedProcessRuleArray) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{36} }
+func (m *CLUSDerivedProcessRuleArray) Reset()         { *m = CLUSDerivedProcessRuleArray{} }
+func (m *CLUSDerivedProcessRuleArray) String() string { return proto.CompactTextString(m) }
+func (*CLUSDerivedProcessRuleArray) ProtoMessage()    {}
+func (*CLUSDerivedProcessRuleArray) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{36}
+}
+func (m *CLUSDerivedProcessRuleArray) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSDerivedProcessRuleArray.Unmarshal(m, b)
+}
+func (m *CLUSDerivedProcessRuleArray) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSDerivedProcessRuleArray.Marshal(b, m, deterministic)
+}
+func (dst *CLUSDerivedProcessRuleArray) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSDerivedProcessRuleArray.Merge(dst, src)
+}
+func (m *CLUSDerivedProcessRuleArray) XXX_Size() int {
+	return xxx_messageInfo_CLUSDerivedProcessRuleArray.Size(m)
+}
+func (m *CLUSDerivedProcessRuleArray) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSDerivedProcessRuleArray.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSDerivedProcessRuleArray proto.InternalMessageInfo
 
 func (m *CLUSDerivedProcessRuleArray) GetRules() []*CLUSDerivedProcessRule {
 	if m != nil {
@@ -2090,20 +2915,42 @@ func (m *CLUSDerivedProcessRuleArray) GetRules() []*CLUSDerivedProcessRule {
 }
 
 type CLUSDerivedFileRule struct {
-	Recursive bool     `protobuf:"varint,1,opt,name=Recursive" json:"Recursive,omitempty"`
-	Filter    string   `protobuf:"bytes,2,opt,name=Filter" json:"Filter,omitempty"`
-	Path      string   `protobuf:"bytes,3,opt,name=Path" json:"Path,omitempty"`
-	Regex     string   `protobuf:"bytes,4,opt,name=Regex" json:"Regex,omitempty"`
-	Behavior  string   `protobuf:"bytes,5,opt,name=Behavior" json:"Behavior,omitempty"`
-	GroupName string   `protobuf:"bytes,6,opt,name=GroupName" json:"GroupName,omitempty"`
-	Apps      []string `protobuf:"bytes,7,rep,name=Apps" json:"Apps,omitempty"`
-	CfgType   string   `protobuf:"bytes,8,opt,name=CfgType" json:"CfgType,omitempty"`
+	Recursive            bool     `protobuf:"varint,1,opt,name=Recursive,proto3" json:"Recursive,omitempty"`
+	Filter               string   `protobuf:"bytes,2,opt,name=Filter,proto3" json:"Filter,omitempty"`
+	Path                 string   `protobuf:"bytes,3,opt,name=Path,proto3" json:"Path,omitempty"`
+	Regex                string   `protobuf:"bytes,4,opt,name=Regex,proto3" json:"Regex,omitempty"`
+	Behavior             string   `protobuf:"bytes,5,opt,name=Behavior,proto3" json:"Behavior,omitempty"`
+	GroupName            string   `protobuf:"bytes,6,opt,name=GroupName,proto3" json:"GroupName,omitempty"`
+	Apps                 []string `protobuf:"bytes,7,rep,name=Apps,proto3" json:"Apps,omitempty"`
+	CfgType              string   `protobuf:"bytes,8,opt,name=CfgType,proto3" json:"CfgType,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSDerivedFileRule) Reset()                    { *m = CLUSDerivedFileRule{} }
-func (m *CLUSDerivedFileRule) String() string            { return proto.CompactTextString(m) }
-func (*CLUSDerivedFileRule) ProtoMessage()               {}
-func (*CLUSDerivedFileRule) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{37} }
+func (m *CLUSDerivedFileRule) Reset()         { *m = CLUSDerivedFileRule{} }
+func (m *CLUSDerivedFileRule) String() string { return proto.CompactTextString(m) }
+func (*CLUSDerivedFileRule) ProtoMessage()    {}
+func (*CLUSDerivedFileRule) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{37}
+}
+func (m *CLUSDerivedFileRule) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSDerivedFileRule.Unmarshal(m, b)
+}
+func (m *CLUSDerivedFileRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSDerivedFileRule.Marshal(b, m, deterministic)
+}
+func (dst *CLUSDerivedFileRule) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSDerivedFileRule.Merge(dst, src)
+}
+func (m *CLUSDerivedFileRule) XXX_Size() int {
+	return xxx_messageInfo_CLUSDerivedFileRule.Size(m)
+}
+func (m *CLUSDerivedFileRule) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSDerivedFileRule.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSDerivedFileRule proto.InternalMessageInfo
 
 func (m *CLUSDerivedFileRule) GetRecursive() bool {
 	if m != nil {
@@ -2162,13 +3009,35 @@ func (m *CLUSDerivedFileRule) GetCfgType() string {
 }
 
 type CLUSDerivedFileRuleArray struct {
-	Rules []*CLUSDerivedFileRule `protobuf:"bytes,1,rep,name=Rules" json:"Rules,omitempty"`
+	Rules                []*CLUSDerivedFileRule `protobuf:"bytes,1,rep,name=Rules,proto3" json:"Rules,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
-func (m *CLUSDerivedFileRuleArray) Reset()                    { *m = CLUSDerivedFileRuleArray{} }
-func (m *CLUSDerivedFileRuleArray) String() string            { return proto.CompactTextString(m) }
-func (*CLUSDerivedFileRuleArray) ProtoMessage()               {}
-func (*CLUSDerivedFileRuleArray) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{38} }
+func (m *CLUSDerivedFileRuleArray) Reset()         { *m = CLUSDerivedFileRuleArray{} }
+func (m *CLUSDerivedFileRuleArray) String() string { return proto.CompactTextString(m) }
+func (*CLUSDerivedFileRuleArray) ProtoMessage()    {}
+func (*CLUSDerivedFileRuleArray) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{38}
+}
+func (m *CLUSDerivedFileRuleArray) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSDerivedFileRuleArray.Unmarshal(m, b)
+}
+func (m *CLUSDerivedFileRuleArray) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSDerivedFileRuleArray.Marshal(b, m, deterministic)
+}
+func (dst *CLUSDerivedFileRuleArray) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSDerivedFileRuleArray.Merge(dst, src)
+}
+func (m *CLUSDerivedFileRuleArray) XXX_Size() int {
+	return xxx_messageInfo_CLUSDerivedFileRuleArray.Size(m)
+}
+func (m *CLUSDerivedFileRuleArray) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSDerivedFileRuleArray.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSDerivedFileRuleArray proto.InternalMessageInfo
 
 func (m *CLUSDerivedFileRuleArray) GetRules() []*CLUSDerivedFileRule {
 	if m != nil {
@@ -2178,22 +3047,44 @@ func (m *CLUSDerivedFileRuleArray) GetRules() []*CLUSDerivedFileRule {
 }
 
 type CLUSWorkloadInterceptPort struct {
-	Port          string `protobuf:"bytes,1,opt,name=Port" json:"Port,omitempty"`
-	Peer          string `protobuf:"bytes,2,opt,name=Peer" json:"Peer,omitempty"`
-	MAC           []byte `protobuf:"bytes,3,opt,name=MAC,proto3" json:"MAC,omitempty"`
-	UCMAC         []byte `protobuf:"bytes,4,opt,name=UCMAC,proto3" json:"UCMAC,omitempty"`
-	BCMAC         []byte `protobuf:"bytes,5,opt,name=BCMAC,proto3" json:"BCMAC,omitempty"`
-	InPort        string `protobuf:"bytes,6,opt,name=InPort" json:"InPort,omitempty"`
-	ExPort        string `protobuf:"bytes,7,opt,name=ExPort" json:"ExPort,omitempty"`
-	InPortRules   string `protobuf:"bytes,8,opt,name=InPortRules" json:"InPortRules,omitempty"`
-	ExPortRules   string `protobuf:"bytes,9,opt,name=ExPortRules" json:"ExPortRules,omitempty"`
-	EnforcerRules string `protobuf:"bytes,10,opt,name=EnforcerRules" json:"EnforcerRules,omitempty"`
+	Port                 string   `protobuf:"bytes,1,opt,name=Port,proto3" json:"Port,omitempty"`
+	Peer                 string   `protobuf:"bytes,2,opt,name=Peer,proto3" json:"Peer,omitempty"`
+	MAC                  []byte   `protobuf:"bytes,3,opt,name=MAC,proto3" json:"MAC,omitempty"`
+	UCMAC                []byte   `protobuf:"bytes,4,opt,name=UCMAC,proto3" json:"UCMAC,omitempty"`
+	BCMAC                []byte   `protobuf:"bytes,5,opt,name=BCMAC,proto3" json:"BCMAC,omitempty"`
+	InPort               string   `protobuf:"bytes,6,opt,name=InPort,proto3" json:"InPort,omitempty"`
+	ExPort               string   `protobuf:"bytes,7,opt,name=ExPort,proto3" json:"ExPort,omitempty"`
+	InPortRules          string   `protobuf:"bytes,8,opt,name=InPortRules,proto3" json:"InPortRules,omitempty"`
+	ExPortRules          string   `protobuf:"bytes,9,opt,name=ExPortRules,proto3" json:"ExPortRules,omitempty"`
+	EnforcerRules        string   `protobuf:"bytes,10,opt,name=EnforcerRules,proto3" json:"EnforcerRules,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSWorkloadInterceptPort) Reset()                    { *m = CLUSWorkloadInterceptPort{} }
-func (m *CLUSWorkloadInterceptPort) String() string            { return proto.CompactTextString(m) }
-func (*CLUSWorkloadInterceptPort) ProtoMessage()               {}
-func (*CLUSWorkloadInterceptPort) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{39} }
+func (m *CLUSWorkloadInterceptPort) Reset()         { *m = CLUSWorkloadInterceptPort{} }
+func (m *CLUSWorkloadInterceptPort) String() string { return proto.CompactTextString(m) }
+func (*CLUSWorkloadInterceptPort) ProtoMessage()    {}
+func (*CLUSWorkloadInterceptPort) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{39}
+}
+func (m *CLUSWorkloadInterceptPort) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSWorkloadInterceptPort.Unmarshal(m, b)
+}
+func (m *CLUSWorkloadInterceptPort) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSWorkloadInterceptPort.Marshal(b, m, deterministic)
+}
+func (dst *CLUSWorkloadInterceptPort) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSWorkloadInterceptPort.Merge(dst, src)
+}
+func (m *CLUSWorkloadInterceptPort) XXX_Size() int {
+	return xxx_messageInfo_CLUSWorkloadInterceptPort.Size(m)
+}
+func (m *CLUSWorkloadInterceptPort) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSWorkloadInterceptPort.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSWorkloadInterceptPort proto.InternalMessageInfo
 
 func (m *CLUSWorkloadInterceptPort) GetPort() string {
 	if m != nil {
@@ -2266,16 +3157,38 @@ func (m *CLUSWorkloadInterceptPort) GetEnforcerRules() string {
 }
 
 type CLUSWorkloadIntercept struct {
-	ID         string                       `protobuf:"bytes,1,opt,name=ID" json:"ID,omitempty"`
-	Inline     bool                         `protobuf:"varint,2,opt,name=Inline" json:"Inline,omitempty"`
-	Quarantine bool                         `protobuf:"varint,3,opt,name=Quarantine" json:"Quarantine,omitempty"`
-	Ports      []*CLUSWorkloadInterceptPort `protobuf:"bytes,4,rep,name=Ports" json:"Ports,omitempty"`
+	ID                   string                       `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	Inline               bool                         `protobuf:"varint,2,opt,name=Inline,proto3" json:"Inline,omitempty"`
+	Quarantine           bool                         `protobuf:"varint,3,opt,name=Quarantine,proto3" json:"Quarantine,omitempty"`
+	Ports                []*CLUSWorkloadInterceptPort `protobuf:"bytes,4,rep,name=Ports,proto3" json:"Ports,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
 }
 
-func (m *CLUSWorkloadIntercept) Reset()                    { *m = CLUSWorkloadIntercept{} }
-func (m *CLUSWorkloadIntercept) String() string            { return proto.CompactTextString(m) }
-func (*CLUSWorkloadIntercept) ProtoMessage()               {}
-func (*CLUSWorkloadIntercept) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{40} }
+func (m *CLUSWorkloadIntercept) Reset()         { *m = CLUSWorkloadIntercept{} }
+func (m *CLUSWorkloadIntercept) String() string { return proto.CompactTextString(m) }
+func (*CLUSWorkloadIntercept) ProtoMessage()    {}
+func (*CLUSWorkloadIntercept) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{40}
+}
+func (m *CLUSWorkloadIntercept) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSWorkloadIntercept.Unmarshal(m, b)
+}
+func (m *CLUSWorkloadIntercept) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSWorkloadIntercept.Marshal(b, m, deterministic)
+}
+func (dst *CLUSWorkloadIntercept) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSWorkloadIntercept.Merge(dst, src)
+}
+func (m *CLUSWorkloadIntercept) XXX_Size() int {
+	return xxx_messageInfo_CLUSWorkloadIntercept.Size(m)
+}
+func (m *CLUSWorkloadIntercept) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSWorkloadIntercept.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSWorkloadIntercept proto.InternalMessageInfo
 
 func (m *CLUSWorkloadIntercept) GetID() string {
 	if m != nil {
@@ -2306,22 +3219,44 @@ func (m *CLUSWorkloadIntercept) GetPorts() []*CLUSWorkloadInterceptPort {
 }
 
 type CLUSMeter struct {
-	MeterID    uint32 `protobuf:"varint,1,opt,name=MeterID" json:"MeterID,omitempty"`
-	Workload   string `protobuf:"bytes,2,opt,name=Workload" json:"Workload,omitempty"`
-	PeerIP     []byte `protobuf:"bytes,3,opt,name=PeerIP,proto3" json:"PeerIP,omitempty"`
-	Count      uint32 `protobuf:"varint,4,opt,name=Count" json:"Count,omitempty"`
-	LastCount  uint32 `protobuf:"varint,5,opt,name=LastCount" json:"LastCount,omitempty"`
-	Idle       uint32 `protobuf:"varint,6,opt,name=Idle" json:"Idle,omitempty"`
-	Span       uint32 `protobuf:"varint,7,opt,name=Span" json:"Span,omitempty"`
-	UpperLimit uint32 `protobuf:"varint,8,opt,name=UpperLimit" json:"UpperLimit,omitempty"`
-	LowerLimit uint32 `protobuf:"varint,9,opt,name=LowerLimit" json:"LowerLimit,omitempty"`
-	Tap        bool   `protobuf:"varint,10,opt,name=Tap" json:"Tap,omitempty"`
+	MeterID              uint32   `protobuf:"varint,1,opt,name=MeterID,proto3" json:"MeterID,omitempty"`
+	Workload             string   `protobuf:"bytes,2,opt,name=Workload,proto3" json:"Workload,omitempty"`
+	PeerIP               []byte   `protobuf:"bytes,3,opt,name=PeerIP,proto3" json:"PeerIP,omitempty"`
+	Count                uint32   `protobuf:"varint,4,opt,name=Count,proto3" json:"Count,omitempty"`
+	LastCount            uint32   `protobuf:"varint,5,opt,name=LastCount,proto3" json:"LastCount,omitempty"`
+	Idle                 uint32   `protobuf:"varint,6,opt,name=Idle,proto3" json:"Idle,omitempty"`
+	Span                 uint32   `protobuf:"varint,7,opt,name=Span,proto3" json:"Span,omitempty"`
+	UpperLimit           uint32   `protobuf:"varint,8,opt,name=UpperLimit,proto3" json:"UpperLimit,omitempty"`
+	LowerLimit           uint32   `protobuf:"varint,9,opt,name=LowerLimit,proto3" json:"LowerLimit,omitempty"`
+	Tap                  bool     `protobuf:"varint,10,opt,name=Tap,proto3" json:"Tap,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CLUSMeter) Reset()                    { *m = CLUSMeter{} }
-func (m *CLUSMeter) String() string            { return proto.CompactTextString(m) }
-func (*CLUSMeter) ProtoMessage()               {}
-func (*CLUSMeter) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{41} }
+func (m *CLUSMeter) Reset()         { *m = CLUSMeter{} }
+func (m *CLUSMeter) String() string { return proto.CompactTextString(m) }
+func (*CLUSMeter) ProtoMessage()    {}
+func (*CLUSMeter) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{41}
+}
+func (m *CLUSMeter) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSMeter.Unmarshal(m, b)
+}
+func (m *CLUSMeter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSMeter.Marshal(b, m, deterministic)
+}
+func (dst *CLUSMeter) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSMeter.Merge(dst, src)
+}
+func (m *CLUSMeter) XXX_Size() int {
+	return xxx_messageInfo_CLUSMeter.Size(m)
+}
+func (m *CLUSMeter) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSMeter.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSMeter proto.InternalMessageInfo
 
 func (m *CLUSMeter) GetMeterID() uint32 {
 	if m != nil {
@@ -2394,13 +3329,35 @@ func (m *CLUSMeter) GetTap() bool {
 }
 
 type CLUSMeterArray struct {
-	Meters []*CLUSMeter `protobuf:"bytes,1,rep,name=Meters" json:"Meters,omitempty"`
+	Meters               []*CLUSMeter `protobuf:"bytes,1,rep,name=Meters,proto3" json:"Meters,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
+	XXX_unrecognized     []byte       `json:"-"`
+	XXX_sizecache        int32        `json:"-"`
 }
 
-func (m *CLUSMeterArray) Reset()                    { *m = CLUSMeterArray{} }
-func (m *CLUSMeterArray) String() string            { return proto.CompactTextString(m) }
-func (*CLUSMeterArray) ProtoMessage()               {}
-func (*CLUSMeterArray) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{42} }
+func (m *CLUSMeterArray) Reset()         { *m = CLUSMeterArray{} }
+func (m *CLUSMeterArray) String() string { return proto.CompactTextString(m) }
+func (*CLUSMeterArray) ProtoMessage()    {}
+func (*CLUSMeterArray) Descriptor() ([]byte, []int) {
+	return fileDescriptor_enforcer_service_d1cfa8380496aac8, []int{42}
+}
+func (m *CLUSMeterArray) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CLUSMeterArray.Unmarshal(m, b)
+}
+func (m *CLUSMeterArray) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CLUSMeterArray.Marshal(b, m, deterministic)
+}
+func (dst *CLUSMeterArray) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CLUSMeterArray.Merge(dst, src)
+}
+func (m *CLUSMeterArray) XXX_Size() int {
+	return xxx_messageInfo_CLUSMeterArray.Size(m)
+}
+func (m *CLUSMeterArray) XXX_DiscardUnknown() {
+	xxx_messageInfo_CLUSMeterArray.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CLUSMeterArray proto.InternalMessageInfo
 
 func (m *CLUSMeterArray) GetMeters() []*CLUSMeter {
 	if m != nil {
@@ -2420,6 +3377,7 @@ func init() {
 	proto.RegisterType((*CLUSDerivedPolicyRule)(nil), "share.CLUSDerivedPolicyRule")
 	proto.RegisterType((*CLUSDerivedPolicyRuleArray)(nil), "share.CLUSDerivedPolicyRuleArray")
 	proto.RegisterType((*CLUSDerivedPolicyRuleMap)(nil), "share.CLUSDerivedPolicyRuleMap")
+	proto.RegisterMapType((map[string]*CLUSDerivedPolicyRuleArray)(nil), "share.CLUSDerivedPolicyRuleMap.RuleMapEntry")
 	proto.RegisterType((*CLUSProbeSummary)(nil), "share.CLUSProbeSummary")
 	proto.RegisterType((*CLUSProbeProcess)(nil), "share.CLUSProbeProcess")
 	proto.RegisterType((*CLUSProbeProcessArray)(nil), "share.CLUSProbeProcessArray")
@@ -2441,6 +3399,7 @@ func init() {
 	proto.RegisterType((*CLUSDerivedDlpRule)(nil), "share.CLUSDerivedDlpRule")
 	proto.RegisterType((*CLUSDerivedDlpRuleArray)(nil), "share.CLUSDerivedDlpRuleArray")
 	proto.RegisterType((*CLUSDerivedDlpRuleMap)(nil), "share.CLUSDerivedDlpRuleMap")
+	proto.RegisterMapType((map[string]*CLUSDerivedDlpRuleArray)(nil), "share.CLUSDerivedDlpRuleMap.DlpRuleMapEntry")
 	proto.RegisterType((*CLUSDerivedDlpRuleEntry)(nil), "share.CLUSDerivedDlpRuleEntry")
 	proto.RegisterType((*CLUSDerivedDlpRuleEntryArray)(nil), "share.CLUSDerivedDlpRuleEntryArray")
 	proto.RegisterType((*CLUSDerivedDlpRuleMac)(nil), "share.CLUSDerivedDlpRuleMac")
@@ -2465,8 +3424,9 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for EnforcerCapService service
-
+// EnforcerCapServiceClient is the client API for EnforcerCapService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type EnforcerCapServiceClient interface {
 	IsGRPCCompressed(ctx context.Context, in *RPCVoid, opts ...grpc.CallOption) (*CLUSBoolean, error)
 }
@@ -2481,15 +3441,14 @@ func NewEnforcerCapServiceClient(cc *grpc.ClientConn) EnforcerCapServiceClient {
 
 func (c *enforcerCapServiceClient) IsGRPCCompressed(ctx context.Context, in *RPCVoid, opts ...grpc.CallOption) (*CLUSBoolean, error) {
 	out := new(CLUSBoolean)
-	err := grpc.Invoke(ctx, "/share.EnforcerCapService/IsGRPCCompressed", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerCapService/IsGRPCCompressed", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for EnforcerCapService service
-
+// EnforcerCapServiceServer is the server API for EnforcerCapService service.
 type EnforcerCapServiceServer interface {
 	IsGRPCCompressed(context.Context, *RPCVoid) (*CLUSBoolean, error)
 }
@@ -2529,8 +3488,9 @@ var _EnforcerCapService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "enforcer_service.proto",
 }
 
-// Client API for EnforcerService service
-
+// EnforcerServiceClient is the client API for EnforcerService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type EnforcerServiceClient interface {
 	Kick(ctx context.Context, in *CLUSKick, opts ...grpc.CallOption) (*RPCVoid, error)
 	GetSessionList(ctx context.Context, in *CLUSFilter, opts ...grpc.CallOption) (EnforcerService_GetSessionListClient, error)
@@ -2571,7 +3531,7 @@ func NewEnforcerServiceClient(cc *grpc.ClientConn) EnforcerServiceClient {
 
 func (c *enforcerServiceClient) Kick(ctx context.Context, in *CLUSKick, opts ...grpc.CallOption) (*RPCVoid, error) {
 	out := new(RPCVoid)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/Kick", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/Kick", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2579,7 +3539,7 @@ func (c *enforcerServiceClient) Kick(ctx context.Context, in *CLUSKick, opts ...
 }
 
 func (c *enforcerServiceClient) GetSessionList(ctx context.Context, in *CLUSFilter, opts ...grpc.CallOption) (EnforcerService_GetSessionListClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_EnforcerService_serviceDesc.Streams[0], c.cc, "/share.EnforcerService/GetSessionList", opts...)
+	stream, err := c.cc.NewStream(ctx, &_EnforcerService_serviceDesc.Streams[0], "/share.EnforcerService/GetSessionList", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2612,7 +3572,7 @@ func (x *enforcerServiceGetSessionListClient) Recv() (*CLUSSessionArray, error) 
 
 func (c *enforcerServiceClient) ClearSession(ctx context.Context, in *CLUSFilter, opts ...grpc.CallOption) (*RPCVoid, error) {
 	out := new(RPCVoid)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/ClearSession", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/ClearSession", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2621,7 +3581,7 @@ func (c *enforcerServiceClient) ClearSession(ctx context.Context, in *CLUSFilter
 
 func (c *enforcerServiceClient) GetStats(ctx context.Context, in *CLUSFilter, opts ...grpc.CallOption) (*CLUSStats, error) {
 	out := new(CLUSStats)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/GetStats", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/GetStats", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2630,7 +3590,7 @@ func (c *enforcerServiceClient) GetStats(ctx context.Context, in *CLUSFilter, op
 
 func (c *enforcerServiceClient) GetSessionCounter(ctx context.Context, in *RPCVoid, opts ...grpc.CallOption) (*CLUSSessionCounter, error) {
 	out := new(CLUSSessionCounter)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/GetSessionCounter", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/GetSessionCounter", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2639,7 +3599,7 @@ func (c *enforcerServiceClient) GetSessionCounter(ctx context.Context, in *RPCVo
 
 func (c *enforcerServiceClient) GetDatapathCounter(ctx context.Context, in *RPCVoid, opts ...grpc.CallOption) (*CLUSDatapathCounter, error) {
 	out := new(CLUSDatapathCounter)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/GetDatapathCounter", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/GetDatapathCounter", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2648,7 +3608,7 @@ func (c *enforcerServiceClient) GetDatapathCounter(ctx context.Context, in *RPCV
 
 func (c *enforcerServiceClient) GetDerivedPolicyRules(ctx context.Context, in *CLUSFilter, opts ...grpc.CallOption) (*CLUSDerivedPolicyRuleMap, error) {
 	out := new(CLUSDerivedPolicyRuleMap)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/GetDerivedPolicyRules", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/GetDerivedPolicyRules", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2657,7 +3617,7 @@ func (c *enforcerServiceClient) GetDerivedPolicyRules(ctx context.Context, in *C
 
 func (c *enforcerServiceClient) ProbeSummary(ctx context.Context, in *RPCVoid, opts ...grpc.CallOption) (*CLUSProbeSummary, error) {
 	out := new(CLUSProbeSummary)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/ProbeSummary", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/ProbeSummary", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2666,7 +3626,7 @@ func (c *enforcerServiceClient) ProbeSummary(ctx context.Context, in *RPCVoid, o
 
 func (c *enforcerServiceClient) ProbeProcessMap(ctx context.Context, in *RPCVoid, opts ...grpc.CallOption) (*CLUSProbeProcessArray, error) {
 	out := new(CLUSProbeProcessArray)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/ProbeProcessMap", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/ProbeProcessMap", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2675,7 +3635,7 @@ func (c *enforcerServiceClient) ProbeProcessMap(ctx context.Context, in *RPCVoid
 
 func (c *enforcerServiceClient) ProbeContainerMap(ctx context.Context, in *RPCVoid, opts ...grpc.CallOption) (*CLUSProbeContainerArray, error) {
 	out := new(CLUSProbeContainerArray)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/ProbeContainerMap", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/ProbeContainerMap", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2684,7 +3644,7 @@ func (c *enforcerServiceClient) ProbeContainerMap(ctx context.Context, in *RPCVo
 
 func (c *enforcerServiceClient) SnifferCmd(ctx context.Context, in *CLUSSnifferRequest, opts ...grpc.CallOption) (*CLUSSnifferResponse, error) {
 	out := new(CLUSSnifferResponse)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/SnifferCmd", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/SnifferCmd", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2693,7 +3653,7 @@ func (c *enforcerServiceClient) SnifferCmd(ctx context.Context, in *CLUSSnifferR
 
 func (c *enforcerServiceClient) GetSniffers(ctx context.Context, in *CLUSSnifferFilter, opts ...grpc.CallOption) (*CLUSSnifferArray, error) {
 	out := new(CLUSSnifferArray)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/GetSniffers", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/GetSniffers", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2701,7 +3661,7 @@ func (c *enforcerServiceClient) GetSniffers(ctx context.Context, in *CLUSSniffer
 }
 
 func (c *enforcerServiceClient) GetSnifferPcap(ctx context.Context, in *CLUSSnifferDownload, opts ...grpc.CallOption) (EnforcerService_GetSnifferPcapClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_EnforcerService_serviceDesc.Streams[1], c.cc, "/share.EnforcerService/GetSnifferPcap", opts...)
+	stream, err := c.cc.NewStream(ctx, &_EnforcerService_serviceDesc.Streams[1], "/share.EnforcerService/GetSnifferPcap", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2733,7 +3693,7 @@ func (x *enforcerServiceGetSnifferPcapClient) Recv() (*CLUSSnifferPcap, error) {
 }
 
 func (c *enforcerServiceClient) GetContainerLogs(ctx context.Context, in *CLUSContainerLogReq, opts ...grpc.CallOption) (EnforcerService_GetContainerLogsClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_EnforcerService_serviceDesc.Streams[2], c.cc, "/share.EnforcerService/GetContainerLogs", opts...)
+	stream, err := c.cc.NewStream(ctx, &_EnforcerService_serviceDesc.Streams[2], "/share.EnforcerService/GetContainerLogs", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2766,7 +3726,7 @@ func (x *enforcerServiceGetContainerLogsClient) Recv() (*CLUSContainerLogRes, er
 
 func (c *enforcerServiceClient) RunDockerBench(ctx context.Context, in *RPCVoid, opts ...grpc.CallOption) (*RPCVoid, error) {
 	out := new(RPCVoid)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/RunDockerBench", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/RunDockerBench", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2775,7 +3735,7 @@ func (c *enforcerServiceClient) RunDockerBench(ctx context.Context, in *RPCVoid,
 
 func (c *enforcerServiceClient) RunKubernetesBench(ctx context.Context, in *RPCVoid, opts ...grpc.CallOption) (*RPCVoid, error) {
 	out := new(RPCVoid)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/RunKubernetesBench", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/RunKubernetesBench", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2784,7 +3744,7 @@ func (c *enforcerServiceClient) RunKubernetesBench(ctx context.Context, in *RPCV
 
 func (c *enforcerServiceClient) GetFileMonitorFile(ctx context.Context, in *CLUSFilter, opts ...grpc.CallOption) (*CLUSFileMonitorFileArray, error) {
 	out := new(CLUSFileMonitorFileArray)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/GetFileMonitorFile", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/GetFileMonitorFile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2793,7 +3753,7 @@ func (c *enforcerServiceClient) GetFileMonitorFile(ctx context.Context, in *CLUS
 
 func (c *enforcerServiceClient) GetProcess(ctx context.Context, in *CLUSFilter, opts ...grpc.CallOption) (*CLUSProcessArray, error) {
 	out := new(CLUSProcessArray)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/GetProcess", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/GetProcess", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2802,7 +3762,7 @@ func (c *enforcerServiceClient) GetProcess(ctx context.Context, in *CLUSFilter, 
 
 func (c *enforcerServiceClient) GetProcessHistory(ctx context.Context, in *CLUSFilter, opts ...grpc.CallOption) (*CLUSProcessArray, error) {
 	out := new(CLUSProcessArray)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/GetProcessHistory", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/GetProcessHistory", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2811,7 +3771,7 @@ func (c *enforcerServiceClient) GetProcessHistory(ctx context.Context, in *CLUSF
 
 func (c *enforcerServiceClient) GetDerivedDlpRules(ctx context.Context, in *CLUSFilter, opts ...grpc.CallOption) (*CLUSDerivedDlpRuleMap, error) {
 	out := new(CLUSDerivedDlpRuleMap)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/GetDerivedDlpRules", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/GetDerivedDlpRules", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2820,7 +3780,7 @@ func (c *enforcerServiceClient) GetDerivedDlpRules(ctx context.Context, in *CLUS
 
 func (c *enforcerServiceClient) GetDerivedDlpRuleEntries(ctx context.Context, in *CLUSFilter, opts ...grpc.CallOption) (*CLUSDerivedDlpRuleEntryArray, error) {
 	out := new(CLUSDerivedDlpRuleEntryArray)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/GetDerivedDlpRuleEntries", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/GetDerivedDlpRuleEntries", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2829,7 +3789,7 @@ func (c *enforcerServiceClient) GetDerivedDlpRuleEntries(ctx context.Context, in
 
 func (c *enforcerServiceClient) GetDerivedDlpRuleMacs(ctx context.Context, in *CLUSFilter, opts ...grpc.CallOption) (*CLUSDerivedDlpRuleMacArray, error) {
 	out := new(CLUSDerivedDlpRuleMacArray)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/GetDerivedDlpRuleMacs", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/GetDerivedDlpRuleMacs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2838,7 +3798,7 @@ func (c *enforcerServiceClient) GetDerivedDlpRuleMacs(ctx context.Context, in *C
 
 func (c *enforcerServiceClient) GetDerivedWorkloadProcessRule(ctx context.Context, in *CLUSFilter, opts ...grpc.CallOption) (*CLUSDerivedProcessRuleArray, error) {
 	out := new(CLUSDerivedProcessRuleArray)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/GetDerivedWorkloadProcessRule", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/GetDerivedWorkloadProcessRule", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2847,7 +3807,7 @@ func (c *enforcerServiceClient) GetDerivedWorkloadProcessRule(ctx context.Contex
 
 func (c *enforcerServiceClient) GetDerivedWorkloadFileRule(ctx context.Context, in *CLUSFilter, opts ...grpc.CallOption) (*CLUSDerivedFileRuleArray, error) {
 	out := new(CLUSDerivedFileRuleArray)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/GetDerivedWorkloadFileRule", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/GetDerivedWorkloadFileRule", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2856,7 +3816,7 @@ func (c *enforcerServiceClient) GetDerivedWorkloadFileRule(ctx context.Context, 
 
 func (c *enforcerServiceClient) GetContainerIntercept(ctx context.Context, in *CLUSFilter, opts ...grpc.CallOption) (*CLUSWorkloadIntercept, error) {
 	out := new(CLUSWorkloadIntercept)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/GetContainerIntercept", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/GetContainerIntercept", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2864,7 +3824,7 @@ func (c *enforcerServiceClient) GetContainerIntercept(ctx context.Context, in *C
 }
 
 func (c *enforcerServiceClient) GetMeterList(ctx context.Context, in *CLUSFilter, opts ...grpc.CallOption) (EnforcerService_GetMeterListClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_EnforcerService_serviceDesc.Streams[3], c.cc, "/share.EnforcerService/GetMeterList", opts...)
+	stream, err := c.cc.NewStream(ctx, &_EnforcerService_serviceDesc.Streams[3], "/share.EnforcerService/GetMeterList", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2897,15 +3857,14 @@ func (x *enforcerServiceGetMeterListClient) Recv() (*CLUSMeterArray, error) {
 
 func (c *enforcerServiceClient) ProfilingCmd(ctx context.Context, in *CLUSProfilingRequest, opts ...grpc.CallOption) (*RPCVoid, error) {
 	out := new(RPCVoid)
-	err := grpc.Invoke(ctx, "/share.EnforcerService/ProfilingCmd", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerService/ProfilingCmd", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for EnforcerService service
-
+// EnforcerServiceServer is the server API for EnforcerService service.
 type EnforcerServiceServer interface {
 	Kick(context.Context, *CLUSKick) (*RPCVoid, error)
 	GetSessionList(*CLUSFilter, EnforcerService_GetSessionListServer) error
@@ -3560,8 +4519,9 @@ var _EnforcerService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "enforcer_service.proto",
 }
 
-// Client API for EnforcerScanService service
-
+// EnforcerScanServiceClient is the client API for EnforcerScanService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type EnforcerScanServiceClient interface {
 	ScanGetFiles(ctx context.Context, in *ScanRunningRequest, opts ...grpc.CallOption) (*ScanData, error)
 }
@@ -3576,15 +4536,14 @@ func NewEnforcerScanServiceClient(cc *grpc.ClientConn) EnforcerScanServiceClient
 
 func (c *enforcerScanServiceClient) ScanGetFiles(ctx context.Context, in *ScanRunningRequest, opts ...grpc.CallOption) (*ScanData, error) {
 	out := new(ScanData)
-	err := grpc.Invoke(ctx, "/share.EnforcerScanService/ScanGetFiles", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/share.EnforcerScanService/ScanGetFiles", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for EnforcerScanService service
-
+// EnforcerScanServiceServer is the server API for EnforcerScanService service.
 type EnforcerScanServiceServer interface {
 	ScanGetFiles(context.Context, *ScanRunningRequest) (*ScanData, error)
 }
@@ -3624,9 +4583,11 @@ var _EnforcerScanService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "enforcer_service.proto",
 }
 
-func init() { proto.RegisterFile("enforcer_service.proto", fileDescriptor2) }
+func init() {
+	proto.RegisterFile("enforcer_service.proto", fileDescriptor_enforcer_service_d1cfa8380496aac8)
+}
 
-var fileDescriptor2 = []byte{
+var fileDescriptor_enforcer_service_d1cfa8380496aac8 = []byte{
 	// 3727 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x5a, 0x5f, 0x73, 0x1b, 0x39,
 	0x72, 0x3f, 0x92, 0xfa, 0x43, 0x42, 0xd4, 0x1f, 0x8f, 0xbd, 0xf6, 0x98, 0xd6, 0x7a, 0xb5, 0xb3,

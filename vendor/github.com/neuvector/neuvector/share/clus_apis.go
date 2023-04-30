@@ -69,6 +69,8 @@ const (
 	CFGEndpointVulnerability    = "vulnerability"
 	CFGEndpointUserRole         = "user_role"
 	CFGEndpointPwdProfile       = "pwd_profile"
+	CFGEndpointSigstore         = "sigstore"
+	CFGEndpointSigstoreVerifier = "verifier"
 )
 const CLUSConfigStore string = CLUSObjectStore + "config/"
 const CLUSConfigSystemKey string = CLUSConfigStore + CFGEndpointSystem
@@ -98,6 +100,8 @@ const CLUSConfigVulnerabilityStore string = CLUSConfigStore + CFGEndpointVulnera
 const CLUSConfigDomainStore string = CLUSConfigStore + CFGEndpointDomain + "/"
 const CLUSConfigUserRoleStore string = CLUSConfigStore + CFGEndpointUserRole + "/"
 const CLUSConfigPwdProfileStore string = CLUSConfigStore + CFGEndpointPwdProfile + "/"
+const CLUSConfigSigstore string = CLUSConfigStore + CFGEndpointSigstore + "/"
+const CLUSConfigSigstoreVerifierStore string = CLUSConfigSigstore + CFGEndpointSigstoreVerifier + "/"
 
 // !!! NOTE: When adding new config items, update the import/export list as well !!!
 
@@ -123,6 +127,7 @@ const CLUSThrottledEventStore string = CLUSObjectStore + "throttled/"
 // network
 const PolicyIPRulesDefaultName string = "GroupIPRules"
 const PolicyIPRulesVersionID string = "NeuVectorPolicyVersion" // used for indicate policy version changed
+const DlpRulesVersionID string = "NeuVectorDlpVersion"         // used for indicate dlp version changed
 const DlpRulesDefaultName string = "DlpWorkloadRules"
 const DlpRuleName string = "dlprule"
 const DlpRuleStore string = CLUSNetworkStore + DlpRuleName + "/"
@@ -199,8 +204,9 @@ const CLUSScannerStatsStore string = CLUSScanStore + "scanner_stats/"
 const CLUSScannerDBVersionID string = "NeuVectorCVEDBVersion" // used for indicate db version changed
 const CLUSScannerDBStore string = CLUSScanStore + "database/"
 
-//recalculate
+// recalculate
 const CLUSRecalPolicyStore string = CLUSRecalculateStore + "policy/" //not to be watched by consul
+const CLUSRecalDlpStore string = CLUSRecalculateStore + "dlp/"       //not to be watched by consul
 
 func CLUSPolicyIPRulesKey(name string) string {
 	return fmt.Sprintf("%s%s", CLUSNetworkStore, name)
@@ -210,7 +216,11 @@ func CLUSRecalPolicyIPRulesKey(name string) string {
 	return fmt.Sprintf("%s%s", CLUSRecalPolicyStore, name)
 }
 
-//fqdn
+func CLUSRecalDlpWlRulesKey(name string) string {
+	return fmt.Sprintf("%s%s", CLUSRecalDlpStore, name)
+}
+
+// fqdn
 const CLUSFqdnIpStore string = CLUSFqdnStore + "ip/" //not to be watched by consul
 
 func CLUSFqdnIpKey(hostID string, fqdname string) string {
@@ -619,6 +629,14 @@ func CLUSGroupKey2GroupName(key string) string {
 	return CLUSKeyNthToken(key, 3)
 }
 
+func CLUSSigstoreGlobalConfigKey() string {
+	return fmt.Sprintf("%s%s", CLUSConfigSigstore, "global_config")
+
+}
+func CLUSSigstoreVerifierKey(verifierName string) string {
+	return fmt.Sprintf("%s%s", CLUSConfigSigstoreVerifierStore, verifierName)
+}
+
 type CLUSDistLocker struct {
 	LockedBy string    `json:"locked_by"`
 	LockedAt time.Time `json:"locked_at"`
@@ -807,10 +825,11 @@ type CLUSServerLDAP struct {
 
 type CLUSServerSAML struct {
 	CLUSServerAuth
-	SSOURL     string `json:"sso_url"`
-	Issuer     string `json:"issuer"`
-	X509Cert   string `json:"x509_cert,cloak"`
-	GroupClaim string `json:"group_claim"`
+	SSOURL        string   `json:"sso_url"`
+	Issuer        string   `json:"issuer"`
+	X509Cert      string   `json:"x509_cert,cloak"`
+	GroupClaim    string   `json:"group_claim"`
+	X509CertExtra []string `json:"x509_cert_extra"`
 }
 
 type CLUSServerOIDC struct {
@@ -996,6 +1015,7 @@ type CLUSCriteriaEntry struct {
 type CLUSFqdnIp struct {
 	FqdnName string   `json:"fqdn_name"`
 	FqdnIP   []net.IP `json:"fqdn_ip"`
+	Vhost    bool     `json:"vhost,omitempty"`
 }
 
 type TCfgType int
@@ -1092,6 +1112,7 @@ var CLUSWLModeGroup string = "nv.mode_group"
 var CLUSWLAddressGroup string = "nv.address_group"
 var CLUSHostAddrGroup string = "nv.hostaddr_group" //used as wlid for "nodes" in policy calculation
 var CLUSWLFqdnPrefix string = "fqdn:"
+var CLUSWLFqdnVhPrefix string = "vh:"
 var CLUSLearnedHostPrefix string = "Host:"
 var CLUSLearnedWorkloadPrefix string = "Workload:"
 var CLUSEndpointIngress string = "ingress"
@@ -1144,6 +1165,14 @@ type CLUSGroupIPPolicyVer struct {
 	RulesLen             int    `json:"rules_len"`
 	WorkloadSlot         int    `json:"workload_slot,omitempty"`
 	WorkloadLen          int    `json:"workload_len,omitempty"`
+}
+
+type CLUSDlpRuleVer struct {
+	Key             string `json:"key"`
+	DlpRulesVersion string `json:"dlp_version"`
+	SlotNo          int    `json:"slot_no"`
+	RulesLen        int    `json:"rules_len"`
+	WorkloadLen     int    `json:"workload_len"`
 }
 
 type CLUSSubnet struct {
@@ -1782,6 +1811,7 @@ type CLUSAdmissionRule struct { // see type RESTAdmissionRule
 	CfgType           TCfgType                `json:"cfg_type"`
 	RuleType          string                  `json:"rule_type"` // "exception", "deny"
 	UseAsRiskyRoleTag bool                    `json:"use_as_risky_role_tag"`
+	RuleMode          string                  `json:"rule_mode"` // "", "monitor", "protect"
 }
 
 type CLUSAdmissionRules struct {
@@ -2142,7 +2172,7 @@ type CLUSFedScanRevisions struct {
 	Restoring      bool              `json:"restoring"`        // fed registry revision
 }
 
-//dlp rule
+// dlp rule
 const (
 	DlpRuleKeyPattern string = "pattern"
 )
@@ -2267,7 +2297,7 @@ type CLUSDlpGroup struct {
 	CfgType TCfgType          `json:"cfg_type"`
 }
 
-//waf
+// waf
 type CLUSWafCriteriaEntry struct {
 	Key     string `json:"key"`
 	Value   string `json:"value"`
@@ -2326,14 +2356,15 @@ type CLUSCrdEventRecord struct {
 	CrdEventRecord []string
 }
 
-////// Process UUID Rules
-//     Reserved(256 entries): 	00000000-0000-0000-0000-0000000000XX
-//     Default rules:			00000000-0000-0000-0000-00000000000X
-//     Linux-specific:  		00000000-0000-0000-0000-00000000001X ans 2X
-//     Windows-specific:  		00000000-0000-0000-0000-00000000003X ans 4X
+// //// Process UUID Rules
+//
+//	Reserved(256 entries): 	00000000-0000-0000-0000-0000000000XX
+//	Default rules:			00000000-0000-0000-0000-00000000000X
+//	Linux-specific:  		00000000-0000-0000-0000-00000000001X ans 2X
+//	Windows-specific:  		00000000-0000-0000-0000-00000000003X ans 4X
 const CLUSReservedUuidPrefix string = "00000000-0000-0000-0000-0000000000" // reserved the last 2 digits
 
-//////
+// ////
 const CLUSReservedUuidNotAlllowed string = "00000000-0000-0000-0000-000000000000"    // processes beyond white list
 const CLUSReservedUuidRiskyApp string = "00000000-0000-0000-0000-000000000001"       // riskApp
 const CLUSReservedUuidTunnelProc string = "00000000-0000-0000-0000-000000000002"     // tunnel
@@ -2453,7 +2484,7 @@ type SecretLog struct {
 	RuleDesc string `json:"rule_desc"` // rule description
 }
 
-/////// Secret Types
+// ///// Secret Types
 const (
 	SecretPrivateKey string = "privatekey" // Private Key
 	SecretX509       string = "x.509"      // X.509 certificates (ignored)
@@ -2485,7 +2516,7 @@ type CLUSSetIdPermLog struct {
 	Evidence string `json:"evidence"` // file attributes
 }
 
-/////// For custom roles
+// ///// For custom roles
 func CLUSUserRoleKey(name string) string {
 	return fmt.Sprintf("%s%s", CLUSConfigUserRoleStore, name)
 }
@@ -2650,4 +2681,20 @@ type CLUSCheckUpgradeInfo struct {
 // throttled events/logs
 type CLUSThrottledEvents struct {
 	LastReportTime map[TLogEvent]int64 `json:"last_report_at"` // key is event id, value is time.Unix()
+}
+
+type CLUSSigstoreGlobalConfig struct {
+	RekorPublicKey string `json:"rekor_public_key"`
+	RootCert       string `json:"root_cert"`
+	SCTPublicKey   string `json:"sct_public_key"`
+}
+
+type CLUSSigstoreVerifier struct {
+	Name                       string `json:"name"`
+	Type                       string `json:"type"`
+	PublicKey                  string `json:"public_key"`
+	CheckTransparencyLogBundle bool   `json:"check_transparency_log_bundle"`
+	CertIssuer                 string `json:"cert_issuer"`
+	CertSubject                string `json:"cert_subject"`
+	CheckSCT                   bool   `json:"check_sct"`
 }

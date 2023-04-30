@@ -92,6 +92,14 @@ github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRF
 github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d/go.mod h1:rBZYJk541a8SKzHPHnH3zbiI+7dagKZ0cgpgrD7Fyho=
 github.com/alexflint/go-filemutex v0.0.0-20171022225611-72bdc8eae2ae/go.mod h1:CgnQgUtFrFz9mxFNtED3jI5tLDjKlOM+oUF/sTk6ps0=
+github.com/alopez-suse/neuvector v0.0.0-20230417202658-90f1aec7cf68 h1:LGccTosZLvWMNlkPJAmYV9HRvaTO7VSHb55edVYYaME=
+github.com/alopez-suse/neuvector v0.0.0-20230417202658-90f1aec7cf68/go.mod h1:6MKujtS3y/BQlnSXSelaUID2x3e1cmHq/31HoOQl9TM=
+github.com/alopez-suse/neuvector v0.0.0-20230418021533-82c2cdf627c5 h1:NWMHo4OzhVmtSph/BsPzI6STfAQWQu+OQWyQB5NyAjw=
+github.com/alopez-suse/neuvector v0.0.0-20230418021533-82c2cdf627c5/go.mod h1:6MKujtS3y/BQlnSXSelaUID2x3e1cmHq/31HoOQl9TM=
+github.com/alopez-suse/neuvector v0.0.0-20230418031654-20d24ff2bf2c h1:HytODpr6djdetAtD09xr34lJGlZbOpsoHtwb0DZnDdc=
+github.com/alopez-suse/neuvector v0.0.0-20230418031654-20d24ff2bf2c/go.mod h1:6MKujtS3y/BQlnSXSelaUID2x3e1cmHq/31HoOQl9TM=
+github.com/alopez-suse/neuvector v0.0.0-20230430125100-acd531428c50 h1:38PM9KnWP/lK1KTPrj9AROSQfA+qzpCSl3UsvIr3GaM=
+github.com/alopez-suse/neuvector v0.0.0-20230430125100-acd531428c50/go.mod h1:6MKujtS3y/BQlnSXSelaUID2x3e1cmHq/31HoOQl9TM=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
 github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6/go.mod h1:grANhF5doyWs3UAsr3K4I6qtAmlQcZDesFNEHPZAzj8=
