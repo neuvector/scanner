@@ -66,58 +66,128 @@ func GetCVEDBEncryptKey() []byte {
 	return cveDBEncryptKey
 }
 
-type outputPackage struct {
+type OutputPackage struct {
 	Package      string `json:"Package"`
-	FixedVersion string `json:"Fixed_version"`
+	FixedVersion string `json:"FixedVersion"`
 }
 
-type outputCVEVul struct {
-	share.ScanVulnerability
-	Source   string          `json:"Source"`
-	Packages []outputPackage `json:"Packages"`
+type OutputCVEEntry struct {
+	OSApp            string           `json:"OSApp"`
+	OSAppVer         string           `json:"OSAppVersion"`
+	PublishedDate    string           `json:"PublishedDate"`
+	LastModifiedDate string           `json:"LastModifiedDate"`
+	Packages         []*OutputPackage `json:"Packages"`
 }
 
-func ReadCveDbMeta(path string, output bool) (map[string]*share.ScanVulnerability, error) {
-	var outCVEs []*outputCVEVul
+type OutputCVEVul struct {
+	Name      string            `json:"Name"`
+	Severity  string            `json:"Severity"`
+	Score     float32           `json:"Score"`
+	Vectors   string            `json:"Vectors"`
+	ScoreV3   float32           `json:"ScoreV3"`
+	VectorsV3 string            `json:"VectorsV3"`
+	Entries   []*OutputCVEEntry `json:"Entries"`
+}
+
+func ns2String(ns string) (string, string) {
+	if strings.HasPrefix(ns, "alpine:") {
+		return "Alpine Linux", ns[7:]
+	} else if strings.HasPrefix(ns, "amzn:") {
+		return "Amazon Linux", ns[5:]
+	} else if strings.HasPrefix(ns, "centos:") {
+		return "Red Hat Linux", ns[7:]
+	} else if strings.HasPrefix(ns, "debian:") {
+		return "Debian", ns[7:]
+	} else if strings.HasPrefix(ns, "mariner:") {
+		return "CBL-Mariner", ns[8:]
+	} else if strings.HasPrefix(ns, "oracle:") {
+		return "Oracle Linux", ns[7:]
+	} else if strings.HasPrefix(ns, "sles:l") {
+		return "openSUSE Leap", ns[6:]
+	} else if strings.HasPrefix(ns, "sles:") {
+		return "SUSE Linux", ns[5:]
+	} else if strings.HasPrefix(ns, "ubuntu:") {
+		return "Ubuntu", ns[7:]
+	}
+
+	return "", ""
+}
+
+func ReadCveDbMeta(path string, output bool) (map[string]*share.ScanVulnerability, []*OutputCVEVul, error) {
+	var osCVEs map[string]*OutputCVEVul
+	var appCVEs map[string]*OutputCVEVul
+	var outCVEs map[string]*OutputCVEVul
+	var out []*OutputCVEVul
+	var err error
 
 	if output {
-		outCVEs = make([]*outputCVEVul, 0)
+		outCVEs = make(map[string]*OutputCVEVul)
 	}
 
 	fullDb := make(map[string]*share.ScanVulnerability, 0)
 	for i := 0; i < DBMax; i++ {
-		if err := readCveDbMeta(path, DBS.Buffers[i].Name, fullDb, outCVEs); err != nil {
-			return nil, err
+		if osCVEs, err = readCveDbMeta(path, DBS.Buffers[i].Name, fullDb, output); err != nil {
+			return nil, nil, err
+		}
+		if output {
+			for cve, v := range osCVEs {
+				if exist, ok := outCVEs[cve]; ok {
+					exist.Entries = append(exist.Entries, v.Entries...)
+				} else {
+					outCVEs[cve] = v
+				}
+			}
 		}
 	}
-	if err := readAppDbMeta(path, fullDb, outCVEs); err != nil {
-		return nil, err
+
+	if appCVEs, err = readAppDbMeta(path, fullDb, output); err != nil {
+		return nil, nil, err
 	}
 
 	if output {
-		sort.Slice(outCVEs, func(s, t int) bool {
-			return outCVEs[s].Name < outCVEs[t].Name
+		for cve, v := range appCVEs {
+			if exist, ok := outCVEs[cve]; ok {
+				exist.Entries = append(exist.Entries, v.Entries...)
+			} else {
+				outCVEs[cve] = v
+			}
+		}
+
+		// convert map to array
+		i := 0
+		out = make([]*OutputCVEVul, len(outCVEs))
+		for _, v := range outCVEs {
+			out[i] = v
+			i++
+		}
+
+		sort.Slice(out, func(s, t int) bool {
+			return out[s].Name < out[t].Name
 		})
-		file, _ := json.MarshalIndent(outCVEs, "", "    ")
-		_ = ioutil.WriteFile("cvedb.json", file, 0644)
 	}
 
-	return fullDb, nil
+	return fullDb, out, nil
 }
 
-func readCveDbMeta(path, osname string, fullDb map[string]*share.ScanVulnerability, outCVEs []*outputCVEVul) error {
+func readCveDbMeta(path, osname string, fullDb map[string]*share.ScanVulnerability, output bool) (map[string]*OutputCVEVul, error) {
+	var outCVEs map[string]*OutputCVEVul
+
 	filename := fmt.Sprintf("%s%s_full.tb", path, osname)
 	fvul, err := os.Open(filename)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err, "os": osname}).Error("Can't open file")
-		return err
+		return nil, err
 	}
 	defer fvul.Close()
 
 	data, err := ioutil.ReadAll(fvul)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Read file error")
-		return err
+		return nil, err
+	}
+
+	if output {
+		outCVEs = make(map[string]*OutputCVEVul, 0)
 	}
 
 	buf := make([]byte, maxBufferSize)
@@ -149,42 +219,71 @@ func readCveDbMeta(path, osname string, fullDb map[string]*share.ScanVulnerabili
 					FeedRating:       v.FeedRating,
 				}
 				fullDb[cveName] = sv
+			}
 
-				if outCVEs != nil {
-					out := &outputCVEVul{ScanVulnerability: *sv, Packages: make([]outputPackage, 0)}
-					out.Name = v.Name
-					out.Source = osname
+			if output {
+				os, ver := ns2String(v.Namespace)
+				if os != "" {
+					var ov *OutputCVEVul
+					var ok bool
 
-					for _, fi := range v.FixedIn {
-						out.Packages = append(out.Packages, outputPackage{Package: fi.Name, FixedVersion: fi.Version})
+					if ov, ok = outCVEs[v.Name]; !ok {
+						ov = &OutputCVEVul{
+							Name:      v.Name,
+							Severity:  v.Severity,
+							Score:     float32(v.CVSSv2.Score),
+							Vectors:   v.CVSSv2.Vectors,
+							ScoreV3:   float32(v.CVSSv3.Score),
+							VectorsV3: v.CVSSv3.Vectors,
+							Entries:   make([]*OutputCVEEntry, 0),
+						}
+						outCVEs[v.Name] = ov
 					}
-					sort.Slice(out.Packages, func(s, t int) bool {
-						return out.Packages[s].Package < out.Packages[t].Package
+
+					e := &OutputCVEEntry{
+						OSApp:            os,
+						OSAppVer:         ver,
+						PublishedDate:    v.IssuedDate.Format("2006-01-02"),
+						LastModifiedDate: v.LastModDate.Format("2006-01-02"),
+						Packages:         make([]*OutputPackage, 0),
+					}
+					for _, fi := range v.FixedIn {
+						e.Packages = append(e.Packages, &OutputPackage{Package: fi.Name, FixedVersion: fi.Version})
+					}
+					sort.Slice(e.Packages, func(s, t int) bool {
+						return e.Packages[s].Package < e.Packages[t].Package
 					})
-					outCVEs = append(outCVEs, out)
+
+					ov.Entries = append(ov.Entries, e)
 				}
 			}
 		}
 	}
 
 	log.WithFields(log.Fields{"vuls": len(fullDb), "osname": osname, "path": path}).Debug("")
-	return nil
+	return outCVEs, nil
 }
 
-func readAppDbMeta(path string, fullDb map[string]*share.ScanVulnerability, outCVEs []*outputCVEVul) error {
+func readAppDbMeta(path string, fullDb map[string]*share.ScanVulnerability, output bool) (map[string]*OutputCVEVul, error) {
+	var outCVEs map[string]*OutputCVEVul
+
 	var filename string
 	filename = fmt.Sprintf("%s/apps.tb", path)
 	fvul, err := os.Open(filename)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("open file error")
-		return err
+		return nil, err
 	}
 	defer fvul.Close()
 
 	data, err := ioutil.ReadAll(fvul)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Read file error")
-		return err
+		return nil, err
+	}
+
+	if output {
+		outCVEs = make(map[string]*OutputCVEVul)
 	}
 
 	buf := make([]byte, maxBufferSize)
@@ -211,26 +310,47 @@ func readAppDbMeta(path string, fullDb map[string]*share.ScanVulnerability, outC
 				}
 				fullDb[cveName] = sv
 
-				if outCVEs != nil {
-					out := &outputCVEVul{ScanVulnerability: *sv, Packages: make([]outputPackage, 0)}
-					out.Name = v.VulName
-					out.Source = "apps"
-					out.Packages = append(out.Packages, outputPackage{Package: v.ModuleName})
+				if output {
+					var ov *OutputCVEVul
+					var ok bool
+
+					if ov, ok = outCVEs[v.VulName]; !ok {
+						ov = &OutputCVEVul{
+							Name:      v.VulName,
+							Severity:  v.Severity,
+							Score:     float32(v.Score),
+							Vectors:   v.Vectors,
+							ScoreV3:   float32(v.ScoreV3),
+							VectorsV3: v.VectorsV3,
+							Entries:   make([]*OutputCVEEntry, 0),
+						}
+						outCVEs[v.VulName] = ov
+					}
+
+					e := &OutputCVEEntry{
+						OSApp:            v.AppName,
+						OSAppVer:         "",
+						PublishedDate:    v.IssuedDate.Format("2006-01-02"),
+						LastModifiedDate: v.LastModDate.Format("2006-01-02"),
+						Packages:         make([]*OutputPackage, 0),
+					}
+
+					e.Packages = append(e.Packages, &OutputPackage{Package: v.ModuleName})
 					for _, fv := range v.FixedVer {
 						op := strings.Replace(fv.OpCode, "or", "||", -1)
 						op = strings.Replace(op, "gt", ">", -1)
 						op = strings.Replace(op, "lt", "<", -1)
 						op = strings.Replace(op, "eq", "=", -1)
-						out.Packages[0].FixedVersion = fmt.Sprintf("%s%s;%s", op, fv.Version, out.Packages[0].FixedVersion)
+						e.Packages[0].FixedVersion = fmt.Sprintf("%s%s;%s", op, fv.Version, e.Packages[0].FixedVersion)
 					}
-					outCVEs = append(outCVEs, out)
+					ov.Entries = append(ov.Entries, e)
 				}
 			}
 		} else {
 			log.WithFields(log.Fields{"error": err}).Error("Unmarshal vulnerability error")
 		}
 	}
-	return nil
+	return outCVEs, nil
 }
 
 func LoadVulnerabilityIndex(path, osname string) ([]VulShort, error) {

@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
@@ -32,7 +34,13 @@ const taskerPath = "/usr/local/bin/scannerTask"
 const registerWaitTime = time.Duration(time.Second * 10)
 const licenseTimeFormat string = "2006-01-02"
 const dockerSocket = "unix:///var/run/docker.sock"
-const defualtDockerhubReg = "https://registry.hub.docker.com"
+const defaultDockerhubReg = "https://registry.hub.docker.com"
+
+type outputCVE struct {
+	Version    string                 `json:"Version"`
+	CreateTime string                 `json:"CreateTime"`
+	CVEs       []*common.OutputCVEVul `json:"Vulnerabilities"`
+}
 
 var dockerhubRegs utils.Set = utils.NewSet("registry.hub.docker.com", "index.docker.io", "registry-1.docker.io", "docker.io")
 
@@ -48,6 +56,7 @@ func dbRead(path string, maxRetry int, output bool) map[string]*share.ScanVulner
 	var retry int
 	var dbReady bool
 	var dbData map[string]*share.ScanVulnerability
+	var outCVEs []*common.OutputCVEVul
 
 	for {
 		if _, err := os.Stat(dbFile); err != nil {
@@ -57,10 +66,20 @@ func dbRead(path string, maxRetry int, output bool) map[string]*share.ScanVulner
 			if verNew, createTime, err := common.LoadCveDb(path, cveTools.TbPath, encryptKey); err == nil {
 				cveTools.CveDBVersion = verNew
 				cveTools.CveDBCreateTime = createTime
-				if dbData, err = common.ReadCveDbMeta(cveTools.TbPath, output); err != nil {
+				if dbData, outCVEs, err = common.ReadCveDbMeta(cveTools.TbPath, output); err != nil {
 					log.WithFields(log.Fields{"error": err}).Error("Failed to load scanner db")
 				} else {
 					dbReady = true
+
+					if output {
+						out := outputCVE{
+							Version:    verNew,
+							CreateTime: createTime,
+							CVEs:       outCVEs,
+						}
+						file, _ := json.MarshalIndent(out, "", "    ")
+						_ = ioutil.WriteFile("cvedb.json", file, 0644)
+					}
 				}
 			}
 			cveTools.UpdateMux.Unlock()
@@ -79,7 +98,7 @@ func dbRead(path string, maxRetry int, output bool) map[string]*share.ScanVulner
 	}
 }
 
-func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinPort uint16, output bool) {
+func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinPort uint16) {
 	cb := &clientCallback{
 		shutCh:         make(chan interface{}, 1),
 		ignoreShutdown: true,
@@ -87,7 +106,7 @@ func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinP
 
 	for {
 		// forever retry
-		dbData := dbRead(path, 0, output)
+		dbData := dbRead(path, 0, false)
 		scanner := share.ScannerRegisterData{
 			CVEDBVersion:    cveTools.CveDBVersion,
 			CVEDBCreateTime: cveTools.CveDBCreateTime,
@@ -144,7 +163,6 @@ func main() {
 	advPort := flag.Uint("adv_port", 0, "Advertise port")
 	rtSock := flag.String("u", dockerSocket, "Container socket URL") // used for scan local image
 	showTaskDebug := flag.Bool("g", true, "Show task debug information")
-	getVer := flag.Bool("v", false, "show cve database version")
 	// for on demand ci/cd scan
 	license := flag.String("license", "", "Scanner license") // it means on-demand stand-alone scanner
 	image := flag.String("image", "", "Scan image")          // overwrite registry, repository and tag
@@ -158,16 +176,12 @@ func main() {
 	ctrlUser := flag.String("ctrl_username", "", "Controller REST API username")
 	ctrlPass := flag.String("ctrl_password", "", "Controller REST API password")
 	noWait := flag.Bool("no_wait", false, "No initial wait")
-	output := flag.Bool("output", false, "Output CVEDB in json format")
+
+	output := flag.Bool("o", false, "Output CVEDB in json format")
+	getVer := flag.Bool("v", false, "show cve database version")
 
 	flag.Usage = usage
 	flag.Parse()
-
-	// acquire tool
-	sys := system.NewSystemTools()
-	cveTools = cvetools.NewCveTools(*rtSock, scan.NewScanUtil(sys))
-
-	var onDemand bool
 
 	// show cve database version
 	if *getVer {
@@ -179,6 +193,18 @@ func main() {
 		}
 		return
 	}
+
+	// acquire tool
+	sys := system.NewSystemTools()
+	cveTools = cvetools.NewCveTools(*rtSock, scan.NewScanUtil(sys))
+
+	// output cvedb in json format
+	if *output {
+		dbRead(*dbPath, 3, true)
+		return
+	}
+
+	var onDemand bool
 
 	// If license parameter is given, this is an on-demand scanner, no register to the controller,
 	// but if join address is given, the scan result are sent to the controller.
@@ -333,7 +359,7 @@ func main() {
 
 	// Use the original address, which is the service name, so when controller changes,
 	// new IP can be resolved
-	go connectController(*dbPath, *adv, *join, selfID, (uint32)(*advPort), (uint16)(*joinPort), *output)
+	go connectController(*dbPath, *adv, *join, selfID, (uint32)(*advPort), (uint16)(*joinPort))
 	<-done
 
 	log.Info("Exiting ...")
