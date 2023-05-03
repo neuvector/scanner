@@ -123,6 +123,7 @@ const CLUSThrottledEventStore string = CLUSObjectStore + "throttled/"
 // network
 const PolicyIPRulesDefaultName string = "GroupIPRules"
 const PolicyIPRulesVersionID string = "NeuVectorPolicyVersion" // used for indicate policy version changed
+const DlpRulesVersionID string = "NeuVectorDlpVersion"         // used for indicate dlp version changed
 const DlpRulesDefaultName string = "DlpWorkloadRules"
 const DlpRuleName string = "dlprule"
 const DlpRuleStore string = CLUSNetworkStore + DlpRuleName + "/"
@@ -201,6 +202,7 @@ const CLUSScannerDBStore string = CLUSScanStore + "database/"
 
 //recalculate
 const CLUSRecalPolicyStore string = CLUSRecalculateStore + "policy/" //not to be watched by consul
+const CLUSRecalDlpStore string = CLUSRecalculateStore + "dlp/"       //not to be watched by consul
 
 func CLUSPolicyIPRulesKey(name string) string {
 	return fmt.Sprintf("%s%s", CLUSNetworkStore, name)
@@ -208,6 +210,10 @@ func CLUSPolicyIPRulesKey(name string) string {
 
 func CLUSRecalPolicyIPRulesKey(name string) string {
 	return fmt.Sprintf("%s%s", CLUSRecalPolicyStore, name)
+}
+
+func CLUSRecalDlpWlRulesKey(name string) string {
+	return fmt.Sprintf("%s%s", CLUSRecalDlpStore, name)
 }
 
 //fqdn
@@ -742,6 +748,7 @@ type CLUSSystemConfig struct {
 	CfgType              TCfgType                  `json:"cfg_type"`
 	NetServiceStatus     bool                      `json:"net_service_status"`
 	NetServicePolicyMode string                    `json:"net_service_policy_mode"`
+	DisableNetPolicy     bool                      `json:"disable_net_policy"`
 	ModeAutoD2M          bool                      `json:"mode_auto_d2m"`
 	ModeAutoD2MDuration  int64                     `json:"mode_auto_d2m_duration"`
 	ModeAutoM2P          bool                      `json:"mode_auto_m2p"`
@@ -807,10 +814,11 @@ type CLUSServerLDAP struct {
 
 type CLUSServerSAML struct {
 	CLUSServerAuth
-	SSOURL     string `json:"sso_url"`
-	Issuer     string `json:"issuer"`
-	X509Cert   string `json:"x509_cert,cloak"`
-	GroupClaim string `json:"group_claim"`
+	SSOURL        string   `json:"sso_url"`
+	Issuer        string   `json:"issuer"`
+	X509Cert      string   `json:"x509_cert,cloak"`
+	GroupClaim    string   `json:"group_claim"`
+	X509CertExtra []string `json:"x509_cert_extra"`
 }
 
 type CLUSServerOIDC struct {
@@ -996,6 +1004,7 @@ type CLUSCriteriaEntry struct {
 type CLUSFqdnIp struct {
 	FqdnName string   `json:"fqdn_name"`
 	FqdnIP   []net.IP `json:"fqdn_ip"`
+	Vhost    bool     `json:"vhost,omitempty"`
 }
 
 type TCfgType int
@@ -1092,6 +1101,7 @@ var CLUSWLModeGroup string = "nv.mode_group"
 var CLUSWLAddressGroup string = "nv.address_group"
 var CLUSHostAddrGroup string = "nv.hostaddr_group" //used as wlid for "nodes" in policy calculation
 var CLUSWLFqdnPrefix string = "fqdn:"
+var CLUSWLFqdnVhPrefix string = "vh:"
 var CLUSLearnedHostPrefix string = "Host:"
 var CLUSLearnedWorkloadPrefix string = "Workload:"
 var CLUSEndpointIngress string = "ingress"
@@ -1144,6 +1154,14 @@ type CLUSGroupIPPolicyVer struct {
 	RulesLen             int    `json:"rules_len"`
 	WorkloadSlot         int    `json:"workload_slot,omitempty"`
 	WorkloadLen          int    `json:"workload_len,omitempty"`
+}
+
+type CLUSDlpRuleVer struct {
+	Key             string `json:"key"`
+	DlpRulesVersion string `json:"dlp_version"`
+	SlotNo          int    `json:"slot_no"`
+	RulesLen        int    `json:"rules_len"`
+	WorkloadLen     int    `json:"workload_len"`
 }
 
 type CLUSSubnet struct {
@@ -1782,6 +1800,7 @@ type CLUSAdmissionRule struct { // see type RESTAdmissionRule
 	CfgType           TCfgType                `json:"cfg_type"`
 	RuleType          string                  `json:"rule_type"` // "exception", "deny"
 	UseAsRiskyRoleTag bool                    `json:"use_as_risky_role_tag"`
+	RuleMode          string                  `json:"rule_mode"` // "", "monitor", "protect"
 }
 
 type CLUSAdmissionRules struct {

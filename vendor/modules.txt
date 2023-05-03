@@ -123,8 +123,6 @@ github.com/docker/go-events
 github.com/docker/go-units
 # github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7
 github.com/docker/libtrust
-# github.com/go-openapi/strfmt v0.21.7
-## explicit
 # github.com/gogo/googleapis v1.4.1
 github.com/gogo/googleapis/google/rpc
 # github.com/gogo/protobuf v1.3.2
@@ -173,17 +171,17 @@ github.com/knqyf263/go-rpmdb/pkg/sqlite3
 # github.com/mattn/go-isatty v0.0.12
 github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.13
-## explicit
 github.com/mattn/go-runewidth
 # github.com/mitchellh/go-homedir v1.1.0
 github.com/mitchellh/go-homedir
 # github.com/mitchellh/mapstructure v1.5.0
+## explicit
 github.com/mitchellh/mapstructure
 # github.com/neuvector/k8s v1.2.1-0.20220214174348-d0b3f377461e
 github.com/neuvector/k8s/apis/meta/v1
 github.com/neuvector/k8s/runtime
 github.com/neuvector/k8s/runtime/schema
-# github.com/neuvector/neuvector v0.0.0-20230317062814-522f0507b1ab
+# github.com/neuvector/neuvector v0.0.0-20230503191254-14a660db780f
 ## explicit
 github.com/neuvector/neuvector/controller/api
 github.com/neuvector/neuvector/share
@@ -228,6 +226,8 @@ github.com/rivo/uniseg
 github.com/sirupsen/logrus
 # github.com/streadway/simpleuuid v0.0.0-20130420165545-6617b501e485
 github.com/streadway/simpleuuid
+# github.com/stretchr/testify v1.8.2
+## explicit
 # github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2
 github.com/syndtr/gocapability/capability
 # github.com/vishvananda/netlink v1.1.0
