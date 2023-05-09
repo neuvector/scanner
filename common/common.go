@@ -133,6 +133,7 @@ var DebianReleasesMapping = map[string]string{
 	"stretch":  "9",
 	"buster":   "10",
 	"bullseye": "11",
+	"bookworm": "12",
 	"sid":      "unstable",
 
 	// Class names
