@@ -162,7 +162,6 @@ func main() {
 	adv := flag.String("a", "", "Advertise address")
 	advPort := flag.Uint("adv_port", 0, "Advertise port")
 	rtSock := flag.String("u", dockerSocket, "Container socket URL") // used for scan local image
-	showTaskDebug := flag.Bool("g", true, "Show task debug information")
 	// for on demand ci/cd scan
 	license := flag.String("license", "", "Scanner license") // it means on-demand stand-alone scanner
 	image := flag.String("image", "", "Scan image")          // overwrite registry, repository and tag
@@ -177,6 +176,7 @@ func main() {
 	ctrlPass := flag.String("ctrl_password", "", "Controller REST API password")
 	noWait := flag.Bool("no_wait", false, "No initial wait")
 
+	verbose := flag.Bool("x", false, "more debug")
 	output := flag.Bool("o", false, "Output CVEDB in json format")
 	getVer := flag.Bool("v", false, "show cve database version")
 
@@ -204,7 +204,8 @@ func main() {
 		return
 	}
 
-	var onDemand bool
+	onDemand := false
+	showTaskDebug := true
 
 	// If license parameter is given, this is an on-demand scanner, no register to the controller,
 	// but if join address is given, the scan result are sent to the controller.
@@ -216,9 +217,11 @@ func main() {
 
 		onDemand = true
 
-		// Less debug in standalone mode
-		log.SetLevel(log.InfoLevel)
-		*showTaskDebug = false
+		// Less debug in interactive mode
+		if *image != "" && *verbose == false {
+			log.SetLevel(log.InfoLevel)
+			showTaskDebug = false
+		}
 	}
 
 	// recovered, clean up all possible previous image folders
@@ -242,7 +245,7 @@ func main() {
 		}
 	}
 
-	scanTasker = newTasker(taskerPath, *rtSock, *showTaskDebug, sys)
+	scanTasker = newTasker(taskerPath, *rtSock, showTaskDebug, sys)
 	if scanTasker != nil {
 		log.Debug("Use scannerTask")
 		defer scanTasker.Close()
