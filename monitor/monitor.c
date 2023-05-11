@@ -20,8 +20,6 @@
 #define true  1
 #define false 0
 
-#define DEBUG_FILE "/var/log/ranger/monitor.log"
-
 #define ENV_CLUSTER_JOIN       "CLUSTER_JOIN_ADDR"
 #define ENV_CLUSTER_JOIN_PORT  "CLUSTER_JOIN_PORT"
 #define ENV_CLUSTER_ADVERTISE  "CLUSTER_ADVERTISED_ADDR"
@@ -63,17 +61,6 @@ typedef struct proc_info_ {
     struct timeval start;
     int exit_status;
 } proc_info_t;
-
-#define SCRIPT_SYSCTL   "sysctl -p"
-#define SCRIPT_CONFIG   "/usr/local/bin/configure.sh"
-#define SCRIPT_TEARDOWN "/usr/local/bin/teardown.sh"
-//#define SCRIPT_KILL_CONSUL "kill $(pgrep consul)"
-#define SCRIPT_KILL_CONSUL "consul leave"
-
-// Must be same as in configure.sh. rc < 0 to indicate error.
-#define RC_CONFIG_TC  0
-#define RC_CONFIG_NOTC 1
-#define RC_CONFIG_OVS 2
 
 static proc_info_t g_procs[PROC_MAX] = {
 [PROC_SCANNER]  {"scanner", "/usr/local/bin/scanner", },
@@ -138,6 +125,10 @@ static pid_t fork_exec(int i)
         a = 1;
         args[a ++] = "-d";
         args[a ++] = "/etc/neuvector/db/";
+
+        if (g_debug == 1) {
+            args[a ++] = "-x";
+        }
 
         if (g_image != NULL) {
             // automatically set to standalone mode
