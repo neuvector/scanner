@@ -657,8 +657,8 @@ github.com/nbutton23/zxcvbn-go v0.0.0-20160627004424-a22cb81b2ecd/go.mod h1:o96d
 github.com/nbutton23/zxcvbn-go v0.0.0-20171102151520-eafdab6b0663/go.mod h1:o96djdrsSGy3AWPyBgZMAGfxZNfgntdJG+11KU4QvbU=
 github.com/neuvector/k8s v1.2.1-0.20220214174348-d0b3f377461e h1:y7w21QaxlBzeRNW1PEdBfR/rA0S801uCEvubsiq1AJ0=
 github.com/neuvector/k8s v1.2.1-0.20220214174348-d0b3f377461e/go.mod h1:djxl7Js+tfAJJgxKpeN3lnFZT6jRhl1Ikkgd/wMrLQU=
-github.com/neuvector/neuvector v0.0.0-20230503191254-14a660db780f h1:zvLIw/ZfY5+ZF3l7KNiIiMWkDMnJIASw3Z7M0eacU98=
-github.com/neuvector/neuvector v0.0.0-20230503191254-14a660db780f/go.mod h1:6MKujtS3y/BQlnSXSelaUID2x3e1cmHq/31HoOQl9TM=
+github.com/neuvector/neuvector v0.0.0-20230511231508-130684c70f19 h1:llzVC8yQEjGxUme2AmOaw4WGYFoW/O5MRieO/O2M6zY=
+github.com/neuvector/neuvector v0.0.0-20230511231508-130684c70f19/go.mod h1:0+B4wl0c7PKh7lRg6VGsKvMTisECO+yoYBC1Expsz7M=
 github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d/go.mod h1:YUTz3bUH2ZwIWBy3CJBeOBEugqcmXREj14T+iG/4k4U=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/oklog/ulid v1.3.1 h1:EGfNDEx6MqHz8B3uNV6QAib1UR2Lm97sHi3ocA6ESJ4=
@@ -1574,4 +1574,6 @@ sigs.k8s.io/structured-merge-diff/v4 v4.1.2/go.mod h1:j/nl6xW8vLS49O8YvXW1ocPhZa
 sigs.k8s.io/yaml v1.1.0/go.mod h1:UJmg0vDUVViEyp3mgSv9WPwZCDxu4rQW1olrI1uml+o=
 sigs.k8s.io/yaml v1.2.0 h1:kr/MCeFWJWTwyaHoR9c8EjH9OumOmoF9YGiZd7lFm/Q=
 sigs.k8s.io/yaml v1.2.0/go.mod h1:yfXDCHCao9+ENCvLSE62v9VSji2MKu5jeNfTrofGhJc=
+sigs.k8s.io/yaml v1.3.0 h1:a2VclLzOGrwOHDiV8EfBGhvjHvP46CtW5j6POvhYGGo=
+sigs.k8s.io/yaml v1.3.0/go.mod h1:GeOyir5tyXNByN85N/dRIT9es5UQNerPYEKK56eTBm8=
 sourcegraph.com/sqs/pbtypes v0.0.0-20180604144634-d3ebe8f20ae4/go.mod h1:ketZ/q3QxT9HOBeFhu6RdvsftgpsbFHBF5Cas6cDKZ0=
