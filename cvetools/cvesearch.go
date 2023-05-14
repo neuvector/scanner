@@ -202,6 +202,7 @@ func (cv *CveTools) ScanAppPackage(req *share.ScanAppRequest, namespace string) 
 
 // ScanImage helps the Image scanning
 func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, imgPath string) (*share.ScanResult, error) {
+	var err error
 	result := &share.ScanResult{
 		Provider:        share.ScanProvider_Neuvector,
 		Version:         cv.CveDBVersion,
@@ -286,6 +287,17 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
 			return result, nil
+		}
+
+		signatureData, errCode := rc.GetSignatureDataForImage(ctx, req.Repository, info.Digest)
+		if errCode != share.ScanErrorCode_ScanErrNone {
+			result.Error = errCode
+			return result, fmt.Errorf("error code when getting signature data for image: %s", errCode.String())
+		}
+
+		result.Verifiers, err = verifyImageSignatures(info.Digest, req.RootsOfTrust, signatureData)
+		if err != nil {
+			return result, fmt.Errorf("error verifying signatures for image: %s", err.Error())
 		}
 
 		layers = info.Layers
