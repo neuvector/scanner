@@ -45,7 +45,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/jedib0t/go-pretty/v6 v6.4.6
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/neuvector/neuvector v0.0.0-20230511231508-130684c70f19
+	github.com/neuvector/neuvector v0.0.0-20230514155127-ebd60b1dd4b3
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.2 // indirect
 	google.golang.org/grpc v1.40.0
