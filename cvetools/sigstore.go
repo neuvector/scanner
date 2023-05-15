@@ -83,7 +83,7 @@ func parseVerifiersFromBinaryOutput(output string) []string {
 
 func executeVerificationBinary(inputPath string) (output string, err error) {
 	inputFlag := fmt.Sprintf("--config-file=%s", inputPath)
-	cmd := exec.Command("/usr/bin/sigstore-interface", inputFlag)
+	cmd := exec.Command("/usr/local/bin/sigstore-interface", inputFlag)
 	var out strings.Builder
 	cmd.Stdout = &out
 	err = cmd.Run()
