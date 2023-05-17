@@ -83,6 +83,10 @@ func (detector *RpmFeaturesDetector) Detect(namespace string, files map[string]*
 				"cpe:/o:redhat:rhel:8.3::baseos",
 				"cpe:/a:redhat:enterprise_linux:8::appstream",
 				"cpe:/o:redhat:enterprise_linux:8::baseos")
+		} else if strings.HasPrefix(namespace, "rhel:9.") {
+			cpes = utils.NewSet(
+				"cpe:/o:redhat:enterprise_linux:9::baseos",
+				"cpe:/a:redhat:enterprise_linux:9::appstream")
 		}
 	}
 
