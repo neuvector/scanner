@@ -289,15 +289,9 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 			return result, nil
 		}
 
-		signatureData, errCode := rc.GetSignatureDataForImage(ctx, req.Repository, info.Digest)
-		if errCode != share.ScanErrorCode_ScanErrNone {
-			result.Error = errCode
-			return result, fmt.Errorf("error code when getting signature data for image: %s", errCode.String())
-		}
-
-		result.Verifiers, err = verifyImageSignatures(info.Digest, req.RootsOfTrust, signatureData)
+		result.Verifiers, result.Error, err = getSatisfiedSignatureVerifiersForImage(rc, req, info, ctx)
 		if err != nil {
-			return result, fmt.Errorf("error verifying signatures for image: %s", err.Error())
+			return result, fmt.Errorf("error when verifying signatures for image: %s", err.Error())
 		}
 
 		layers = info.Layers
@@ -1353,4 +1347,26 @@ func buildSetIdPermLogs(perms []share.CLUSSetIdPermLog) []*share.ScanSetIdPermLo
 		}
 	}
 	return permLogs
+}
+
+func getSatisfiedSignatureVerifiersForImage(rc *scan.RegClient, req *share.ScanImageRequest, info *scan.ImageInfo, ctx context.Context) ([]string, share.ScanErrorCode, error) {
+	if len(req.RootsOfTrust) == 0 {
+		return []string{}, share.ScanErrorCode_ScanErrNone, nil
+	}
+
+	signatureData, errCode := rc.GetSignatureDataForImage(ctx, req.Repository, info.Digest)
+	if errCode != share.ScanErrorCode_ScanErrNone {
+		if errCode == share.ScanErrorCode_ScanErrImageNotFound {
+			// no signatures to verify for image
+			return []string{}, share.ScanErrorCode_ScanErrNone, nil
+		}
+		return []string{}, errCode, fmt.Errorf("error code when getting signature data for image: %s", errCode.String())
+	}
+
+	satisfiedVerifiers, err := verifyImageSignatures(info.Digest, req.RootsOfTrust, signatureData)
+	if err != nil {
+		return []string{}, share.ScanErrorCode_ScanErrPackage, fmt.Errorf("error verifying signatures for image: %s", err.Error())
+	}
+
+	return satisfiedVerifiers, share.ScanErrorCode_ScanErrNone, nil
 }
