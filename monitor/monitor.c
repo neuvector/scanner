@@ -329,6 +329,7 @@ static void proc_exit_handler(int signal)
 static void help(const char *prog)
 {
     printf("%s:\n", prog);
+    printf("    d: enable debug\n");
     printf("    h: help\n");
     printf("    i: <image>, scan image in standalone mode\n");
 }

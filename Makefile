@@ -18,6 +18,7 @@ copy_scan:
 	cp scanner/monitor/monitor ${STAGE_DIR}/usr/local/bin/
 	cp scanner/scanner ${STAGE_DIR}/usr/local/bin/
 	cp scanner/task/scannerTask ${STAGE_DIR}/usr/local/bin/
+	cp sigstore-interface/sigstore-interface ${STAGE_DIR}/usr/local/bin/sigstore-interface
 	cp scanner/data/cvedb.regular ${STAGE_DIR}/etc/neuvector/db/cvedb
 
 stage_init:
