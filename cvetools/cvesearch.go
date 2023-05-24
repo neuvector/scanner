@@ -202,6 +202,7 @@ func (cv *CveTools) ScanAppPackage(req *share.ScanAppRequest, namespace string) 
 
 // ScanImage helps the Image scanning
 func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, imgPath string) (*share.ScanResult, error) {
+	var err error
 	result := &share.ScanResult{
 		Provider:        share.ScanProvider_Neuvector,
 		Version:         cv.CveDBVersion,
@@ -286,6 +287,11 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
 			return result, nil
+		}
+
+		result.Verifiers, result.Error, err = getSatisfiedSignatureVerifiersForImage(rc, req, info, ctx)
+		if err != nil {
+			return result, fmt.Errorf("error when verifying signatures for image: %s", err.Error())
 		}
 
 		layers = info.Layers
@@ -1341,4 +1347,32 @@ func buildSetIdPermLogs(perms []share.CLUSSetIdPermLog) []*share.ScanSetIdPermLo
 		}
 	}
 	return permLogs
+}
+
+func getSatisfiedSignatureVerifiersForImage(rc *scan.RegClient, req *share.ScanImageRequest, info *scan.ImageInfo, ctx context.Context) ([]string, share.ScanErrorCode, error) {
+	if len(req.RootsOfTrust) == 0 {
+		return []string{}, share.ScanErrorCode_ScanErrNone, nil
+	}
+
+	log.WithFields(log.Fields{"imageDigest": info.Digest}).Info("Fetching signature data for image ...")
+
+	signatureData, errCode := rc.GetSignatureDataForImage(ctx, req.Repository, info.Digest)
+	if errCode != share.ScanErrorCode_ScanErrNone {
+		if errCode == share.ScanErrorCode_ScanErrImageNotFound {
+			// no signatures to verify for image
+			log.WithFields(log.Fields{"imageDigest": info.Digest}).Debug("No signature data found for image")
+			return []string{}, share.ScanErrorCode_ScanErrNone, nil
+		}
+		return []string{}, errCode, fmt.Errorf("error code when getting signature data for image: %s", errCode.String())
+	}
+
+	log.WithFields(log.Fields{"imageDigest": info.Digest}).Info("Done fetching signature data for image.")
+
+	satisfiedVerifiers, err := verifyImageSignatures(info.Digest, req.RootsOfTrust, signatureData)
+	if err != nil {
+		return []string{}, share.ScanErrorCode_ScanErrPackage, fmt.Errorf("error verifying signatures for image: %s", err.Error())
+	}
+	log.WithFields(log.Fields{"imageDigest": info.Digest, "satisfiedVerifiers": satisfiedVerifiers}).Debug("satisfied signature verifiers for image")
+
+	return satisfiedVerifiers, share.ScanErrorCode_ScanErrNone, nil
 }
