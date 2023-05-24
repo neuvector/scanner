@@ -1354,19 +1354,25 @@ func getSatisfiedSignatureVerifiersForImage(rc *scan.RegClient, req *share.ScanI
 		return []string{}, share.ScanErrorCode_ScanErrNone, nil
 	}
 
+	log.WithFields(log.Fields{"imageDigest": info.Digest}).Info("Fetching signature data for image ...")
+
 	signatureData, errCode := rc.GetSignatureDataForImage(ctx, req.Repository, info.Digest)
 	if errCode != share.ScanErrorCode_ScanErrNone {
 		if errCode == share.ScanErrorCode_ScanErrImageNotFound {
 			// no signatures to verify for image
+			log.WithFields(log.Fields{"imageDigest": info.Digest}).Debug("No signature data found for image")
 			return []string{}, share.ScanErrorCode_ScanErrNone, nil
 		}
 		return []string{}, errCode, fmt.Errorf("error code when getting signature data for image: %s", errCode.String())
 	}
 
+	log.WithFields(log.Fields{"imageDigest": info.Digest}).Info("Done fetching signature data for image.")
+
 	satisfiedVerifiers, err := verifyImageSignatures(info.Digest, req.RootsOfTrust, signatureData)
 	if err != nil {
 		return []string{}, share.ScanErrorCode_ScanErrPackage, fmt.Errorf("error verifying signatures for image: %s", err.Error())
 	}
+	log.WithFields(log.Fields{"imageDigest": info.Digest, "satisfiedVerifiers": satisfiedVerifiers}).Debug("satisfied signature verifiers for image")
 
 	return satisfiedVerifiers, share.ScanErrorCode_ScanErrNone, nil
 }
