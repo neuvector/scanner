@@ -259,7 +259,7 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 				return result, nil
 			}
 
-			rc := scan.NewRegClient(baseReg, req.Username, req.Password, req.Proxy, new(httptrace.NopTracer))
+			rc := scan.NewRegClient(baseReg, req.Token, req.Username, req.Password, req.Proxy, new(httptrace.NopTracer))
 			info, errCode = rc.GetImageInfo(ctx, baseRepo, baseTag)
 			if errCode != share.ScanErrorCode_ScanErrNone {
 				result.Error = errCode
@@ -273,7 +273,7 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 			log.WithFields(log.Fields{"baseImage": req.BaseImage, "base": baseLayers, "layers": len(info.Layers)}).Debug()
 		}
 
-		rc := scan.NewRegClient(req.Registry, req.Username, req.Password, req.Proxy, new(httptrace.NopTracer))
+		rc := scan.NewRegClient(req.Registry, req.Token, req.Username, req.Password, req.Proxy, new(httptrace.NopTracer))
 
 		info, errCode = rc.GetImageInfo(ctx, req.Repository, req.Tag)
 		if errCode != share.ScanErrorCode_ScanErrNone {
