@@ -181,7 +181,7 @@ github.com/mitchellh/mapstructure
 github.com/neuvector/k8s/apis/meta/v1
 github.com/neuvector/k8s/runtime
 github.com/neuvector/k8s/runtime/schema
-# github.com/neuvector/neuvector v0.0.0-20230511231508-130684c70f19
+# github.com/neuvector/neuvector v0.0.0-20230524023323-88a4a3d0f1f0
 ## explicit
 github.com/neuvector/neuvector/controller/api
 github.com/neuvector/neuvector/share

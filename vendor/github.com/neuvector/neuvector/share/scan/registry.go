@@ -3,7 +3,6 @@ package scan
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"sort"
 	"strings"
@@ -23,31 +22,13 @@ type RegClient struct {
 	*registry.Registry
 }
 
-func NewRegClient(url, username, password, proxy string, trace httptrace.HTTPTrace) *RegClient {
+// If token is given, the Authorization header will be added with token appended.
+func NewRegClient(url, token, username, password, proxy string, trace httptrace.HTTPTrace) *RegClient {
 	log.WithFields(log.Fields{"url": url}).Debug("")
 
 	// Ignore errors
-	hub, _, _ := registry.NewInsecure(url, username, password, proxy, trace)
+	hub, _, _ := registry.NewInsecure(url, token, username, password, proxy, trace)
 	return &RegClient{Registry: hub}
-
-	/*
-		var msg string
-		hub, errCode, err := registry.NewSecure(url, username, password, proxy, trace)
-		if errCode == registry.ErrorCertificate {
-			log.Debug("Use insecure connection")
-			hub, errCode, err = registry.NewInsecure(url, username, password, proxy, trace)
-			if errCode == registry.ErrorCertificate {
-				log.WithFields(log.Fields{"error": err}).Error("Certificate error")
-				if err != nil {
-					msg = err.Error()
-				}
-				return nil, share.ScanErrorCode_ScanErrCertificate, msg
-			}
-		}
-
-		// Ignore other errors
-		return &RegClient{Registry: hub}, share.ScanErrorCode_ScanErrNone, ""
-	*/
 }
 
 type ImageInfo struct {
@@ -80,8 +61,6 @@ func (rc *RegClient) GetImageInfo(ctx context.Context, name, tag string) (*Image
 
 	dg, body, err := rc.ManifestRequest(ctx, name, tag, 2)
 	if err == nil {
-		// log.WithFields(log.Fields{"body": string(body[:])}).Info("=========")
-
 		// check if response is manifest list
 		var ml manifestList.DeserializedManifestList
 		if err = ml.UnmarshalJSON(body); err == nil && len(ml.Manifests) > 0 &&
@@ -253,24 +232,24 @@ func GetCosignSignatureTagFromDigest(digest string) string {
 //
 // More information about the cosign's signature specification can be found here:
 // https://github.com/sigstore/cosign/blob/main/specs/SIGNATURE_SPEC.md
-func (rc *RegClient) GetSignatureDataForImage(ctx context.Context, repo string, digest string) (s SignatureData, err error) {
+func (rc *RegClient) GetSignatureDataForImage(ctx context.Context, repo string, digest string) (s SignatureData, errCode share.ScanErrorCode) {
 	signatureTag := GetCosignSignatureTagFromDigest(digest)
 	info, errCode := rc.GetImageInfo(ctx, repo, signatureTag)
 	if errCode != share.ScanErrorCode_ScanErrNone {
-		return SignatureData{}, fmt.Errorf("error code while scanning for image info: %s", errCode)
+		return SignatureData{}, errCode
 	}
 	s.Payloads = make(map[string]string)
 	for _, layer := range info.Layers {
 		rdr, _, err := rc.DownloadLayer(context.Background(), repo, goDigest.Digest(layer))
 		if err != nil {
-			return SignatureData{}, fmt.Errorf("error while downloading layer: %s", err.Error())
+			return SignatureData{}, share.ScanErrorCode_ScanErrRegistryAPI
 		}
 		layerBytes, err := ioutil.ReadAll(rdr)
 		if err != nil {
-			return SignatureData{}, fmt.Errorf("error while reading layer %s: %s", layer, err.Error())
+			return SignatureData{}, share.ScanErrorCode_ScanErrRegistryAPI
 		}
 		s.Payloads[layer] = string(layerBytes)
 	}
 	s.Manifest = string(info.RawManifest)
-	return s, nil
+	return s, share.ScanErrorCode_ScanErrNone
 }
