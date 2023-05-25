@@ -49,7 +49,7 @@ var cveTools *cvetools.CveTools // available inside package
 var scanTasker *Tasker          // available inside package
 var selfID string
 
-func dbRead(path string, maxRetry int, output bool) map[string]*share.ScanVulnerability {
+func dbRead(path string, maxRetry int, output string) map[string]*share.ScanVulnerability {
 	dbFile := path + share.DefaultCVEDBName
 	encryptKey := common.GetCVEDBEncryptKey()
 
@@ -66,19 +66,19 @@ func dbRead(path string, maxRetry int, output bool) map[string]*share.ScanVulner
 			if verNew, createTime, err := common.LoadCveDb(path, cveTools.TbPath, encryptKey); err == nil {
 				cveTools.CveDBVersion = verNew
 				cveTools.CveDBCreateTime = createTime
-				if dbData, outCVEs, err = common.ReadCveDbMeta(cveTools.TbPath, output); err != nil {
+				if dbData, outCVEs, err = common.ReadCveDbMeta(cveTools.TbPath, output != ""); err != nil {
 					log.WithFields(log.Fields{"error": err}).Error("Failed to load scanner db")
 				} else {
 					dbReady = true
 
-					if output {
+					if output != "" {
 						out := outputCVE{
 							Version:    verNew,
 							CreateTime: createTime,
 							CVEs:       outCVEs,
 						}
 						file, _ := json.MarshalIndent(out, "", "    ")
-						_ = ioutil.WriteFile("cvedb.json", file, 0644)
+						_ = ioutil.WriteFile(output, file, 0644)
 					}
 				}
 			}
@@ -106,7 +106,7 @@ func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinP
 
 	for {
 		// forever retry
-		dbData := dbRead(path, 0, false)
+		dbData := dbRead(path, 0, "")
 		scanner := share.ScannerRegisterData{
 			CVEDBVersion:    cveTools.CveDBVersion,
 			CVEDBCreateTime: cveTools.CveDBCreateTime,
@@ -177,7 +177,7 @@ func main() {
 	noWait := flag.Bool("no_wait", false, "No initial wait")
 
 	verbose := flag.Bool("x", false, "more debug")
-	output := flag.Bool("o", false, "Output CVEDB in json format")
+	output := flag.String("o", "", "Output CVEDB in json format, specify the output file")
 	getVer := flag.Bool("v", false, "show cve database version")
 
 	flag.Usage = usage
@@ -199,8 +199,8 @@ func main() {
 	cveTools = cvetools.NewCveTools(*rtSock, scan.NewScanUtil(sys))
 
 	// output cvedb in json format
-	if *output {
-		dbRead(*dbPath, 3, true)
+	if *output != "" {
+		dbRead(*dbPath, 3, *output)
 		return
 	}
 
@@ -294,7 +294,7 @@ func main() {
 		}
 
 		// DB read error printed inside dbRead()
-		dbData := dbRead(*dbPath, 3, false)
+		dbData := dbRead(*dbPath, 3, "")
 		if dbData != nil {
 			result := scanOnDemand(req, dbData)
 
