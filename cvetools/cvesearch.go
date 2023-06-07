@@ -289,9 +289,20 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 			return result, nil
 		}
 
-		result.Verifiers, result.Error, err = getSatisfiedSignatureVerifiersForImage(rc, req, info, ctx)
-		if err != nil {
-			return result, fmt.Errorf("error when verifying signatures for image: %s", err.Error())
+		// image signature handling
+		hasVerifier := false
+		for _, t := range req.RootsOfTrust {
+			if len(t.Verifiers) > 0 {
+				hasVerifier = true
+				break
+			}
+		}
+		if hasVerifier {
+			result.Verifiers, result.Error, err = getSatisfiedSignatureVerifiersForImage(rc, req, info, ctx)
+			if err != nil {
+				log.WithFields(log.Fields{"imageDigest": info.Digest}).Error(err.Error())
+				// do not return Failed scan status because signature handling is not good
+			}
 		}
 
 		layers = info.Layers
@@ -1350,11 +1361,7 @@ func buildSetIdPermLogs(perms []share.CLUSSetIdPermLog) []*share.ScanSetIdPermLo
 }
 
 func getSatisfiedSignatureVerifiersForImage(rc *scan.RegClient, req *share.ScanImageRequest, info *scan.ImageInfo, ctx context.Context) ([]string, share.ScanErrorCode, error) {
-	if len(req.RootsOfTrust) == 0 {
-		return []string{}, share.ScanErrorCode_ScanErrNone, nil
-	}
-
-	log.WithFields(log.Fields{"imageDigest": info.Digest}).Info("Fetching signature data for image ...")
+	log.WithFields(log.Fields{"imageDigest": info.Digest}).Debug("Fetching signature data for image ...")
 
 	signatureData, errCode := rc.GetSignatureDataForImage(ctx, req.Repository, info.Digest)
 	if errCode != share.ScanErrorCode_ScanErrNone {
