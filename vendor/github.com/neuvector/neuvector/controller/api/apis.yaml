@@ -5223,6 +5223,11 @@ definitions:
         example:
           restricted: ["Uses illegal volume type.", "Allows running as root user."]
           baseline: ["Sets HostNetwork, HostPID, or HostIPC to true.", "Allows privileged container(s)."]
+      sigstore_verifiers:
+        type: array
+        items:
+          type: string
+        example: ["public/verifier1", "private1/verifier1", "private1/verifier2"]
   RESTAdmissionState:
     type: object
     properties:
@@ -8021,7 +8026,14 @@ definitions:
         type: array
         items:
           type: string
-          example: "{\"all\"}"
+          enum:
+            - cpath
+            - conn
+            - mutex
+            - scan
+            - cluster
+            - k8s_monitor
+        example: ["scan", "k8s_monitor"]
       monitor_service_mesh:
         type: boolean
         example: true
@@ -10103,7 +10115,17 @@ definitions:
         type: array
         items:
           type: string
-          example: all
+          enum:
+            - cpath
+            - conn
+            - mutex
+            - scan
+            - cluster
+            - k8s_monitor
+        example: ["cpath", "scan", "k8s_monitor"]
+      csp_type:
+        type: string
+        example: aws
       monitor_service_mesh:
         type: boolean
         example: true
@@ -10224,7 +10246,17 @@ definitions:
         type: array
         items:
           type: string
-          example: all
+          enum:
+            - cpath
+            - conn
+            - mutex
+            - scan
+            - cluster
+            - k8s_monitor
+        example: ["scan", "k8s_monitor"]
+      csp_type:
+        type: string
+        example: aws
       monitor_service_mesh:
         type: boolean
         example: true
@@ -10470,7 +10502,14 @@ definitions:
         type: array
         items:
           type: string
-          example: all
+          enum:
+            - cpath
+            - conn
+            - mutex
+            - scan
+            - cluster
+            - k8s_monitor
+        example: ["cpath", "scan", "k8s_monitor"]
       monitor_service_mesh:
         type: boolean
         example: true
