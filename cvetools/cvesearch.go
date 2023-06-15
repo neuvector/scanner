@@ -292,7 +292,8 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 
 		result.Verifiers, result.Error, err = getSatisfiedSignatureVerifiersForImage(rc, req, info, ctx)
 		if err != nil {
-			return result, fmt.Errorf("error when verifying signatures for image: %s", err.Error())
+			// do not return Failed scan status just because signature handling is no good
+			// return result, fmt.Errorf("error when verifying signatures for image: %s", err.Error())
 		}
 
 		layers = info.Layers
@@ -1351,7 +1352,14 @@ func buildSetIdPermLogs(perms []share.CLUSSetIdPermLog) []*share.ScanSetIdPermLo
 }
 
 func getSatisfiedSignatureVerifiersForImage(rc *scan.RegClient, req *share.ScanImageRequest, info *scan.ImageInfo, ctx context.Context) ([]string, share.ScanErrorCode, error) {
-	if len(req.RootsOfTrust) == 0 {
+	hasVerifier := false
+	for _, t := range req.RootsOfTrust {
+		if len(t.Verifiers) > 0 {
+			hasVerifier = true
+			break
+		}
+	}
+	if !hasVerifier {
 		return []string{}, share.ScanErrorCode_ScanErrNone, nil
 	}
 
