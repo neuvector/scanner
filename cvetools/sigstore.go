@@ -77,7 +77,7 @@ func createConfFile(imgDigest string) (path string, file *os.File, err error) {
 func parseVerifiersFromBinaryOutput(output string) []string {
 	outputLines := strings.Split(output, "\n")
 	lastLine := outputLines[len(outputLines)-2]
-	satisfiedVerifiers := strings.Split(lastLine[1:len(lastLine)-1], ", ")
+	satisfiedVerifiers := strings.Split(strings.TrimSpace(lastLine), ", ")
 	return satisfiedVerifiers
 }
 
