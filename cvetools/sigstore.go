@@ -9,6 +9,7 @@ import (
 
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/scan"
+	log "github.com/sirupsen/logrus"
 )
 
 type sigstoreInterfaceConfig struct {
@@ -32,13 +33,14 @@ func verifyImageSignatures(imgDigest string, rootsOfTrust []*share.SigstoreRootO
 	}
 	binaryOutput, err := executeVerificationBinary(confPath)
 	if err != nil {
+		parseVerifiersFromBinaryOutput(imgDigest, binaryOutput)
 		return verifiers, fmt.Errorf("error when executing verification binary: %s", err.Error())
 	}
 	err = os.Remove(confPath)
 	if err != nil {
 		return verifiers, fmt.Errorf("could not remove used interface config file at %s: %s", confPath, err.Error())
 	}
-	return parseVerifiersFromBinaryOutput(binaryOutput), nil
+	return parseVerifiersFromBinaryOutput(imgDigest, binaryOutput), nil
 }
 
 func getConfJSON(imgDigest string, rootsOfTrust []*share.SigstoreRootOfTrust, sigData scan.SignatureData) ([]byte, error) {
@@ -74,11 +76,26 @@ func createConfFile(imgDigest string) (path string, file *os.File, err error) {
 	return confPath, confFile, nil
 }
 
-func parseVerifiersFromBinaryOutput(output string) []string {
+func parseVerifiersFromBinaryOutput(imgDigest string, output string) []string {
+	var lastError string
 	outputLines := strings.Split(output, "\n")
-	lastLine := outputLines[len(outputLines)-2]
-	satisfiedVerifiers := strings.Split(strings.TrimSpace(lastLine), ", ")
-	return satisfiedVerifiers
+	for _, line := range outputLines {
+		// sigstore-interface writes a line with prefix
+		//   "ERROR: " for error encounted when verifying against a verifier
+		//   "Satisfied verifiers: " for all the satisfied verifiers separated by ", "
+		if strings.HasPrefix(line, "ERROR: ") {
+			if line != lastError {
+				log.WithFields(log.Fields{"imageDigest": imgDigest}).Error(line[len("ERROR: "):])
+				lastError = line
+			}
+		} else {
+			if strings.HasPrefix(line, "Satisfied verifiers: ") {
+				vs := strings.Split(strings.TrimSpace(line[len("Satisfied verifiers: "):]), ", ")
+				return vs
+			}
+		}
+	}
+	return nil
 }
 
 func executeVerificationBinary(inputPath string) (output string, err error) {

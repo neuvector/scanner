@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -290,7 +291,7 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 			return result, nil
 		}
 
-		result.Verifiers, result.Error, err = getSatisfiedSignatureVerifiersForImage(rc, req, info, ctx)
+		result.SignatureInfo, result.Error, err = getSatisfiedSignatureVerifiersForImage(rc, req, info, ctx)
 		if err != nil {
 			// do not return Failed scan status just because signature handling is no good
 			// return result, fmt.Errorf("error when verifying signatures for image: %s", err.Error())
@@ -1351,7 +1352,12 @@ func buildSetIdPermLogs(perms []share.CLUSSetIdPermLog) []*share.ScanSetIdPermLo
 	return permLogs
 }
 
-func getSatisfiedSignatureVerifiersForImage(rc *scan.RegClient, req *share.ScanImageRequest, info *scan.ImageInfo, ctx context.Context) ([]string, share.ScanErrorCode, error) {
+func getSatisfiedSignatureVerifiersForImage(rc *scan.RegClient, req *share.ScanImageRequest, info *scan.ImageInfo,
+	ctx context.Context) (*share.ScanSignatureInfo, share.ScanErrorCode, error) {
+
+	sigInfo := &share.ScanSignatureInfo{
+		VerificationTimestamp: time.Now().UTC().Format(time.RFC3339),
+	}
 	hasVerifier := false
 	for _, t := range req.RootsOfTrust {
 		if len(t.Verifiers) > 0 {
@@ -1360,28 +1366,32 @@ func getSatisfiedSignatureVerifiersForImage(rc *scan.RegClient, req *share.ScanI
 		}
 	}
 	if !hasVerifier {
-		return []string{}, share.ScanErrorCode_ScanErrNone, nil
+		return sigInfo, share.ScanErrorCode_ScanErrNone, nil
 	}
 
 	log.WithFields(log.Fields{"imageDigest": info.Digest}).Info("Fetching signature data for image ...")
 
 	signatureData, errCode := rc.GetSignatureDataForImage(ctx, req.Repository, info.Digest)
 	if errCode != share.ScanErrorCode_ScanErrNone {
+		sigInfo.VerificationError = errCode
 		if errCode == share.ScanErrorCode_ScanErrImageNotFound {
 			// no signatures to verify for image
 			log.WithFields(log.Fields{"imageDigest": info.Digest}).Debug("No signature data found for image")
-			return []string{}, share.ScanErrorCode_ScanErrNone, nil
+			return sigInfo, share.ScanErrorCode_ScanErrNone, nil
 		}
-		return []string{}, errCode, fmt.Errorf("error code when getting signature data for image: %s", errCode.String())
+		return sigInfo, errCode, fmt.Errorf("error code when getting signature data for image: %s", errCode.String())
 	}
 
 	log.WithFields(log.Fields{"imageDigest": info.Digest}).Info("Done fetching signature data for image.")
 
 	satisfiedVerifiers, err := verifyImageSignatures(info.Digest, req.RootsOfTrust, signatureData)
 	if err != nil {
-		return []string{}, share.ScanErrorCode_ScanErrPackage, fmt.Errorf("error verifying signatures for image: %s", err.Error())
+		log.WithFields(log.Fields{"imageDigest": info.Digest, "err": err}).Error()
+		sigInfo.VerificationError = share.ScanErrorCode_ScanErrRegistryAPI
+		return sigInfo, share.ScanErrorCode_ScanErrPackage, fmt.Errorf("error verifying signatures for image: %s", err.Error())
 	}
 	log.WithFields(log.Fields{"imageDigest": info.Digest, "satisfiedVerifiers": satisfiedVerifiers}).Debug("satisfied signature verifiers for image")
+	sigInfo.Verifiers = satisfiedVerifiers
 
-	return satisfiedVerifiers, share.ScanErrorCode_ScanErrNone, nil
+	return sigInfo, share.ScanErrorCode_ScanErrNone, nil
 }
