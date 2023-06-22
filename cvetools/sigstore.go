@@ -90,8 +90,10 @@ func parseVerifiersFromBinaryOutput(imgDigest string, output string) []string {
 			}
 		} else {
 			if strings.HasPrefix(line, "Satisfied verifiers: ") {
-				vs := strings.Split(strings.TrimSpace(line[len("Satisfied verifiers: "):]), ", ")
-				return vs
+				if line = strings.TrimSpace(line[len("Satisfied verifiers: "):]); line != "" {
+					vs := strings.Split(line, ", ")
+					return vs
+				}
 			}
 		}
 	}
