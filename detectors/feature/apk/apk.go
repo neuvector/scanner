@@ -37,22 +37,22 @@ func (detector *RpmFeaturesDetector) Detect(namespace string, files map[string]*
 		line := strings.TrimSpace(scanner.Text())
 		if len(line) > 3 {
 			if line[0] == 'P' && line[1] == ':' {
-				pkg.Feature.Name = strings.TrimPrefix(line, "P:")
+				pkg.Package = strings.TrimPrefix(line, "P:")
 			} else if line[0] == 'V' && line[1] == ':' {
 				pkg.Version, err = utils.NewVersion(strings.TrimPrefix(line, "V:"))
 				if err != nil {
 					log.Warningf("could not parse package version '%c': %s. skipping", line[1], err.Error())
 				}
 			} else if line[0] == 'o' && line[1] == ':' {
-				pkg.Feature.Name = strings.TrimPrefix(line, "o:")
+				pkg.Package = strings.TrimPrefix(line, "o:")
 			}
 		}
 		// Add the package to the result array if we have all the informations
 		if line == "" {
-			if pkg.Feature.Name != "" && pkg.Version.String() != "" {
+			if pkg.Package != "" && pkg.Version.String() != "" {
 				pkg.InBase = f.InBase
-				packagesMap[pkg.Feature.Name+"#"+pkg.Version.String()] = pkg
-				pkg.Feature.Name = ""
+				packagesMap[pkg.Package+"#"+pkg.Version.String()] = pkg
+				pkg.Package = ""
 				pkg.Version = utils.Version{}
 			}
 		}

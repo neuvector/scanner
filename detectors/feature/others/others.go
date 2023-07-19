@@ -37,7 +37,7 @@ func (detector *OthersFeaturesDetector) Detect(namespace string, files map[strin
 		line := scanner.Text()
 		r := pipPackagesRegexp.FindStringSubmatch(line)
 		if len(r) == 3 {
-			pkg.Feature.Name = strings.ToLower(r[1])
+			pkg.Package = strings.ToLower(r[1])
 			pkg.Version, err = utils.NewVersion(r[2])
 			if err != nil {
 				log.Warningf("could not parse package version '%s': %s. skipping", r[2], err.Error())
@@ -45,7 +45,7 @@ func (detector *OthersFeaturesDetector) Detect(namespace string, files map[strin
 			}
 
 			pkg.InBase = f.InBase
-			packagesMap[pkg.Feature.Name+"#"+pkg.Version.String()] = pkg
+			packagesMap[pkg.Package+"#"+pkg.Version.String()] = pkg
 		}
 	}
 

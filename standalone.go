@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -152,30 +153,54 @@ func writeResultToStdout(req *share.ScanImageRequest, result *share.ScanResult, 
 	fmt.Printf("Base OS: %s\n", rpt.BaseOS)
 	fmt.Printf("TOTAL: %d, HIGH: %d, MEDIUM: %d, LOW: %d, UNKNOWN: %d\n", len(rpt.Vuls), high, med, low, unk)
 
-	if len(rpt.Vuls) > 0 {
-		rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
-		t := table.NewWriter()
-		t.SetOutputMirror(os.Stdout)
-		t.AppendHeader(table.Row{"Package", "Vulnerability", "Severity", "Version", "Fixed Version", "Published"})
-		for _, v := range rpt.Vuls {
-			t.AppendRow(table.Row{
-				v.PackageName, v.Name, v.Severity, v.PackageVersion, v.FixedVersion, time.Unix(v.PublishedTS, 0).UTC().Format("2006-01-02"),
-			}, rowConfigAutoMerge)
+	files := make([]string, 0)
+	fileMap := make(map[string][]*api.RESTVulnerability)
+	for _, v := range rpt.Vuls {
+		if list, ok := fileMap[v.FileName]; !ok {
+			files = append(files, v.FileName)
+			fileMap[v.FileName] = []*api.RESTVulnerability{v}
+		} else {
+			fileMap[v.FileName] = append(list, v)
 		}
-		t.SetColumnConfigs([]table.ColumnConfig{
-			{Name: "Package", AutoMerge: true},
-			{Name: "Severity", AutoMerge: true},
-			{Name: "Version", AutoMerge: true},
-		})
-		t.SortBy([]table.SortBy{
-			{Name: "Package", Mode: table.Asc},
-			{Name: "Severity", Mode: table.Asc},
-			{Name: "Vulnerability", Mode: table.Asc},
-		})
-		t.SetStyle(table.StyleLight)
-		t.Style().Options.SeparateRows = true
+	}
 
-		t.Render()
+	sort.Strings(files)
+
+	for _, f := range files {
+		list, ok := fileMap[f]
+		if !ok {
+			continue
+		}
+
+		if f != "" {
+			fmt.Printf("\nFile: %s\n", f)
+		}
+
+		if len(list) > 0 {
+			rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
+			t := table.NewWriter()
+			t.SetOutputMirror(os.Stdout)
+			t.AppendHeader(table.Row{"Package", "Vulnerability", "Severity", "Version", "Fixed Version", "Published"})
+			for _, v := range list {
+				t.AppendRow(table.Row{
+					v.PackageName, v.Name, v.Severity, v.PackageVersion, v.FixedVersion, time.Unix(v.PublishedTS, 0).UTC().Format("2006-01-02"),
+				}, rowConfigAutoMerge)
+			}
+			t.SetColumnConfigs([]table.ColumnConfig{
+				{Name: "Package", AutoMerge: true},
+				{Name: "Severity", AutoMerge: true},
+				{Name: "Version", AutoMerge: true},
+			})
+			t.SortBy([]table.SortBy{
+				{Name: "Package", Mode: table.Asc},
+				{Name: "Severity", Mode: table.Asc},
+				{Name: "Vulnerability", Mode: table.Asc},
+			})
+			t.SetStyle(table.StyleLight)
+			t.Style().Options.SeparateRows = true
+
+			t.Render()
+		}
 	}
 }
 

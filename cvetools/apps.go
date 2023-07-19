@@ -94,11 +94,11 @@ func appVul2FullVul(app detectors.AppFeatureVersion, mv common.AppModuleVul) vul
 	fv.Vf.CVSSv2.Score = mv.Score
 
 	if strings.HasSuffix(app.FileName, scan.WPVerFileSuffix) {
-		fv.Ft.Feature.Name = "WordPress"
+		fv.Ft.Package = "WordPress"
 	} else {
-		fv.Ft.Feature.Name = app.FileName
+		fv.Ft.Package = app.ModuleName
 	}
-	fv.Ft.Feature.Namespace.Name = app.AppName
+	fv.Ft.File = app.FileName
 	fv.Ft.Version, _ = utils.NewVersion(app.Version)
 	fv.Ft.InBase = app.InBase
 	return fv

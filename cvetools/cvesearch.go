@@ -117,10 +117,10 @@ func diffFeatures(lastFeat, features []detectors.FeatureVersion) []detectors.Fea
 	dfeats := make([]detectors.FeatureVersion, 0)
 	fmap := make(map[string]*detectors.FeatureVersion)
 	for i, ft := range lastFeat {
-		fmap[ft.Feature.Name] = &lastFeat[i]
+		fmap[ft.Package] = &lastFeat[i]
 	}
 	for _, ft := range features {
-		if lf, ok := fmap[ft.Feature.Name]; !ok || lf.Version != ft.Version {
+		if lf, ok := fmap[ft.Package]; !ok || lf.Version != ft.Version {
 			dfeats = append(dfeats, ft)
 		}
 	}
@@ -858,18 +858,18 @@ func (cv *CveTools) getFeatures(layerFiles *layerScanFiles, imageNs *detectors.N
 
 	// get the nginx package from os dpkg or rpm and append it to application package
 	for i, ft := range features {
-		if ft.Feature.Name == "nginx" {
+		if ft.Package == "nginx" {
 			nginx := scan.AppPackage{AppName: "nginx", ModuleName: "nginx", Version: ft.Version.String(), FileName: "nginx"}
 			app := detectors.AppFeatureVersion{AppPackage: nginx, ModuleVuls: make([]detectors.ModuleVul, 0), InBase: ft.InBase}
 			layerFiles.apps = append(layerFiles.apps, app)
-		} else if ft.Feature.Name == "openssl" && namespace == nil {
+		} else if ft.Package == "openssl" && namespace == nil {
 			// add the openssl to the app to compare
 			ver := ft.Version.String()
 			ssl := scan.AppPackage{AppName: "openssl", ModuleName: "openssl", Version: ver, FileName: "openssl"}
 			app := detectors.AppFeatureVersion{AppPackage: ssl, ModuleVuls: make([]detectors.ModuleVul, 0), InBase: ft.InBase}
 			layerFiles.apps = append(layerFiles.apps, app)
-			features[i].Feature.Name = "opensslxx"
-		} else if ft.Feature.Name == "busybox" && namespace == nil {
+			features[i].Package = "opensslxx"
+		} else if ft.Package == "busybox" && namespace == nil {
 			namespace = &detectors.Namespace{Name: "busybox" + ":" + ft.Version.String()}
 			log.WithFields(log.Fields{"busybox": *namespace}).Debug("BusyBox")
 
@@ -911,7 +911,7 @@ func isInVulnWindow(window featureVulnWindow, ft detectors.FeatureVersion, minVe
 // For a given feature ft, return vul list and module list
 func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft detectors.FeatureVersion) ([]common.VulShort, []detectors.ModuleVul) {
 	// feature name can take format util-linux/libsmartcols1, the source is util-linux and should be used to search cve.
-	name := ft.Feature.Name
+	name := ft.Package
 	if a := strings.Index(name, "/"); a > 0 {
 		name = name[:a]
 	}
@@ -947,7 +947,7 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 			// v.Fixin = nil
 			for _, window := range val {
 				//Check that the vulnerability matches correct window for the vulnerability.
-				if strings.EqualFold(window.featureName, ft.Feature.Name) && strings.EqualFold(window.featureNamespace, namespace) {
+				if strings.EqualFold(window.featureName, ft.Package) && strings.EqualFold(window.featureNamespace, namespace) {
 					minVer, err := utils.NewVersion(window.min)
 					if err != nil {
 						log.WithFields(log.Fields{"error": err, "version": window.min}).Error()
@@ -1143,14 +1143,15 @@ func getVulItemList(vuls []vulFullReport, dbPrefix string) []*share.ScanVulnerab
 	}
 
 	for _, vul := range vuls {
-		name := vul.Ft.Feature.Name
+		name := vul.Ft.Package
 		if a := strings.Index(name, "/"); a > 0 {
 			// feature name can take format util-linux/libsmartcols1, user the source name but keep the feature full name, NVSHAS-4042
-			// vul.ft.Feature.Name = name[a+1:]
+			// vul.ft.Package = name[a+1:]
 			name = name[:a]
 		}
 		severity := common.Priority(vul.Vf.Severity)
 
+		// Identify only one fixed version
 		var fixedin common.FeaFull
 		if len(vul.Vf.FixedIn) == 1 {
 			fixedin = vul.Vf.FixedIn[0]
@@ -1172,7 +1173,7 @@ func getVulItemList(vuls []vulFullReport, dbPrefix string) []*share.ScanVulnerab
 	// Sort vulnerabilitiy by severity.
 	priority := func(v1, v2 vulnerabilityInfo) bool {
 		if v1.severity.Compare(v2.severity) == 0 {
-			return v1.featVer.Feature.Name <= v2.featVer.Feature.Name
+			return v1.featVer.Package <= v2.featVer.Package
 		} else {
 			return v1.severity.Compare(v2.severity) > 0
 		}
@@ -1198,7 +1199,7 @@ func getVulItemList(vuls []vulFullReport, dbPrefix string) []*share.ScanVulnerab
 		packVer := featver.Version.String()
 
 		// TODO: Quick fix to remove duplication. It should be done earlier
-		key := fmt.Sprintf("%s-%s-%s", v.Name, featver.Feature.Name, packVer)
+		key := fmt.Sprintf("%s-%s-%s", v.Name, featver.Package, packVer)
 		if unique.Contains(key) {
 			continue
 		}
@@ -1223,25 +1224,32 @@ func getVulItemList(vuls []vulFullReport, dbPrefix string) []*share.ScanVulnerab
 			// Link:             v.Link,
 			// Vectors:          v.CVSSv2.Vectors,
 			// VectorsV3:        v.CVSSv3.Vectors,
-			Score:            float32(v.CVSSv2.Score),
-			ScoreV3:          float32(v.CVSSv3.Score),
-			Name:             v.Name,
-			Severity:         fmt.Sprintf("%s", severity),
-			PackageName:      featver.Feature.Name,
-			PackageVersion:   packVer,
-			FixedVersion:     strings.Replace(fixedInVer, "||", " OR ", -1),
-			PublishedDate:    fmt.Sprintf("%d", v.IssuedDate.Unix()),
-			LastModifiedDate: fmt.Sprintf("%d", v.LastModDate.Unix()),
-			CPEs:             cpes,
-			FeedRating:       v.FeedRating,
-			InBase:           featver.InBase,
-			DBKey:            fmt.Sprintf("%s:%s", dbPrefix, v.Name),
+			Score:                 float32(v.CVSSv2.Score),
+			ScoreV3:               float32(v.CVSSv3.Score),
+			Name:                  v.Name,
+			Severity:              fmt.Sprintf("%s", severity),
+			PackageNameDeprecated: featver.Package,
+			PackageName:           featver.Package,
+			PackageVersion:        packVer,
+			FixedVersion:          strings.Replace(fixedInVer, "||", " OR ", -1),
+			PublishedDate:         fmt.Sprintf("%d", v.IssuedDate.Unix()),
+			LastModifiedDate:      fmt.Sprintf("%d", v.LastModDate.Unix()),
+			CPEs:                  cpes,
+			FeedRating:            v.FeedRating,
+			InBase:                featver.InBase,
+			DBKey:                 fmt.Sprintf("%s:%s", dbPrefix, v.Name),
 		}
 		if len(v.CVEs) > 0 {
 			item.CVEs = v.CVEs
 		} else if strings.HasPrefix(v.Name, "CVE-") {
 			item.CVEs = []string{v.Name}
 		}
+
+		if dbPrefix == common.DBAppName {
+			item.FileName = featver.File
+			item.PackageNameDeprecated = featver.File // backward compatible. Release <=5.2 returns filename as the package name.
+		}
+
 		vulList = append(vulList, item)
 	}
 	// log.Info("scan report:", len(vulList))
@@ -1269,7 +1277,7 @@ func feature2Module(namespace string, features []detectors.FeatureVersion, apps 
 
 	i := 0
 	for _, f := range features {
-		modules[i] = &share.ScanModule{Name: f.Feature.Name, Version: f.Version.String(), Source: namespace}
+		modules[i] = &share.ScanModule{Name: f.Package, Version: f.Version.String(), Source: namespace}
 
 		for _, mv := range f.ModuleVuls {
 			cve := &share.ScanModuleVul{Name: mv.Name, Status: mv.Status}

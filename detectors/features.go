@@ -43,8 +43,10 @@ type ModuleVul struct {
 }
 
 type FeatureVersion struct {
+	// Feature    Feature
 	Name       string
-	Feature    Feature
+	Package    string
+	File       string
 	Version    utils.Version
 	MinVer     utils.Version
 	ModuleVuls []ModuleVul

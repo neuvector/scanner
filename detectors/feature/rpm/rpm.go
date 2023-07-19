@@ -112,14 +112,12 @@ func (detector *RpmFeaturesDetector) Detect(namespace string, files map[string]*
 
 			// Add package
 			pkg := detectors.FeatureVersion{
-				Feature: detectors.Feature{
-					Name: p.Name,
-				},
+				Package: p.Name,
 				Version: version,
 				CPEs:    cpes,
 				InBase:  rpmFF.InBase,
 			}
-			packagesMap[pkg.Feature.Name+"#"+pkg.Version.String()] = pkg
+			packagesMap[pkg.Package+"#"+pkg.Version.String()] = pkg
 		}
 	} else {
 		// To support legacy format from old enforcer
@@ -146,14 +144,12 @@ func (detector *RpmFeaturesDetector) Detect(namespace string, files map[string]*
 
 			// Add package
 			pkg := detectors.FeatureVersion{
-				Feature: detectors.Feature{
-					Name: line[0],
-				},
+				Package: line[0],
 				Version: version,
 				CPEs:    cpes,
 				InBase:  rpmFF.InBase,
 			}
-			packagesMap[pkg.Feature.Name+"#"+pkg.Version.String()] = pkg
+			packagesMap[pkg.Package+"#"+pkg.Version.String()] = pkg
 		}
 	}
 
