@@ -64,9 +64,7 @@ func (detector *DpkgFeaturesDetector) addFeature(packagesMap map[string]detector
 
 		ver, _ := utils.NewVersion(pkg.version)
 		fv := detectors.FeatureVersion{
-			Feature: detectors.Feature{
-				Name: name,
-			},
+			Package: name,
 			Version: ver,
 			InBase:  inBase,
 		}
@@ -78,7 +76,7 @@ func (detector *DpkgFeaturesDetector) addFeature(packagesMap map[string]detector
 		*/
 
 		if installed || strings.Contains(pkg.status, installedStatus) {
-			packagesMap[fv.Feature.Name+"#"+pkg.version] = fv
+			packagesMap[fv.Package+"#"+pkg.version] = fv
 		}
 	}
 }

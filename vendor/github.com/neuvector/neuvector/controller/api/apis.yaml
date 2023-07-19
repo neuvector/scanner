@@ -5,7 +5,7 @@ swagger: '2.0'
 ################################################################################
 info:
   description: Secure Docker and Kubernetes based container deployments with the NeuVector run-time security solution.
-  version: '5.2'
+  version: '5.2.1'
   title: NeuVector API
   contact:
     email: support@neuvector.com
@@ -2834,6 +2834,233 @@ paths:
         - in: path
           name: id
           description: Workload ID
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Success
+  /v1/scan/sigstore/root_of_trust:
+    get:
+      tags:
+        - Scan
+      summary: Get all sigstore roots of trust
+      produces:
+        - application/json
+      parameters:
+        - in: header
+          name: X-Auth-Token
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/SigstoreAllRootsOfTrustGet'
+    post:
+      tags:
+        - Scan
+      summary: Create new sigstore root of trust
+      consumes:
+        - application/json
+      parameters:
+        - in: header
+          name: X-Auth-Token
+          required: true
+          type: string
+        - in: body
+          name: body
+          description: Root of Trust Data
+          required: true
+          schema:
+            $ref: '#/definitions/RESTSigstoreRootOfTrustPost'
+      responses:
+        '200':
+          description: Success
+  /v1/scan/sigstore/root_of_trust/{root_name}:
+    get:
+      tags:
+        - Scan
+      summary: Get single sigstore root of trust by name
+      produces:
+        - application/json
+      parameters:
+        - in: header
+          name: X-Auth-Token
+          required: true
+          type: string
+        - in: path
+          name: root_name
+          description: Root Of Trust Name
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/RESTSigstoreRootOfTrustGet'
+    patch:
+      tags:
+        - Scan
+      summary: Update single sigstore root of trust by name
+      consumes:
+        - application/json
+      parameters:
+        - in: header
+          name: X-Auth-Token
+          required: true
+          type: string
+        - in: path
+          name: root_name
+          description: Root Of Trust Name
+          required: true
+          type: string
+        - in: body
+          name: body
+          description: Root of Trust Data
+          required: true
+          schema:
+            $ref: '#/definitions/RESTSigstoreRootOfTrustPatch'
+      responses:
+        '200':
+          description: Success
+    delete:
+      tags:
+        - Scan
+      summary: Delete single sigstore root of trust by name
+      parameters:
+        - in: header
+          name: X-Auth-Token
+          required: true
+          type: string
+        - in: path
+          name: root_name
+          description: Root Of Trust Name
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Success
+  /v1/scan/sigstore/root_of_trust/{root_name}/verifier:
+    get:
+      tags:
+        - Scan
+      summary: Get all sigstore verifiers for given sigstore root of trust
+      produces:
+        - application/json
+      parameters:
+        - in: header
+          name: X-Auth-Token
+          required: true
+          type: string
+        - in: path
+          name: root_name
+          description: Root Of Trust Name
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/SigstoreAllVerifiersGet'
+    post:
+      tags:
+        - Scan
+      summary: Create new sigstore verifier for given sigstore root of trust
+      consumes:
+        - application/json
+      parameters:
+        - in: header
+          name: X-Auth-Token
+          required: true
+          type: string
+        - in: path
+          name: root_name
+          description: Root Of Trust Name
+          required: true
+          type: string
+        - in: body
+          name: body
+          description: Root of Trust Data
+          required: true
+          schema:
+            $ref: '#/definitions/RESTSigstoreVerifier'
+      responses:
+        '200':
+          description: Success
+  /v1/scan/sigstore/root_of_trust/{root_name}/verifier/{verifier_name}:
+    get:
+      tags:
+        - Scan
+      summary: Get sigstore verifier by name under given sigstore root of trust
+      produces:
+        - application/json
+      parameters:
+        - in: header
+          name: X-Auth-Token
+          required: true
+          type: string
+        - in: path
+          name: root_name
+          description: Root Of Trust Name
+          required: true
+          type: string
+        - in: path
+          name: verifier_name
+          description: Verifier Name
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/RESTSigstoreVerifier'
+    patch:
+      tags:
+        - Scan
+      summary: Update sigstore verifier by name under given sigstore root of trust
+      consumes:
+        - application/json
+      parameters:
+        - in: header
+          name: X-Auth-Token
+          required: true
+          type: string
+        - in: path
+          name: root_name
+          description: Root Of Trust Name
+          required: true
+          type: string
+        - in: path
+          name: verifier_name
+          description: Verifier Name
+          required: true
+          type: string
+        - in: body
+          name: body
+          description: Verifier patch data
+          required: true
+          schema:
+            $ref: '#/definitions/RESTSigstoreVerifierPatch'
+      responses:
+        '200':
+          description: Success
+    delete:
+      tags:
+        - Scan
+      summary: Delete sigstore verifier by name under given sigstore root of trust
+      parameters:
+        - in: header
+          name: X-Auth-Token
+          required: true
+          type: string
+        - in: path
+          name: root_name
+          description: Root Of Trust Name
+          required: true
+          type: string
+        - in: path
+          name: verifier_name
+          description: Verifier Name
           required: true
           type: string
       responses:
@@ -7974,6 +8201,9 @@ definitions:
       single_cve_per_syslog:
         type: boolean
         example: true
+      syslog_cve_in_layers:
+        type: boolean
+        example: true
       syslog_server_cert:
         type: string
         example: E7B0OS/N3KMVCL6KNMZ2+LOV90S7854NSD84P0BF
@@ -10022,6 +10252,7 @@ definitions:
       - syslog_categories
       - syslog_in_json
       - single_cve_per_syslog
+      - syslog_cve_in_layers
       - auth_order
       - auth_by_platform
       - rancher_ep
@@ -10083,6 +10314,9 @@ definitions:
         type: boolean
         example: true
       single_cve_per_syslog:
+        type: boolean
+        example: false
+      syslog_cve_in_layers:
         type: boolean
         example: false
       syslog_server_cert:
@@ -10352,6 +10586,7 @@ definitions:
       - syslog_categories
       - syslog_in_json
       - single_cve_per_syslog
+      - syslog_cve_in_layers
       - syslog_server_cert
     properties:
       syslog_ip:
@@ -10380,6 +10615,9 @@ definitions:
         type: boolean
         example: true
       single_cve_per_syslog:
+        type: boolean
+        example: false
+      syslog_cve_in_layers:
         type: boolean
         example: false
       syslog_server_cert:
@@ -10478,6 +10716,9 @@ definitions:
         type: string
         example: E7B0OS/N3KMVCL6KNMZ2+LOV90S7854NSD84P0BF
       single_cve_per_syslog:
+        type: boolean
+        example: true
+      syslog_cve_in_layers:
         type: boolean
         example: true
       auth_order:
@@ -11082,6 +11323,7 @@ definitions:
       - severity
       - vectors
       - description
+      - file_name
       - package_name
       - package_version
       - fixed_version
@@ -11109,6 +11351,9 @@ definitions:
       description:
         type: string
         example: "The setup_env function in group.c in sshd in OpenSSH allows local users to gain privileges."
+      file_name:
+        type: string
+        example: "usr/lib/python3.9" 
       package_name:
         type: string
         example: openssh
@@ -12955,3 +13200,119 @@ definitions:
       apikey_secret:
         type: string
         example: 0u+tVOWNPRfpCK7p9qz
+  SigstoreAllRootsOfTrustGet:
+    type: array
+    items:
+      $ref: '#/definitions/RESTSigstoreRootOfTrustGet'
+  RESTSigstoreRootOfTrustGet:
+    type: object
+    properties:
+      name:
+        type: string
+        example: example_name
+      is_private:
+        type: boolean
+        example: true
+      rekor_public_key:
+        type: string
+        example: -----BEGIN PUBLIC KEY-----XXXXXXXXXX-----END PUBLIC KEY-----
+      root_cert:
+        type: string
+        example: -----BEGIN CERTIFICATE-----XXXXXXXXXX-----END CERTIFICATE-----
+      sct_public_key:
+        type: string
+        example: -----BEGIN PUBLIC KEY-----XXXXXXXXXX-----END PUBLIC KEY-----
+      verifiers:
+        type: array
+        items:
+          $ref: '#/definitions/RESTSigstoreVerifier'
+      cfg_type:
+        type: string
+        enum: [user_created, ground, federal]
+      comment:
+        type: string
+        example: example comment
+  RESTSigstoreRootOfTrustPost:
+    type: object
+    required:
+    - name
+    properties:
+      name:
+        type: string
+        example: example_name
+      is_private:
+        type: boolean
+        example: true
+      rekor_public_key:
+        type: string
+        example: -----BEGIN PUBLIC KEY-----XXXXXXXXXX-----END PUBLIC KEY-----
+      root_cert:
+        type: string
+        example: -----BEGIN CERTIFICATE-----XXXXXXXXXX-----END CERTIFICATE-----
+      sct_public_key:
+        type: string
+        example: -----BEGIN PUBLIC KEY-----XXXXXXXXXX-----END PUBLIC KEY-----
+      comment:
+        type: string
+        example: example comment
+  RESTSigstoreRootOfTrustPatch:
+    type: object
+    properties:
+      rekor_public_key:
+        type: string
+        example: -----BEGIN PUBLIC KEY-----XXXXXXXXXX-----END PUBLIC KEY-----
+      root_cert:
+        type: string
+        example: -----BEGIN CERTIFICATE-----XXXXXXXXXX-----END CERTIFICATE-----
+      sct_public_key:
+        type: string
+        example: -----BEGIN PUBLIC KEY-----XXXXXXXXXX-----END PUBLIC KEY-----
+      comment:
+        type: string
+        example: example comment
+  SigstoreAllVerifiersGet:
+    type: array
+    items:
+      $ref: '#/definitions/RESTSigstoreVerifier'
+  RESTSigstoreVerifier:
+    type: object
+    required:
+    - name
+    - verifier_type
+    properties:
+      name:
+        type: string
+        example: example name
+      verifier_type:
+        type: string
+        enum: [keypair, keyless]
+      public_key:
+        type: string
+        example: -----BEGIN PUBLIC KEY-----XXXXXXXXXX-----END PUBLIC KEY-----
+      cert_issuer:
+        type: string
+        example: https://github.com/login/oauth
+      cert_subject:
+        type: string
+        example: cert.subject@example.com
+      comment:
+        type: string
+        example: example comment
+  RESTSigstoreVerifierPatch:
+    type: object
+    properties:
+      verifier_type:
+        type: string
+        enum: [keypair, keyless]
+      public_key:
+        type: string
+        example: -----BEGIN PUBLIC KEY-----XXXXXXXXXX-----END PUBLIC KEY-----
+      cert_issuer:
+        type: string
+        example: https://github.com/login/oauth
+      cert_subject:
+        type: string
+        example: cert.subject@example.com
+      comment:
+        type: string
+        example: example comment
