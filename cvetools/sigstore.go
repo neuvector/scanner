@@ -18,7 +18,7 @@ type sigstoreInterfaceConfig struct {
 	SignatureData scan.SignatureData          `json:"SignatureData"`
 }
 
-func verifyImageSignatures(imgDigest string, rootsOfTrust []*share.SigstoreRootOfTrust, sigData scan.SignatureData) (verifiers []string, err error) {
+func verifyImageSignatures(imgDigest string, rootsOfTrust []*share.SigstoreRootOfTrust, sigData scan.SignatureData, proxyURL string) (verifiers []string, err error) {
 	confPath, confFile, err := createConfFile(imgDigest)
 	if err != nil {
 		return verifiers, fmt.Errorf("could not create interface config file for image %s: %s", imgDigest, err.Error())
@@ -31,7 +31,7 @@ func verifyImageSignatures(imgDigest string, rootsOfTrust []*share.SigstoreRootO
 	if err != nil {
 		return verifiers, fmt.Errorf("could not write data to config file at %s: %s", confPath, err.Error())
 	}
-	binaryOutput, err := executeVerificationBinary(confPath)
+	binaryOutput, err := executeVerificationBinary(confPath, proxyURL)
 	if err != nil {
 		parseVerifiersFromBinaryOutput(imgDigest, binaryOutput)
 		return verifiers, fmt.Errorf("error when executing verification binary: %s", err.Error())
@@ -100,9 +100,13 @@ func parseVerifiersFromBinaryOutput(imgDigest string, output string) []string {
 	return nil
 }
 
-func executeVerificationBinary(inputPath string) (output string, err error) {
+func executeVerificationBinary(inputPath string, proxyURL string) (output string, err error) {
 	inputFlag := fmt.Sprintf("--config-file=%s", inputPath)
-	cmd := exec.Command("/usr/local/bin/sigstore-interface", inputFlag)
+	args := []string{inputFlag}
+	if proxyURL != "" {
+		args = append(args, fmt.Sprintf("--proxy-url=%s", proxyURL))
+	}
+	cmd := exec.Command("/usr/local/bin/sigstore-interface", args...)
 	var out strings.Builder
 	cmd.Stdout = &out
 	err = cmd.Run()
