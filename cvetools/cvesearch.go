@@ -1273,34 +1273,39 @@ func majorVersion(name string) string {
 }
 
 func feature2Module(namespace string, features []detectors.FeatureVersion, apps []detectors.AppFeatureVersion) []*share.ScanModule {
-	modules := make([]*share.ScanModule, len(features)+len(apps))
+	modules := make([]*share.ScanModule, 0, len(features)+len(apps))
 
-	i := 0
 	for _, f := range features {
-		modules[i] = &share.ScanModule{Name: f.Package, Version: f.Version.String(), Source: namespace}
-
+		m := &share.ScanModule{Name: f.Package, Version: f.Version.String(), Source: namespace}
 		for _, mv := range f.ModuleVuls {
 			cve := &share.ScanModuleVul{Name: mv.Name, Status: mv.Status}
-			modules[i].Vuls = append(modules[i].Vuls, cve)
+			m.Vuls = append(m.Vuls, cve)
 		}
 		if f.CPEs != nil && f.CPEs.Cardinality() > 0 {
-			modules[i].CPEs = make([]string, f.CPEs.Cardinality())
+			m.CPEs = make([]string, f.CPEs.Cardinality())
 			j := 0
 			for cpe := range f.CPEs.Iter() {
-				modules[i].CPEs[j] = cpe.(string)
+				m.CPEs[j] = cpe.(string)
 				j++
 			}
 		}
-
-		i++
+		modules = append(modules, m)
 	}
+
+	dedup := utils.NewSet()
 	for _, app := range apps {
-		modules[i] = &share.ScanModule{Name: app.ModuleName, Version: app.Version, Source: app.AppName}
-		for _, mv := range app.ModuleVuls {
-			cve := &share.ScanModuleVul{Name: mv.Name, Status: mv.Status}
-			modules[i].Vuls = append(modules[i].Vuls, cve)
+		// modules in different layer can produce duplicate entry, remove them here.
+		key := fmt.Sprintf("%s-%s-%s", app.AppName, app.ModuleName, app.Version)
+		if !dedup.Contains(key) {
+			dedup.Add(key)
+
+			m := &share.ScanModule{Name: app.ModuleName, Version: app.Version, Source: app.AppName}
+			for _, mv := range app.ModuleVuls {
+				cve := &share.ScanModuleVul{Name: mv.Name, Status: mv.Status}
+				m.Vuls = append(m.Vuls, cve)
+			}
+			modules = append(modules, m)
 		}
-		i++
 	}
 
 	return modules
