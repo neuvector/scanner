@@ -19,12 +19,14 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/neuvector/scanner/common"
 	"github.com/neuvector/scanner/detectors"
 )
 
 var (
-	osReleaseOSRegexp      = regexp.MustCompile(`^ID=(.*)`)
-	osReleaseVersionRegexp = regexp.MustCompile(`^VERSION_ID=(.*)`)
+	osReleaseOSRegexp       = regexp.MustCompile(`^ID=(.*)`)
+	osReleaseVersionRegexp  = regexp.MustCompile(`^VERSION_ID=(.*)`)
+	osReleaseCodenameRegexp = regexp.MustCompile(`^VERSION_CODENAME=(.*)`)
 )
 
 // OsReleaseNamespaceDetector implements NamespaceDetector and detects the OS from the
@@ -39,7 +41,7 @@ func init() {
 // Typically for Debian / Ubuntu
 // /etc/debian_version can't be used, it does not make any difference between testing and unstable, it returns stretch/sid
 func (detector *OsReleaseNamespaceDetector) Detect(data map[string]*detectors.FeatureFile) *detectors.Namespace {
-	var OS, version string
+	var OS, version, codename string
 
 	for _, filePath := range detector.GetRequiredFiles() {
 		f, hasFile := data[filePath]
@@ -60,11 +62,21 @@ func (detector *OsReleaseNamespaceDetector) Detect(data map[string]*detectors.Fe
 			if len(r) == 2 {
 				version = strings.Replace(strings.ToLower(r[1]), "\"", "", -1)
 			}
+
+			r = osReleaseCodenameRegexp.FindStringSubmatch(line)
+			if len(r) == 2 {
+				codename = strings.Replace(strings.ToLower(r[1]), "\"", "", -1)
+			}
 		}
 	}
 
 	if OS != "" && version != "" {
 		return &detectors.Namespace{Name: OS + ":" + version}
+	}
+	if OS != "" && codename != "" {
+		if version, ok := common.DebianReleasesMapping[codename]; ok {
+			return &detectors.Namespace{Name: OS + ":" + version}
+		}
 	}
 	return nil
 }
