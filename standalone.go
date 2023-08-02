@@ -126,7 +126,7 @@ func writeResultToFile(req *share.ScanImageRequest, result *share.ScanResult, er
 	}
 }
 
-func writeResultToStdout(req *share.ScanImageRequest, result *share.ScanResult, err error) {
+func writeResultToStdout(req *share.ScanImageRequest, result *share.ScanResult, showOptions string) {
 	var rpt *api.RESTScanRepoReport
 	var high, med, low, unk int
 
@@ -151,7 +151,9 @@ func writeResultToStdout(req *share.ScanImageRequest, result *share.ScanResult, 
 
 	fmt.Printf("Image: %s%s:%s\n", req.Registry, req.Repository, req.Tag)
 	fmt.Printf("Base OS: %s\n", rpt.BaseOS)
-	fmt.Printf("TOTAL: %d, HIGH: %d, MEDIUM: %d, LOW: %d, UNKNOWN: %d\n", len(rpt.Vuls), high, med, low, unk)
+
+	// Print vulnerability
+	fmt.Printf("\nVulnerabilities: %d, HIGH: %d, MEDIUM: %d, LOW: %d, UNKNOWN: %d\n", len(rpt.Vuls), high, med, low, unk)
 
 	files := make([]string, 0)
 	fileMap := make(map[string][]*api.RESTVulnerability)
@@ -202,9 +204,34 @@ func writeResultToStdout(req *share.ScanImageRequest, result *share.ScanResult, 
 			t.Render()
 		}
 	}
+
+	options := strings.Split(showOptions, ",")
+	for _, o := range options {
+		switch o {
+		case "cmd":
+			// Print history
+			fmt.Printf("\nHistory:\n")
+			for i, cmd := range rpt.Cmds {
+				if i < len(rpt.Layers) {
+					digest := strings.ToUpper(strings.TrimPrefix(rpt.Layers[i].Digest, "sha256:"))
+					if len(digest) > 12 {
+						digest = digest[:12]
+					}
+					fmt.Printf("%12s %s\n", digest, cmd)
+				} else {
+					fmt.Printf("%12s %s\n", "", cmd)
+				}
+			}
+		case "module":
+			fmt.Printf("\nModules:\n")
+			for _, m := range rpt.Modules {
+				fmt.Printf("%s %s\n", m.Name, m.Version)
+			}
+		}
+	}
 }
 
-func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulnerability) *share.ScanResult {
+func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulnerability, showOptions string) *share.ScanResult {
 	var result *share.ScanResult
 	var err error
 
@@ -254,7 +281,7 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 	}
 
 	writeResultToFile(req, result, err)
-	writeResultToStdout(req, result, err)
+	writeResultToStdout(req, result, showOptions)
 
 	return result
 }

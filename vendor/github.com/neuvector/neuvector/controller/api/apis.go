@@ -1066,6 +1066,7 @@ type RESTConversationEntry struct {
 	LastSeenAt   string `json:"last_seen_at"`
 	CIP          string `json:"client_ip"`
 	SIP          string `json:"server_ip"`
+	FQDN         string `json:"fqdn"`
 	Xff          bool   `json:"xff"`
 	ToSidecar    bool   `json:"to_sidecar"`
 }
@@ -1854,7 +1855,7 @@ type RESTSystemConfigMiscV2 struct {
 	MonitorServiceMesh bool     `json:"monitor_service_mesh"`
 	XffEnabled         bool     `json:"xff_enabled"`
 	NoTelemetryReport  bool     `json:"no_telemetry_report"`
-	CspType            string   `json:"csp_type"`
+	CspType            string   `json:"csp_type"` // billing csp type (local or master cluster)
 }
 
 // for scanner autoscaling
