@@ -1397,7 +1397,7 @@ func getSatisfiedSignatureVerifiersForImage(rc *scan.RegClient, req *share.ScanI
 
 	log.WithFields(log.Fields{"imageDigest": info.Digest}).Info("Done fetching signature data for image.")
 
-	satisfiedVerifiers, err := verifyImageSignatures(info.Digest, req.RootsOfTrust, signatureData, req.Proxy)
+	satisfiedVerifiers, err := verifyImageSignatures(info.Digest, req.RootsOfTrust, signatureData)
 	if err != nil {
 		log.WithFields(log.Fields{"imageDigest": info.Digest, "err": err}).Error()
 		sigInfo.VerificationError = share.ScanErrorCode_ScanErrRegistryAPI
