@@ -3,6 +3,8 @@ package cvetools
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/url"
 	"os"
 	"os/exec"
 	"strings"
@@ -18,7 +20,7 @@ type sigstoreInterfaceConfig struct {
 	SignatureData scan.SignatureData          `json:"SignatureData"`
 }
 
-func verifyImageSignatures(imgDigest string, rootsOfTrust []*share.SigstoreRootOfTrust, sigData scan.SignatureData) (verifiers []string, err error) {
+func verifyImageSignatures(imgDigest string, rootsOfTrust []*share.SigstoreRootOfTrust, sigData scan.SignatureData, proxyURL string) (verifiers []string, err error) {
 	confPath, confFile, err := createConfFile(imgDigest)
 	if err != nil {
 		return verifiers, fmt.Errorf("could not create interface config file for image %s: %s", imgDigest, err.Error())
@@ -31,7 +33,7 @@ func verifyImageSignatures(imgDigest string, rootsOfTrust []*share.SigstoreRootO
 	if err != nil {
 		return verifiers, fmt.Errorf("could not write data to config file at %s: %s", confPath, err.Error())
 	}
-	binaryOutput, err := executeVerificationBinary(confPath)
+	binaryOutput, err := executeVerificationBinary(confPath, proxyURL)
 	if err != nil {
 		parseVerifiersFromBinaryOutput(imgDigest, binaryOutput)
 		return verifiers, fmt.Errorf("error when executing verification binary: %s", err.Error())
@@ -100,14 +102,54 @@ func parseVerifiersFromBinaryOutput(imgDigest string, output string) []string {
 	return nil
 }
 
-func executeVerificationBinary(inputPath string) (output string, err error) {
+func executeVerificationBinary(inputPath string, proxyURL string) (output string, err error) {
+	var username, password string
 	inputFlag := fmt.Sprintf("--config-file=%s", inputPath)
-	cmd := exec.Command("/usr/local/bin/sigstore-interface", inputFlag)
-	var out strings.Builder
-	cmd.Stdout = &out
-	err = cmd.Run()
-	if err != nil {
-		return "", fmt.Errorf("error executing verification binary: %s", err.Error())
+	args := []string{inputFlag}
+	if proxyURL != "" {
+		parsedUrl, err := url.Parse(proxyURL)
+		if err != nil {
+			return "", fmt.Errorf("error parsing proxy url: %s", err.Error())
+		}
+		if parsedUrl.User != nil {
+			username = parsedUrl.User.Username()
+			password, _ = parsedUrl.User.Password()
+			// this removes any user info from our parsedUrl.String() call so they don't show up
+			// in the sigstore-interface process arguments list
+			parsedUrl.User = nil
+		}
+		args = append(args, fmt.Sprintf("--proxy-url=%s", parsedUrl.String()))
+		if username != "" {
+			args = append(args, "--proxy-has-credentials=true")
+		}
 	}
-	return out.String(), nil
+	cmd := exec.Command("/usr/local/bin/sigstore-interface", args...)
+	stdin, _ := cmd.StdinPipe()
+	var stdout strings.Builder
+	var stderr strings.Builder
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	var closeErr error
+
+	if username != "" {
+		go func() {
+			io.WriteString(stdin, fmt.Sprintf("%s:%s", username, password))
+			closeErr = stdin.Close()
+		}()
+	}
+
+	if err := cmd.Start(); err != nil {
+		return "", fmt.Errorf("could not start command: %s", err.Error())
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		return "", fmt.Errorf("error executing verification binary: ExitError %s: stderr: %s", err.Error(), stderr.String())
+	}
+
+	if closeErr != nil {
+		return "", fmt.Errorf("error when closing stdin pipe: %s", closeErr)
+	}
+
+	return stdout.String(), nil
 }
