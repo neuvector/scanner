@@ -1373,7 +1373,6 @@ func buildSetIdPermLogs(perms []share.CLUSSetIdPermLog) []*share.ScanSetIdPermLo
 
 func getSatisfiedSignatureVerifiersForImage(rc *scan.RegClient, req *share.ScanImageRequest, info *scan.ImageInfo,
 	ctx context.Context) (*share.ScanSignatureInfo, share.ScanErrorCode, error) {
-
 	sigInfo := &share.ScanSignatureInfo{
 		VerificationTimestamp: time.Now().UTC().Format(time.RFC3339),
 	}
@@ -1406,8 +1405,8 @@ func getSatisfiedSignatureVerifiersForImage(rc *scan.RegClient, req *share.ScanI
 	satisfiedVerifiers, err := verifyImageSignatures(info.Digest, req.RootsOfTrust, signatureData, req.Proxy)
 	if err != nil {
 		log.WithFields(log.Fields{"imageDigest": info.Digest, "err": err}).Error()
-		sigInfo.VerificationError = share.ScanErrorCode_ScanErrRegistryAPI
-		return sigInfo, share.ScanErrorCode_ScanErrPackage, fmt.Errorf("error verifying signatures for image: %s", err.Error())
+		sigInfo.VerificationError = share.ScanErrorCode_ScanErrSignatureScanError
+		return sigInfo, share.ScanErrorCode_ScanErrSignatureScanError, fmt.Errorf("error verifying signatures for image: %s", err.Error())
 	}
 	log.WithFields(log.Fields{"imageDigest": info.Digest, "satisfiedVerifiers": satisfiedVerifiers}).Debug("satisfied signature verifiers for image")
 	sigInfo.Verifiers = satisfiedVerifiers
