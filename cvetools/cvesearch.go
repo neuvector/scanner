@@ -470,6 +470,7 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 	result.Error = serr
 	result.Vuls = vuls
 	result.Author = info.Author
+	result.Created = info.Created.Format(time.RFC3339)
 	result.Envs = info.Envs
 	result.Labels = info.Labels
 	result.Cmds = info.Cmds
