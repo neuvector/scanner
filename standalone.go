@@ -151,6 +151,7 @@ func writeResultToStdout(req *share.ScanImageRequest, result *share.ScanResult, 
 
 	fmt.Printf("Image: %s%s:%s\n", req.Registry, req.Repository, req.Tag)
 	fmt.Printf("Base OS: %s\n", rpt.BaseOS)
+	fmt.Printf("Created at: %s\n", rpt.CreatedAt)
 
 	// Print vulnerability
 	fmt.Printf("\nVulnerabilities: %d, HIGH: %d, MEDIUM: %d, LOW: %d, UNKNOWN: %d\n", len(rpt.Vuls), high, med, low, unk)
