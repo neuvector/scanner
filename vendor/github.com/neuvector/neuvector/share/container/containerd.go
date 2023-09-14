@@ -38,6 +38,7 @@ type containerdDriver struct {
 	endpoint      string
 	endpointHost  string
 	nodeHostname  string
+	selfID        string
 	client        *containerd.Client
 	criClient     *grpc.ClientConn
 	version       *containerd.Version
@@ -70,6 +71,7 @@ func containerdConnect(endpoint string, sys *system.SystemTools) (Runtime, error
 
 	// optional
 	snapshotter := ""
+	id, _, _ := sys.GetSelfContainerID() // not relaible, could be sandboxID
 	cri, criVer, err := newCriClient(endpoint, ctx)
 	if err == nil {
 		log.WithFields(log.Fields{"version": criVer}).Info("cri")
@@ -82,8 +84,10 @@ func containerdConnect(endpoint string, sys *system.SystemTools) (Runtime, error
 			log.WithFields(log.Fields{"error": err}).Error("cri info")
 		}
 
-		if id, _, err := sys.GetSelfContainerID(); err == nil {
-			sockPath, err = criGetContainerSocketPath(cri, ctx, id, endpoint)
+		id, _ = criGetSelfID(cri, ctx, id)
+		sockPath, err = criGetContainerSocketPath(cri, ctx, id, endpoint)
+		if err == nil {
+			log.WithFields(log.Fields{"selfID": id, "sockPath": sockPath}).Info()
 		}
 	}
 
@@ -97,7 +101,7 @@ func containerdConnect(endpoint string, sys *system.SystemTools) (Runtime, error
 	driver := containerdDriver{
 		sys: sys, client: client, version: &ver, criClient: cri, endpoint: endpoint, endpointHost: sockPath,
 		// Read /host/proc/sys/kernel/hostname doesn't give the correct node hostname. Change UTS namespace to read it
-		sysInfo: sys.GetSystemInfo(), nodeHostname: sys.GetHostname(1), snapshotter: snapshotter,
+		sysInfo: sys.GetSystemInfo(), nodeHostname: sys.GetHostname(1), snapshotter: snapshotter, selfID: id,
 	}
 
 	driver.rtProcMap = utils.NewSet("runc", "containerd", "containerd-shim", "containerd-shim-runc-v1", "containerd-shim-runc-v2")
@@ -178,6 +182,10 @@ func (d *containerdDriver) GetHost() (*share.CLUSHost, error) {
 	return &host, nil
 }
 
+func (d *containerdDriver) GetSelfID() string {
+	return d.selfID
+}
+
 func (d *containerdDriver) GetDevice(id string) (*share.CLUSDevice, *ContainerMetaExtra, error) {
 	return getDevice(id, d, d.sys)
 }
@@ -249,8 +257,9 @@ func (d *containerdDriver) getSpecs(ctx context.Context, c containerd.Container)
 	return &info, spec, rootpid, status, attempts, nil
 }
 
-func (d *containerdDriver) getMeta(info *containers.Container, spec *oci.Spec, pid int, attempt int) (*ContainerMeta, string) {
+func (d *containerdDriver) getMeta(info *containers.Container, spec *oci.Spec, pid int, attempt int) (*ContainerMeta, string, time.Time) {
 	var author string
+	var imgCreateAt time.Time
 
 	meta := &ContainerMeta{
 		ID:       info.ID,
@@ -262,6 +271,7 @@ func (d *containerdDriver) getMeta(info *containers.Container, spec *oci.Spec, p
 	}
 	if image, err := d.GetImage(info.Image); err == nil {
 		author = image.Author
+		imgCreateAt = image.CreatedAt
 		for k, v := range image.Labels {
 			// Not to overwrite container labels when merging
 			if _, ok := meta.Labels[k]; !ok {
@@ -321,7 +331,7 @@ func (d *containerdDriver) getMeta(info *containers.Container, spec *oci.Spec, p
 			meta.NetMode = "host"
 		}
 	}
-	return meta, author
+	return meta, author, imgCreateAt
 }
 
 func (d *containerdDriver) isPrivileged(spec *oci.Spec, id string, bSandBox bool) bool {
@@ -365,7 +375,7 @@ func (d *containerdDriver) ListContainers(runningOnly bool) ([]*ContainerMeta, e
 			continue
 		}
 
-		meta, _ := d.getMeta(info, spec, pid, attempt)
+		meta, _, _ := d.getMeta(info, spec, pid, attempt)
 		metas = append(metas, meta)
 	}
 
@@ -392,10 +402,11 @@ func (d *containerdDriver) GetContainer(id string) (*ContainerMetaExtra, error) 
 		bSandBox = true
 	}
 
-	cmeta, author := d.getMeta(info, spec, pid, attempt)
+	cmeta, author, imgCreatedAt := d.getMeta(info, spec, pid, attempt)
 	meta := &ContainerMetaExtra{
 		ContainerMeta: *cmeta,
 		Author:        author,
+		ImgCreateAt:   imgCreatedAt,
 		Privileged:    d.isPrivileged(spec, c.ID(), bSandBox),
 		Networks:      utils.NewSet(),
 	}

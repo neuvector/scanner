@@ -2,6 +2,8 @@ package api
 
 import (
 	"time"
+
+	"github.com/neuvector/neuvector/share"
 )
 
 const (
@@ -134,6 +136,7 @@ const (
 	EventNameCrdImported                 = "Crd.Import"                     // for crd Config import
 	EventNameCrdRemoved                  = "Crd.Remove"                     // for crd Config remove due to k8s miss
 	EventNameCrdErrDetected              = "Crd.Error"                      // for remove error crd
+	EventNameCrdSkipped                  = "Crd.Skipped"                    // for crd skip ('kubectl create -f' on existing crd resource)
 	EventNameFedPromote                  = "Federation.Promote"             // for multi-clusters
 	EventNameFedDemote                   = "Federation.Demote"              // for multi-clusters
 	EventNameFedJoin                     = "Federation.Join"                // for joint cluster in multi-clusters
@@ -153,6 +156,7 @@ const (
 	EventNameK8sNvRBAC                   = "Kubenetes.NeuVector.RBAC"
 	EventNameGroupAutoPromote            = "Group.Auto.Promote"
 	EventNameAuthDefAdminPwdUnchanged    = "User.Password.Alert"
+	EventNameScannerAutoScaleDisabled    = "Configuration.ScannerAutoScale.Disabled"
 )
 
 // TODO: these are not events but incidents
@@ -315,6 +319,7 @@ type Violation struct {
 	PolicyID      uint32   `json:"policy_id"`
 	ClientIP      string   `json:"client_ip"`
 	ServerIP      string   `json:"server_ip"`
+	FQDN          string   `json:"fqdn"`
 	Xff           bool     `json:"xff"`
 }
 
@@ -365,37 +370,53 @@ type Incident struct {
 
 type Audit struct {
 	LogCommon
-	WorkloadID       string              `json:"workload_id,omitempty"`
-	WorkloadName     string              `json:"workload_name,omitempty"`
-	WorkloadDomain   string              `json:"workload_domain,omitempty"`
-	WorkloadImage    string              `json:"workload_image,omitempty"`
-	WorkloadService  string              `json:"workload_service,omitempty"`
-	ImageID          string              `json:"image_id,omitempty"`
-	ImageLayerDigest string              `json:"image_layer_digest,omitempty"`
-	Registry         string              `json:"registry,omitempty"`
-	RegistryName     string              `json:"registry_name,omitempty"`
-	Repository       string              `json:"repository,omitempty"`
-	Tag              string              `json:"tag,omitempty"`
-	BaseOS           string              `json:"base_os,omitempty"`
-	HighCnt          int                 `json:"high_vul_cnt"`
-	MediumCnt        int                 `json:"medium_vul_cnt"`
-	HighVuls         []string            `json:"high_vuls,omitempty"`
-	MediumVuls       []string            `json:"medium_vuls,omitempty"`
-	CVEDBVersion     string              `json:"cvedb_version,omitempty"`
-	Message          string              `json:"message"`
-	User             string              `json:"user,omitempty"`
-	Error            string              `json:"error,omitempty"`
-	AggregationFrom  int64               `json:"aggregation_from,omitempty"`
-	Count            uint32              `json:"count,omitempty"`
-	Items            []string            `json:"items,omitempty"`
-	Group            string              `json:"group,omitempty"`
-	Platform         string              `json:"platform,omitempty"`
-	PlatformVersion  string              `json:"platform_version,omitempty"`
-	Region           string              `json:"region,omitempty"`
-	ProjectName      string              `json:"project_name,omitempty"`
-	Packages         []string            `json:"packages,omitempty"`
-	PackageMap       map[string][]string `json:"-"`
-	Layers           []Audit             `json:"-"`
+	WorkloadID      string   `json:"workload_id,omitempty"`
+	WorkloadName    string   `json:"workload_name,omitempty"`
+	WorkloadDomain  string   `json:"workload_domain,omitempty"`
+	WorkloadImage   string   `json:"workload_image,omitempty"`
+	WorkloadService string   `json:"workload_service,omitempty"`
+	Image           string   `json:"image,omitempty"`         // workload
+	ImageID         string   `json:"image_id,omitempty"`      // workload
+	Registry        string   `json:"registry,omitempty"`      // image
+	RegistryName    string   `json:"registry_name,omitempty"` // image
+	Repository      string   `json:"repository,omitempty"`    // image
+	Tag             string   `json:"tag,omitempty"`           // image
+	BaseOS          string   `json:"base_os,omitempty"`
+	HighCnt         int      `json:"high_vul_cnt"`
+	MediumCnt       int      `json:"medium_vul_cnt"`
+	HighVuls        []string `json:"high_vuls,omitempty"`
+	MediumVuls      []string `json:"medium_vuls,omitempty"`
+	CVEDBVersion    string   `json:"cvedb_version,omitempty"`
+	Message         string   `json:"message"`
+	User            string   `json:"user,omitempty"`
+	Error           string   `json:"error,omitempty"`
+	AggregationFrom int64    `json:"aggregation_from,omitempty"`
+	Count           uint32   `json:"count,omitempty"`
+	Items           []string `json:"items,omitempty"`
+	Group           string   `json:"group,omitempty"`
+	Platform        string   `json:"platform,omitempty"`
+	PlatformVersion string   `json:"platform_version,omitempty"`
+	// cloud
+	Region      string `json:"region,omitempty"`
+	ProjectName string `json:"project_name,omitempty"`
+	// one vuln. per log
+	Packages       []string `json:"packages,omitempty"`
+	PackageVersion string   `json:"package_ver,omitempty"`
+	FixedVersion   string   `json:"fixed_ver,omitempty"`
+	Score          float32  `json:"score,omitempty"`
+	ScoreV3        float32  `json:"score_v3,omitempty"`
+	Vectors        string   `json:"vectors,omitempty"`
+	VectorsV3      string   `json:"vectors_v3,omitempty"`
+	Link           string   `json:"link,omitempty"`
+	Description    string   `json:"description,omitempty"`
+	Published      string   `json:"pub_date,omitempty"`
+	LastMod        string   `json:"last_mod_date,omitempty"`
+	// report vuln. in layer
+	ImageLayerDigest string `json:"image_layer_digest,omitempty"`
+	Cmds             string `json:"cmds,omitempty"`
+	// intermediate data
+	Vuls   map[string]*share.ScanVulnerability `json:"-"`
+	Layers []Audit                             `json:"-"`
 }
 
 type IBMSAFinding struct {

@@ -600,7 +600,6 @@ func (s *ScanUtil) LoadLocalImage(ctx context.Context, repository, tag, rtSock, 
 	lenML := len(meta.Layers)
 	for i, h := range histories {
 		cmds[i] = NormalizeImageCmd(h.Cmd)
-		// log.WithFields(log.Fields{"size": h.Size, "cmd": cmds[i]}).Info("======================")
 		if h.Size > 0 {
 			// Some layer size is 0, remove them from layerFiles and layers, otherwise, layers won't match with history
 			for ml < lenML {
@@ -824,7 +823,7 @@ func getImageLayerIterate(ctx context.Context, layers []string, sizes map[string
 
 // --
 
-var userRegexp = regexp.MustCompile(`USER \[([a-zA-Z0-9_\-\.]+)\]`)
+var userRegexp = regexp.MustCompile(`USER ([a-zA-Z0-9_\-.]+)`)
 
 func NormalizeImageCmd(cmd string) string {
 	if s := strings.Index(cmd, "/bin/sh -c "); s != -1 {
@@ -847,7 +846,7 @@ func ParseImageCmds(cmds []string) (bool, bool, bool) {
 		if !hasUser {
 			r := userRegexp.FindStringSubmatch(cmd)
 			if len(r) == 2 {
-				if r[1] == "root" {
+				if r[1] == "root" || r[1] == "0" {
 					runAsRoot = true
 				} else {
 					runAsRoot = false
@@ -997,7 +996,7 @@ func downloadLayers(ctx context.Context, layers []string, sizes map[string]int64
 	// remove duplicate layers
 	layerMap := make(map[string]int64)
 	for _, layer := range layers {
-		if _, ok := layerMap[layer]; !ok {
+		if _, ok := layerMap[layer]; !ok && layer != "" {
 			layerMap[layer] = 0 // no decision
 			if bHasSizeInfo {
 				if size, ok := sizes[layer]; ok {
@@ -1039,7 +1038,7 @@ func downloadLayers(ctx context.Context, layers []string, sizes map[string]int64
 			var retry int
 
 			layerPath := filepath.Join(imgPath, ml)
-			if bHasSizeInfo && sl == 0 { // aws registry: some layers in v1 but does not in v2
+			if bHasSizeInfo && sl == 0 {
 				log.WithFields(log.Fields{"layer": ml}).Debug("skip")
 				os.MkdirAll(layerPath, 0755) // empty folder
 				done <- &downloadLayerResult{layer: ml, err: nil, Size: 0, TarSize: 0}

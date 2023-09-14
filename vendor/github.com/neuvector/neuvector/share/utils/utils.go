@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"archive/zip"
 	"bytes"
 	"compress/gzip"
 	"crypto/aes"
@@ -1012,25 +1013,32 @@ func EncryptSensitive(data string, key []byte) string {
 	return encrypted
 }
 
-func DecryptUserToken(encrypted string) string {
+func DecryptUserToken(encrypted string, key []byte) string {
 	if encrypted == "" {
 		return ""
 	}
 
 	encrypted = strings.ReplaceAll(encrypted, "_", "/")
-	token, _ := DecryptFromRawStdBase64(getPasswordSymKey(), encrypted)
+	if key == nil {
+		key = getPasswordSymKey()
+	}
+	token, _ := DecryptFromRawStdBase64(key, encrypted)
 	return token
 }
 
 // User token cannot have / in it and cannot have - as the first char.
-func EncryptUserToken(token string) string {
+func EncryptUserToken(token string, key []byte) string {
 	if token == "" {
 		return ""
 	}
 
+	if key == nil {
+		key = getPasswordSymKey()
+	}
+
 	// Std base64 encoding has + and /, instead of - and _ (url encoding)
 	// token can be part of kv key, so we replace / with _
-	encrypted, _ := EncryptToRawStdBase64(getPasswordSymKey(), []byte(token))
+	encrypted, _ := EncryptToRawStdBase64(key, []byte(token))
 	encrypted = strings.ReplaceAll(encrypted, "/", "_")
 	return encrypted
 }
@@ -1257,7 +1265,7 @@ func IsExecutable(info os.FileInfo, path string) bool {
 	return false
 }
 
-///////
+// /////
 const hashByteRange int64 = 1024
 
 func FileHashCrc32(path string, size int64) uint32 {
@@ -1302,7 +1310,7 @@ func DisplayBytes(num int64) string {
 	return fmt.Sprintf("%d Bytes", num)
 }
 
-////
+// //
 var regCrdName *regexp.Regexp = regexp.MustCompile(`^([0-9a-z])([0-9a-z-.])*([0-9a-z])$`)
 var regDns1122 *regexp.Regexp = regexp.MustCompile(`^[a-z0-9.-]{1}$`)
 var regDns1122start *regexp.Regexp = regexp.MustCompile(`^[a-z0-9]{1}$`)
@@ -1340,4 +1348,66 @@ func RandomString(length int) string {
 		b[i] = charset[seededRand.Intn(len(charset))]
 	}
 	return string(b)
+}
+
+func CompressToZipFile(source, targetFile string) error {
+	if _, err := os.Stat(filepath.Dir(targetFile)); os.IsNotExist(err) {
+		if err = os.MkdirAll(filepath.Dir(targetFile), 0775); err != nil {
+			log.WithFields(log.Fields{"error": err}).Error("Failed to create profile folder")
+			return err
+		}
+	}
+
+    // create a zip file and zip.Writer
+	f, err := os.Create(targetFile)
+    if err != nil {
+        return err
+    }
+    defer f.Close()
+
+    writer := zip.NewWriter(f)
+    defer writer.Close()
+
+    // go through all the files of the source
+    return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+        if err != nil {
+            return err
+        }
+
+        // create a local file header
+        header, err := zip.FileInfoHeader(info)
+        if err != nil {
+            return err
+        }
+
+        // set compression
+        header.Method = zip.Deflate
+
+        // set relative path of a file as the header name
+        header.Name, err = filepath.Rel(filepath.Dir(source), path)
+        if err != nil {
+            return err
+        }
+        if info.IsDir() {
+            header.Name += "/"
+        }
+
+        // create writer for the file header and save content of the file
+        headerWriter, err := writer.CreateHeader(header)
+        if err != nil {
+            return err
+        }
+
+        if info.IsDir() {
+            return nil
+        }
+
+        f, err := os.Open(path)
+        if err != nil {
+            return err
+        }
+        defer f.Close()
+        _, err = io.Copy(headerWriter, f)
+        return err
+    })
 }
