@@ -204,16 +204,30 @@ func (cv *CveTools) ScanAppPackage(req *share.ScanAppRequest, namespace string) 
 
 // ScanImage helps the Image scanning
 func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, imgPath string) (*share.ScanResult, error) {
-	var err error
 	result := &share.ScanResult{
-		Provider:        share.ScanProvider_Neuvector,
-		Version:         cv.CveDBVersion,
-		CVEDBCreateTime: cv.CveDBCreateTime,
-		Error:           share.ScanErrorCode_ScanErrNone,
-		Registry:        req.Registry,
-		Repository:      req.Repository,
-		Tag:             req.Tag,
-		Layers:          make([]*share.ScanLayerResult, 0),
+		Provider:           share.ScanProvider_Neuvector,
+		Version:            cv.CveDBVersion,
+		CVEDBCreateTime:    cv.CveDBCreateTime,
+		Error:              share.ScanErrorCode_ScanErrNone,
+		Registry:           req.Registry,
+		Repository:         req.Repository,
+		Tag:                req.Tag,
+		Layers:             make([]*share.ScanLayerResult, 0),
+		ScanTypesRequested: req.ScanTypesRequested,
+	}
+
+	log.WithFields(log.Fields{"scanTypesRequested": req.ScanTypesRequested}).Info("Scan types requested")
+	if req.ScanTypesRequested == nil {
+		log.Info("No scan types in request, defaulting to vuln scan")
+		req.ScanTypesRequested = &share.ScanTypeMap{
+			Vulnerability: true,
+			Signature:     false,
+		}
+
+		if req.RootsOfTrust != nil && len(req.RootsOfTrust) > 0 {
+			log.Info("Sigstore root of trust information in request, adding signature scan")
+			req.ScanTypesRequested.Signature = true
+		}
 	}
 
 	var baseReg, baseRepo, baseTag string
@@ -284,17 +298,21 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 			return result, nil
 		}
 
+		if req.ScanTypesRequested.Signature {
+			result.SignatureInfo, _, _ = getSatisfiedSignatureVerifiersForImage(rc, req, info, ctx)
+		}
+
+		if !req.ScanTypesRequested.Vulnerability {
+			// no vuln scan requested, we can skip the rest
+			result.Error = share.ScanErrorCode_ScanErrNone
+			return result, nil
+		}
+
 		// There is a download timeout inside this function
 		layerFiles, errCode = rc.DownloadRemoteImage(ctx, req.Repository, imgPath, info.Layers, info.Sizes)
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
 			return result, nil
-		}
-
-		result.SignatureInfo, result.Error, err = getSatisfiedSignatureVerifiersForImage(rc, req, info, ctx)
-		if err != nil {
-			// do not return Failed scan status just because signature handling is no good
-			// return result, fmt.Errorf("error when verifying signatures for image: %s", err.Error())
 		}
 
 		layers = info.Layers
@@ -1367,7 +1385,6 @@ func buildSetIdPermLogs(perms []share.CLUSSetIdPermLog) []*share.ScanSetIdPermLo
 
 func getSatisfiedSignatureVerifiersForImage(rc *scan.RegClient, req *share.ScanImageRequest, info *scan.ImageInfo,
 	ctx context.Context) (*share.ScanSignatureInfo, share.ScanErrorCode, error) {
-
 	sigInfo := &share.ScanSignatureInfo{
 		VerificationTimestamp: time.Now().UTC().Format(time.RFC3339),
 	}
@@ -1397,11 +1414,11 @@ func getSatisfiedSignatureVerifiersForImage(rc *scan.RegClient, req *share.ScanI
 
 	log.WithFields(log.Fields{"imageDigest": info.Digest}).Info("Done fetching signature data for image.")
 
-	satisfiedVerifiers, err := verifyImageSignatures(info.Digest, req.RootsOfTrust, signatureData)
+	satisfiedVerifiers, err := verifyImageSignatures(info.Digest, req.RootsOfTrust, signatureData, req.Proxy)
 	if err != nil {
 		log.WithFields(log.Fields{"imageDigest": info.Digest, "err": err}).Error()
-		sigInfo.VerificationError = share.ScanErrorCode_ScanErrRegistryAPI
-		return sigInfo, share.ScanErrorCode_ScanErrPackage, fmt.Errorf("error verifying signatures for image: %s", err.Error())
+		sigInfo.VerificationError = share.ScanErrorCode_ScanErrSignatureScanError
+		return sigInfo, share.ScanErrorCode_ScanErrSignatureScanError, fmt.Errorf("error verifying signatures for image: %s", err.Error())
 	}
 	log.WithFields(log.Fields{"imageDigest": info.Digest, "satisfiedVerifiers": satisfiedVerifiers}).Debug("satisfied signature verifiers for image")
 	sigInfo.Verifiers = satisfiedVerifiers
