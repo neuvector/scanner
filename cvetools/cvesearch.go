@@ -216,7 +216,6 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 		ScanTypesRequested: req.ScanTypesRequested,
 	}
 
-	log.WithFields(log.Fields{"scanTypesRequested": req.ScanTypesRequested}).Info("Scan types requested")
 	if req.ScanTypesRequested == nil {
 		log.Info("No scan types in request, defaulting to vuln scan")
 		req.ScanTypesRequested = &share.ScanTypeMap{
@@ -228,6 +227,8 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 			log.Info("Sigstore root of trust information in request, adding signature scan")
 			req.ScanTypesRequested.Signature = true
 		}
+	} else {
+		log.WithFields(log.Fields{"scanTypesRequested": *req.ScanTypesRequested}).Info("Scan types requested")
 	}
 
 	var baseReg, baseRepo, baseTag string
