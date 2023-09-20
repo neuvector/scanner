@@ -136,6 +136,7 @@ const (
 	EventNameCrdImported                 = "Crd.Import"                     // for crd Config import
 	EventNameCrdRemoved                  = "Crd.Remove"                     // for crd Config remove due to k8s miss
 	EventNameCrdErrDetected              = "Crd.Error"                      // for remove error crd
+	EventNameCrdSkipped                  = "Crd.Skipped"                    // for crd skip ('kubectl create -f' on existing crd resource)
 	EventNameFedPromote                  = "Federation.Promote"             // for multi-clusters
 	EventNameFedDemote                   = "Federation.Demote"              // for multi-clusters
 	EventNameFedJoin                     = "Federation.Join"                // for joint cluster in multi-clusters
@@ -374,11 +375,12 @@ type Audit struct {
 	WorkloadDomain  string   `json:"workload_domain,omitempty"`
 	WorkloadImage   string   `json:"workload_image,omitempty"`
 	WorkloadService string   `json:"workload_service,omitempty"`
-	ImageID         string   `json:"image_id,omitempty"`
-	Registry        string   `json:"registry,omitempty"`
-	RegistryName    string   `json:"registry_name,omitempty"`
-	Repository      string   `json:"repository,omitempty"`
-	Tag             string   `json:"tag,omitempty"`
+	Image           string   `json:"image,omitempty"`         // workload
+	ImageID         string   `json:"image_id,omitempty"`      // workload
+	Registry        string   `json:"registry,omitempty"`      // image
+	RegistryName    string   `json:"registry_name,omitempty"` // image
+	Repository      string   `json:"repository,omitempty"`    // image
+	Tag             string   `json:"tag,omitempty"`           // image
 	BaseOS          string   `json:"base_os,omitempty"`
 	HighCnt         int      `json:"high_vul_cnt"`
 	MediumCnt       int      `json:"medium_vul_cnt"`
@@ -406,6 +408,7 @@ type Audit struct {
 	Vectors        string   `json:"vectors,omitempty"`
 	VectorsV3      string   `json:"vectors_v3,omitempty"`
 	Link           string   `json:"link,omitempty"`
+	Description    string   `json:"description,omitempty"`
 	Published      string   `json:"pub_date,omitempty"`
 	LastMod        string   `json:"last_mod_date,omitempty"`
 	// report vuln. in layer

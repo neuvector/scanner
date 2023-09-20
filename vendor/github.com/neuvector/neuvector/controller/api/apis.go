@@ -856,6 +856,7 @@ type RESTWorkloadBrief struct { // obsolete, use v2 instead
 	HostID             string               `json:"host_id"`
 	Image              string               `json:"image"`
 	ImageID            string               `json:"image_id"`
+	ImgCreateAt        string               `json:"image_created_at"`
 	PlatformRole       string               `json:"platform_role"`
 	Domain             string               `json:"domain"`
 	State              string               `json:"state"`
@@ -918,6 +919,7 @@ type RESTWorkloadBriefV2 struct {
 	HostID       string `json:"host_id"`
 	Image        string `json:"image"`
 	ImageID      string `json:"image_id"`
+	ImgCreateAt  string `json:"image_created_at"`
 	Domain       string `json:"domain"`
 	State        string `json:"state"`
 	Service      string `json:"service"`
@@ -2685,7 +2687,6 @@ type RESTProcessProfileConfig struct {
 	Baseline       *string                          `json:"baseline,omitempty"`
 	ProcessChgList *[]RESTProcessProfileEntryConfig `json:"process_change_list,omitempty"`
 	ProcessDelList *[]RESTProcessProfileEntryConfig `json:"process_delete_list,omitempty"`
-	ProcessRepList *[]RESTProcessProfileEntryConfig `json:"process_replace_list,omitempty"`
 }
 
 type RESTProcessProfileConfigData struct {

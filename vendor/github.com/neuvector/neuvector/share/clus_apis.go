@@ -986,6 +986,7 @@ type CLUSWorkload struct {
 	HostID       string                    `json:"host_id"`
 	Image        string                    `json:"image"`
 	ImageID      string                    `json:"image_id"`
+	ImgCreateAt  time.Time                 `json:"image_created_at"`
 	Privileged   bool                      `json:"privileged"`
 	RunAsRoot    bool                      `json:"run_as_root"`
 	NetworkMode  string                    `json:"network_mode"`
@@ -1291,6 +1292,7 @@ const (
 	CLUSEvGroupAutoPromote
 	CLUSEvAuthDefAdminPwdUnchanged // default admin's password is not changed yet. reported every 24 hours
 	CLUSEvScannerAutoScaleDisabled // when scanner autoscale is disabled by controller
+	CLUSEvCrdSkipped               // for crd Config import
 )
 
 const (
@@ -1959,13 +1961,15 @@ type CLUSCrdFileRule struct {
 }
 
 type CLUSCrdProcessProfile struct {
-	Baseline string `json:"baseline"` // "default" or "shield", for process profile
+	Baseline string `json:"baseline"` // "basic" & "zero-drift" for process profile. "default"/"shield" are obsolete and both mean "zero-drift"
 }
 
 type CLUSCrdSecurityRule struct {
-	Name            string                `json:"name"`
+	Name            string                `json:"name"` // crd record name in the format {crd kind}-{ns}-{metadata.name}
+	MetadataName    string                `json:"metadata_name"`
 	Groups          []string              `json:"groups"`
 	Rules           map[string]uint32     `json:"rules"`
+	PolicyMode      string                `json:"policy_mode"`
 	ProfileName     string                `json:"profile_name"`
 	ProfileMode     string                `json:"profile_mode"`
 	ProcessProfile  CLUSCrdProcessProfile `json:"process_profile"`
@@ -2394,6 +2398,10 @@ type CLUSCrdRecord struct {
 
 type CLUSCrdEventRecord struct {
 	CrdEventRecord []string
+}
+
+type CLUSCrdEventQueueInfo struct {
+	Count int `json:"count"`
 }
 
 // //// Process UUID Rules
