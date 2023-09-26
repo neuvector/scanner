@@ -856,6 +856,7 @@ type RESTWorkloadBrief struct { // obsolete, use v2 instead
 	HostID             string               `json:"host_id"`
 	Image              string               `json:"image"`
 	ImageID            string               `json:"image_id"`
+	ImgCreateAt        string               `json:"image_created_at"`
 	PlatformRole       string               `json:"platform_role"`
 	Domain             string               `json:"domain"`
 	State              string               `json:"state"`
@@ -918,6 +919,7 @@ type RESTWorkloadBriefV2 struct {
 	HostID       string `json:"host_id"`
 	Image        string `json:"image"`
 	ImageID      string `json:"image_id"`
+	ImgCreateAt  string `json:"image_created_at"`
 	Domain       string `json:"domain"`
 	State        string `json:"state"`
 	Service      string `json:"service"`
@@ -2044,6 +2046,7 @@ const ScanStatusScheduled string = "scheduled"
 const ScanStatusScanning string = "scanning"
 const ScanStatusFinished string = "finished"
 const ScanStatusFailed string = "failed"
+const ScanStatusFailed_SignatureScan string = "failed_signature_scan"
 const ScanStatusUnsupported string = "unsupported"
 
 type RESTScanBrief struct {
@@ -2548,13 +2551,16 @@ type RESTVulnerabilityProfileEntryConfigData struct {
 
 // Custom check
 type RESTCustomCheck struct {
-	Name   string `json:"name"`
-	Script string `json:"script"`
+	Name         string `json:"name"`
+	Script       string `json:"script"`
+	Configurable bool   `json:"configurable"`
 }
 
 type RESTCustomChecks struct {
-	Group   string             `json:"group"`
-	Scripts []*RESTCustomCheck `json:"scripts"`
+	Group    string             `json:"group"`
+	Enabled  bool               `json:"enabled"`
+	Writable bool               `json:"writable"`
+	Scripts  []*RESTCustomCheck `json:"scripts"`
 }
 
 type RESTCustomCheckConfig struct {
@@ -2685,7 +2691,6 @@ type RESTProcessProfileConfig struct {
 	Baseline       *string                          `json:"baseline,omitempty"`
 	ProcessChgList *[]RESTProcessProfileEntryConfig `json:"process_change_list,omitempty"`
 	ProcessDelList *[]RESTProcessProfileEntryConfig `json:"process_delete_list,omitempty"`
-	ProcessRepList *[]RESTProcessProfileEntryConfig `json:"process_replace_list,omitempty"`
 }
 
 type RESTProcessProfileConfigData struct {

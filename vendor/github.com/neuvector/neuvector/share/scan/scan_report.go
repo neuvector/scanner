@@ -61,8 +61,16 @@ type VulTrait struct {
 	filtered bool
 }
 
+type FixedVulInfo struct {
+	PubTS int64
+}
+
 func (v VulTrait) IsFiltered() bool {
 	return v.filtered
+}
+
+func (v VulTrait) GetPubTS() int64 {
+	return v.pubTS
 }
 
 func SetScannerDB(newDB *share.CLUSScannerDB) {
@@ -345,19 +353,17 @@ func ImageBench2REST(cmds []string, secrets []*api.RESTScanSecret, setids []*api
 */
 
 // This is use when grpc structure is returned
-func FillVuls(result *share.ScanResult) {
+func FillVul(vul *share.ScanVulnerability) {
 	sdb := GetScannerDB()
 
-	for _, vul := range result.Vuls {
-		if vul.DBKey != "" {
-			if vr, ok := sdb.CVEDB[vul.DBKey]; ok {
-				vul.Score = vr.Score
-				vul.Vectors = vr.Vectors
-				vul.ScoreV3 = vr.ScoreV3
-				vul.VectorsV3 = vr.VectorsV3
-				vul.Description = vr.Description
-				vul.Link = vr.Link
-			}
+	if vul.DBKey != "" {
+		if vr, ok := sdb.CVEDB[vul.DBKey]; ok {
+			vul.Score = vr.Score
+			vul.Vectors = vr.Vectors
+			vul.ScoreV3 = vr.ScoreV3
+			vul.VectorsV3 = vr.VectorsV3
+			vul.Description = vr.Description
+			vul.Link = vr.Link
 		}
 	}
 }
@@ -550,6 +556,7 @@ func FillVulTraits(cvedb CVEDBType, baseOS string, vts []*VulTrait, showTag stri
 }
 
 func ExtractVulnerability(vuls []*share.ScanVulnerability) []*VulTrait {
+	sdb := GetScannerDB()
 	traits := make([]*VulTrait, len(vuls))
 	for i, v := range vuls {
 		s, ok := serverityString2ID[v.Severity]
@@ -563,7 +570,19 @@ func ExtractVulnerability(vuls []*share.ScanVulnerability) []*VulTrait {
 			if t, err := time.Parse(time.RFC3339, v.PublishedDate); err == nil {
 				pubTS = t.Unix()
 			} else {
-				log.WithFields(log.Fields{"publish": v.PublishedDate}).Error()
+				log.WithFields(log.Fields{"publish": v.PublishedDate, "name": v.Name}).Error()
+			}
+		} else {
+			if len(sdb.CVEDB) > 0 {
+				if vr, ok := sdb.CVEDB[v.DBKey]; ok {
+					if t, err := time.Parse(time.RFC3339, vr.PublishedDate); err == nil {
+						publishedTS := t.Unix()
+						if publishedTS != pubTS {
+							// found a same-key entry in scannerDB but with different publishDate value than tne entry in vuls(scanResult).
+							pubTS = publishedTS
+						}
+					}
+				}
 			}
 		}
 
@@ -595,20 +614,24 @@ func CountVulTrait(traits []*VulTrait) (int, int) {
 	return highs, meds
 }
 
-func GatherVulTrait(traits []*VulTrait) ([]string, []string) {
+func GatherVulTrait(traits []*VulTrait) ([]string, []string, []FixedVulInfo) {
 	highs := make([]string, 0)
 	meds := make([]string, 0)
+	fixedHighsInfo := make([]FixedVulInfo, 0)
 	for _, t := range traits {
 		if !t.filtered {
 			switch t.severity {
 			case vulnSeverityHigh:
+				if t.fixVer != "" {
+					fixedHighsInfo = append(fixedHighsInfo, FixedVulInfo{PubTS: t.pubTS})
+				}
 				highs = append(highs, t.Name)
 			case vulnSeverityMedium:
 				meds = append(meds, t.Name)
 			}
 		}
 	}
-	return highs, meds
+	return highs, meds, fixedHighsInfo
 }
 
 // ----
