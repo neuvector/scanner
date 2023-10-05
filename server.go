@@ -269,7 +269,7 @@ func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegister
 		return errors.New("Failed to connect to controller")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
 
 	if err = scannerRegisterStream(ctx, client, data); err == nil {
