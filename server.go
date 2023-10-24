@@ -9,6 +9,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/cluster"
@@ -57,7 +59,7 @@ func (rs *rpcService) ScanRunning(ctx context.Context, req *share.ScanRunningReq
 		// however, 60 sec timeout is set for (controller <-> scanner), and 5 restries from controller
 		// wait for next pulling from ctl and it should return the cache results from enforcer immediately
 		log.WithFields(log.Fields{"id": req.ID}).Debug("session expired")
-		return nil, nil
+		return &share.ScanResult{Error: share.ScanErrorCode_ScanErrCanceled}, status.Error(codes.Aborted, fmt.Sprintf("aborted: %s, %s", ctx.Err(), req.ID))  // aborted by controller
 	}
 
 	if data != nil && err == nil {
@@ -67,7 +69,7 @@ func (rs *rpcService) ScanRunning(ctx context.Context, req *share.ScanRunningReq
 			result = &share.ScanResult{Version: cveTools.CveDBVersion, CVEDBCreateTime: cveTools.CveDBCreateTime, Error: data.Error}
 			return result, nil
 		case share.ScanErrorCode_ScanErrInProgress: // in progress
-			return nil, nil
+			return &share.ScanResult{Error: data.Error}, status.Error(codes.Unavailable, fmt.Sprintf("In progress: %s", req.ID)) // keep alive
 		case share.ScanErrorCode_ScanErrNone: // a good result within time, proceed to scan procedure
 		}
 	} else if data == nil {
@@ -269,7 +271,7 @@ func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegister
 		return errors.New("Failed to connect to controller")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
 
 	if err = scannerRegisterStream(ctx, client, data); err == nil {
