@@ -175,6 +175,7 @@ func main() {
 	ctrlUser := flag.String("ctrl_username", "", "Controller REST API username")
 	ctrlPass := flag.String("ctrl_password", "", "Controller REST API password")
 	noWait := flag.Bool("no_wait", false, "No initial wait")
+	noTask := flag.Bool("no_task", false, "Not using scanner task")
 
 	verbose := flag.Bool("x", false, "more debug")
 	output := flag.String("o", "", "Output CVEDB in json format, specify the output file")
@@ -246,10 +247,12 @@ func main() {
 		}
 	}
 
-	scanTasker = newTasker(taskerPath, *rtSock, showTaskDebug, sys)
-	if scanTasker != nil {
-		log.Debug("Use scannerTask")
-		defer scanTasker.Close()
+	if *noTask == false {
+		scanTasker = newTasker(taskerPath, *rtSock, showTaskDebug, sys)
+		if scanTasker != nil {
+			log.Debug("Use scannerTask")
+			defer scanTasker.Close()
+		}
 	}
 
 	done := make(chan bool, 1)

@@ -1,91 +1,198 @@
-// Copyright 2015 clair authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// Package detectors exposes functions to register and use container
-// information extractors.
 package detectors
 
 import (
-	"fmt"
-	"sync"
+	"bufio"
+	"regexp"
+	"strings"
+
+	"github.com/neuvector/scanner/common"
 )
-
-const highPriorityFile = "os-release"
-
-// The NamespaceDetector interface defines a way to detect a Namespace from input data.
-// A namespace is usually made of an Operating System name and its version.
-type NamespaceDetector interface {
-	// Detect detects a Namespace and its version from input data.
-	Detect(map[string]*FeatureFile) *Namespace
-	// GetRequiredFiles returns the list of files required for Detect, without
-	// leading /.
-	GetRequiredFiles() []string
-}
-
-var (
-	namespaceDetectorsLock sync.Mutex
-	namespaceDetectors     = make(map[string]NamespaceDetector)
-)
-
-// RegisterNamespaceDetector provides a way to dynamically register an implementation of a
-// NamespaceDetector.
-//
-// If RegisterNamespaceDetector is called twice with the same name if NamespaceDetector is nil,
-// or if the name is blank, it panics.
-func RegisterNamespaceDetector(name string, f NamespaceDetector) {
-	if name == "" {
-		panic("Could not register a NamespaceDetector with an empty name")
-	}
-	if f == nil {
-		panic("Could not register a nil NamespaceDetector")
-	}
-
-	namespaceDetectorsLock.Lock()
-	defer namespaceDetectorsLock.Unlock()
-
-	if _, alreadyExists := namespaceDetectors[name]; alreadyExists {
-		panic(fmt.Sprintf("Detector '%s' is already registered", name))
-	}
-	namespaceDetectors[name] = f
-}
 
 // DetectNamespace finds the OS of the layer by using every registered NamespaceDetector.
 func DetectNamespace(data map[string]*FeatureFile) *Namespace {
 	// check os-release first
-	if d, ok := namespaceDetectors[highPriorityFile]; ok {
-		if namespace := d.Detect(data); namespace != nil {
-			return namespace
-		}
+	if ns := detectOSRelease(data); ns != nil {
+		return ns
 	}
-	for name, detector := range namespaceDetectors {
-		if name == highPriorityFile {
+	if ns := detectLSBRelease(data); ns != nil {
+		return ns
+	}
+	if ns := detectRHRelease(data); ns != nil {
+		return ns
+	}
+	if ns := detectAptSource(data); ns != nil {
+		return ns
+	}
+	return nil
+}
+
+var (
+	osReleaseOSRegexp          = regexp.MustCompile(`^ID=(.*)`)
+	osReleaseVersionRegexp     = regexp.MustCompile(`^VERSION_ID=(.*)`)
+	osReleaseCodenameRegexp    = regexp.MustCompile(`^VERSION_CODENAME=(.*)`)
+	osReleaseRHELVersionRegexp = regexp.MustCompile(`^RHEL_VERSION=(.*)`)
+)
+
+func detectOSRelease(data map[string]*FeatureFile) *Namespace {
+	var OS, version, codename, rhelVer string
+
+	for _, filePath := range []string{"etc/os-release", "usr/lib/os-release"} {
+		f, hasFile := data[filePath]
+		if !hasFile {
 			continue
 		}
-		if namespace := detector.Detect(data); namespace != nil {
-			return namespace
+
+		scanner := bufio.NewScanner(strings.NewReader(string(f.Data)))
+		for scanner.Scan() {
+			line := scanner.Text()
+
+			r := osReleaseOSRegexp.FindStringSubmatch(line)
+			if len(r) == 2 {
+				OS = strings.Replace(strings.ToLower(r[1]), "\"", "", -1)
+			}
+
+			r = osReleaseVersionRegexp.FindStringSubmatch(line)
+			if len(r) == 2 {
+				version = strings.Replace(strings.ToLower(r[1]), "\"", "", -1)
+			}
+
+			r = osReleaseCodenameRegexp.FindStringSubmatch(line)
+			if len(r) == 2 {
+				codename = strings.Replace(strings.ToLower(r[1]), "\"", "", -1)
+			}
+
+			r = osReleaseRHELVersionRegexp.FindStringSubmatch(line)
+			if len(r) == 2 {
+				rhelVer = strings.Replace(strings.ToLower(r[1]), "\"", "", -1)
+			}
+		}
+	}
+
+	if OS != "" && version != "" {
+		return &Namespace{Name: OS + ":" + version, RHELVer: rhelVer}
+	}
+	if OS != "" && codename != "" {
+		if version, ok := common.DebianReleasesMapping[codename]; ok {
+			return &Namespace{Name: OS + ":" + version, RHELVer: rhelVer}
+		}
+	}
+	return nil
+}
+
+var (
+	lsbReleaseOSRegexp      = regexp.MustCompile(`^DISTRIB_ID=(.*)`)
+	lsbReleaseVersionRegexp = regexp.MustCompile(`^DISTRIB_RELEASE=(.*)`)
+)
+
+func detectLSBRelease(data map[string]*FeatureFile) *Namespace {
+	f, hasFile := data["etc/lsb-release"]
+	if !hasFile {
+		return nil
+	}
+
+	var OS, version string
+
+	scanner := bufio.NewScanner(strings.NewReader(string(f.Data)))
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		r := lsbReleaseOSRegexp.FindStringSubmatch(line)
+		if len(r) == 2 {
+			OS = strings.Replace(strings.ToLower(r[1]), "\"", "", -1)
+		}
+
+		r = lsbReleaseVersionRegexp.FindStringSubmatch(line)
+		if len(r) == 2 {
+			version = strings.Replace(strings.ToLower(r[1]), "\"", "", -1)
+
+			// We care about the .04 for Ubuntu but not for Debian / CentOS
+			if OS == "centos" || OS == "debian" {
+				i := strings.Index(version, ".")
+				if i >= 0 {
+					version = version[:i]
+				}
+			}
+			if strings.Contains(OS, "coreos") {
+				OS = "coreos"
+			}
+		}
+	}
+
+	if OS != "" && version != "" {
+		return &Namespace{Name: OS + ":" + version}
+	}
+	return nil
+}
+
+var redhatReleaseRegexp = regexp.MustCompile(`(?P<os>[^\s]*) (Linux release|release) (?P<version>[\d]+)`)
+
+// RedhatReleaseNamespaceDetector implements NamespaceDetector and detects the OS from the
+// /etc/centos-release, /etc/redhat-release and /etc/system-release files.
+//
+// Typically for CentOS and Red-Hat like systems
+// eg. CentOS release 5.11 (Final)
+// eg. CentOS release 6.6 (Final)
+// eg. CentOS Linux release 7.1.1503 (Core)
+func detectRHRelease(data map[string]*FeatureFile) *Namespace {
+	for _, filePath := range []string{"etc/centos-release", "etc/redhat-release", "etc/system-release", "etc/fedora-release"} {
+		f, hasFile := data[filePath]
+		if !hasFile {
+			continue
+		}
+
+		r := redhatReleaseRegexp.FindStringSubmatch(string(f.Data))
+		if len(r) == 4 {
+			//if strings.ToLower(r[1]) == "centos" || strings.ToLower(r[1]) == "rhel" || strings.ToLower(r[1]) == "fedora" {
+			return &Namespace{Name: strings.ToLower(r[1]) + ":" + r[3]}
 		}
 	}
 
 	return nil
 }
 
-// GetRequiredFilesNamespace returns the list of files required for DetectNamespace for every
-// registered NamespaceDetector, without leading /.
-func GetRequiredFilesNamespace() (files []string) {
-	for _, detector := range namespaceDetectors {
-		files = append(files, detector.GetRequiredFiles()...)
+func detectAptSource(data map[string]*FeatureFile) *Namespace {
+	f, hasFile := data["etc/apt/sources.list"]
+	if !hasFile {
+		return nil
 	}
 
-	return
+	var OS, version string
+
+	scanner := bufio.NewScanner(strings.NewReader(string(f.Data)))
+	for scanner.Scan() {
+		// Format: man sources.list | https://wiki.debian.org/SourcesList)
+		// deb uri distribution component1 component2 component3
+		// deb-src uri distribution component1 component2 component3
+		line := strings.Split(scanner.Text(), " ")
+		if len(line) > 3 {
+			// Only consider main component
+			isMainComponent := false
+			for _, component := range line[3:] {
+				if component == "main" {
+					isMainComponent = true
+					break
+				}
+			}
+			if !isMainComponent {
+				continue
+			}
+
+			var found bool
+			version, found = common.DebianReleasesMapping[line[2]]
+			if found {
+				OS = "debian"
+				break
+			}
+			version, found = common.UbuntuReleasesMapping[line[2]]
+			if found {
+				OS = "ubuntu"
+				break
+			}
+		}
+	}
+
+	if OS != "" && version != "" {
+		return &Namespace{Name: OS + ":" + version}
+	}
+	return nil
 }

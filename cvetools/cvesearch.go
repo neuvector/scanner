@@ -23,14 +23,6 @@ import (
 	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
 	"github.com/neuvector/scanner/detectors"
-	_ "github.com/neuvector/scanner/detectors/feature/apk"
-	_ "github.com/neuvector/scanner/detectors/feature/dpkg"
-	_ "github.com/neuvector/scanner/detectors/feature/others"
-	_ "github.com/neuvector/scanner/detectors/feature/rpm"
-	_ "github.com/neuvector/scanner/detectors/namespace/aptsources"
-	_ "github.com/neuvector/scanner/detectors/namespace/lsbrelease"
-	_ "github.com/neuvector/scanner/detectors/namespace/osrelease"
-	_ "github.com/neuvector/scanner/detectors/namespace/redhatrelease"
 )
 
 const (
@@ -689,11 +681,12 @@ func (cv *CveTools) doScan(layerFiles *layerScanFiles, imageNs *detectors.Namesp
 		return namespace, serr, nil, nil, nil
 	}
 
-	errCode, vuls := cv.startScan(features, ns.Name, apps)
+	errCode, vuls := cv.startScan(features, &ns, apps)
 	return namespace, errCode, vuls, features, apps
 }
 
-func os2DB(nsName string) (string, int) {
+func os2DB(ns *detectors.Namespace) (string, int) {
+	nsName := ns.Name
 	db := common.DBMax
 	r := releaseRegexp.FindStringSubmatch(nsName)
 	if len(r) == 3 {
@@ -709,13 +702,20 @@ func os2DB(nsName string) (string, int) {
 				nsName = "centos:" + r[2]
 			}
 			db = common.DBCentos
-			log.Info("namespace map to: ", nsName)
+		case "rhcos":
+			if ns.RHELVer != "" {
+				if dot := strings.Index(ns.RHELVer, "."); dot != -1 {
+					nsName = "centos:" + ns.RHELVer[:dot]
+				} else {
+					nsName = "centos:" + ns.RHELVer
+				}
+				db = common.DBCentos
+			}
+			// unsupported otherwise
 		case "fedora":
 			// Map to ubuntu upstream: NVSHAS-6723
 			nsName = "ubuntu:upstream"
 			db = common.DBUbuntu
-		case "rhcos":
-			// unsupported
 		case "alpine":
 			nsName = removeSubVersion(nsName)
 			db = common.DBAlpine
@@ -742,17 +742,18 @@ func os2DB(nsName string) (string, int) {
 	return nsName, db
 }
 
-func (cv *CveTools) startScan(features []detectors.FeatureVersion, nsName string, appPkg []detectors.AppFeatureVersion) (share.ScanErrorCode, []*share.ScanVulnerability) {
-	var db int
+func (cv *CveTools) startScan(features []detectors.FeatureVersion, ns *detectors.Namespace, appPkg []detectors.AppFeatureVersion) (share.ScanErrorCode, []*share.ScanVulnerability) {
 	var vss []common.VulShort
 	var vfs map[string]common.VulFull
 	var err error
 
-	nsName, db = os2DB(nsName)
+	nsName, db := os2DB(ns)
 	if db == common.DBMax {
 		log.WithFields(log.Fields{"os": nsName}).Info("Unsupported OS")
 		return share.ScanErrorCode_ScanErrNone, make([]*share.ScanVulnerability, 0)
 	}
+
+	log.Info("namespace maps to: ", nsName)
 
 	cv.UpdateMux.Lock()
 	defer cv.UpdateMux.Unlock()

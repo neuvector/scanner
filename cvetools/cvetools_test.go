@@ -5,6 +5,7 @@ import (
 
 	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/scanner/common"
+	"github.com/neuvector/scanner/detectors"
 )
 
 const testTmpPath = "/tmp/scanner_test/"
@@ -65,11 +66,50 @@ func TestSelectDB(t *testing.T) {
 		"opensuse-leap:2.7":  result{"sles:l2.7", common.DBSuse},
 	}
 
-	for ns, r := range tests {
-		var db int
-		ns, db = os2DB(ns)
+	for os, r := range tests {
+		nss := detectors.Namespace{Name: os}
+		ns, db := os2DB(&nss)
 		if ns != r.ns || db != r.db {
 			t.Errorf("Incorrect result:  %s != %s or %d != %d", ns, r.ns, db, r.db)
 		}
+	}
+}
+
+func TestRHCos(t *testing.T) {
+	osRel := `
+NAME="Red Hat Enterprise Linux CoreOS"
+ID="rhcos"
+ID_LIKE="rhel fedora"
+VERSION="411.86.202212072103-0"
+VERSION_ID="4.11"
+PLATFORM_ID="platform:el8"
+PRETTY_NAME="Red Hat Enterprise Linux CoreOS 411.86.202212072103-0 (Ootpa)"
+ANSI_COLOR="0;31"
+CPE_NAME="cpe:/o:redhat:enterprise_linux:8::coreos"
+HOME_URL="https://www.redhat.com/"
+DOCUMENTATION_URL="https://docs.openshift.com/container-platform/4.11/"
+BUG_REPORT_URL="https://bugzilla.redhat.com/"
+REDHAT_BUGZILLA_PRODUCT="OpenShift Container Platform"
+REDHAT_BUGZILLA_PRODUCT_VERSION="4.11"
+REDHAT_SUPPORT_PRODUCT="OpenShift Container Platform"
+REDHAT_SUPPORT_PRODUCT_VERSION="4.11"
+OPENSHIFT_VERSION="4.11"
+RHEL_VERSION="8.6"
+OSTREE_VERSION="411.86.202212072103-0"
+`
+
+	ff := detectors.FeatureFile{Data: []byte(osRel)}
+	files := map[string]*detectors.FeatureFile{
+		"etc/os-release": &ff,
+	}
+
+	nss := detectors.DetectNamespace(files)
+	if nss.Name != "rhcos:4.11" || nss.RHELVer != "8.6" {
+		t.Errorf("Incorrect os: %+v\n", nss)
+	}
+
+	ns, db := os2DB(nss)
+	if ns != "centos:8" || db != common.DBCentos {
+		t.Errorf("Incorrect os: ns=%s db=%v\n", ns, db)
 	}
 }
