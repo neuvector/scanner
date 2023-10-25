@@ -1,9 +1,7 @@
-package osrelease
+package detectors
 
 import (
 	"testing"
-
-	"github.com/neuvector/scanner/detectors"
 )
 
 func Test_AMZN(t *testing.T) {
@@ -17,12 +15,11 @@ ANSI_COLOR="0;33"
 CPE_NAME="cpe:2.3:o:amazon:amazon_linux:2"
 HOME_URL="https://amazonlinux.com/"`
 
-	data := map[string]*detectors.FeatureFile{
-		"etc/os-release": &detectors.FeatureFile{Data: []byte(osr)},
+	data := map[string]*FeatureFile{
+		"etc/os-release": &FeatureFile{Data: []byte(osr)},
 	}
 
-	var d OsReleaseNamespaceDetector
-	ns := d.Detect(data)
+	ns := detectOSRelease(data)
 	if ns.Name != "amzn:2" {
 		t.Errorf("Invalid namespace: %v", ns.Name)
 	}
