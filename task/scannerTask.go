@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -30,13 +29,13 @@ func usage() {
 }
 
 var ntChan chan uint32 = make(chan uint32, 1)
-var cveTools *cvetools.CveTools // available inside package
+var cveTools *cvetools.ScanTools // available inside package
 
 ////
 func checkDbReady() bool {
 	var dbReady bool
 	for {
-		if newVer, createTime, err := common.CheckExpandedDb(cveTools.TbPath, false); err == nil {
+		if newVer, createTime, err := common.CheckExpandedDb(cveTools.ExpandPath, false); err == nil {
 			cveTools.CveDBVersion = fmt.Sprintf("%.3f", newVer)
 			cveTools.CveDBCreateTime = createTime
 			dbReady = true
@@ -104,16 +103,16 @@ func main() {
 
 	// acquire tool
 	sys := system.NewSystemTools()
-	cveTools = cvetools.NewCveTools(*rtSock, scan.NewScanUtil(sys))
+	cveTools = cvetools.NewScanTools(*rtSock, scan.NewScanUtil(sys))
 
 	// create an imgPath from the input file
 	var imageWorkingPath string
 	if *infile == "inputs.json" { // default
-		imageWorkingPath = cvetools.CreateImagePath("")
+		imageWorkingPath = common.CreateImagePath("")
 	} else { // normal from scanner
 		uid := strings.TrimPrefix(*infile, "/tmp/")
 		uid = strings.TrimSuffix(uid, "_i.json") // obtains the uuid
-		imageWorkingPath = filepath.Join(cvetools.ImageWorkingPath, uid)
+		imageWorkingPath = common.GetImagePath(uid)
 	}
 	log.WithFields(log.Fields{"imageWorkingPath": imageWorkingPath}).Debug()
 	defer os.RemoveAll(imageWorkingPath) // either delete from caller (kill -9) or self-deleted

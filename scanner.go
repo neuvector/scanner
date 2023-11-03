@@ -17,11 +17,9 @@ import (
 	"github.com/neuvector/neuvector/share/cluster"
 	"github.com/neuvector/neuvector/share/container"
 	"github.com/neuvector/neuvector/share/global"
-	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/system"
 	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
-	"github.com/neuvector/scanner/cvetools"
 )
 
 func usage() {
@@ -45,8 +43,8 @@ type outputCVE struct {
 var dockerhubRegs utils.Set = utils.NewSet("registry.hub.docker.com", "index.docker.io", "registry-1.docker.io", "docker.io")
 
 var ntChan chan uint32 = make(chan uint32, 1)
-var cveTools *cvetools.CveTools // available inside package
-var scanTasker *Tasker          // available inside package
+var cveDB *common.CveDB // available inside package
+var scanTasker *Tasker  // available inside package
 var selfID string
 
 func dbRead(path string, maxRetry int, output string) map[string]*share.ScanVulnerability {
@@ -62,11 +60,10 @@ func dbRead(path string, maxRetry int, output string) map[string]*share.ScanVuln
 		if _, err := os.Stat(dbFile); err != nil {
 			log.WithFields(log.Fields{"file": dbFile}).Error("cannot find scanner db")
 		} else {
-			cveTools.UpdateMux.Lock()
-			if verNew, createTime, err := common.LoadCveDb(path, cveTools.TbPath, encryptKey); err == nil {
-				cveTools.CveDBVersion = verNew
-				cveTools.CveDBCreateTime = createTime
-				if dbData, outCVEs, err = common.ReadCveDbMeta(cveTools.TbPath, output != ""); err != nil {
+			if verNew, createTime, err := common.LoadCveDb(path, cveDB.ExpandPath, encryptKey); err == nil {
+				cveDB.CveDBVersion = verNew
+				cveDB.CveDBCreateTime = createTime
+				if dbData, outCVEs, err = common.ReadCveDbMeta(cveDB.ExpandPath, output != ""); err != nil {
 					log.WithFields(log.Fields{"error": err}).Error("Failed to load scanner db")
 				} else {
 					dbReady = true
@@ -82,7 +79,6 @@ func dbRead(path string, maxRetry int, output string) map[string]*share.ScanVuln
 					}
 				}
 			}
-			cveTools.UpdateMux.Unlock()
 		}
 
 		if !dbReady {
@@ -108,8 +104,8 @@ func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinP
 		// forever retry
 		dbData := dbRead(path, 0, "")
 		scanner := share.ScannerRegisterData{
-			CVEDBVersion:    cveTools.CveDBVersion,
-			CVEDBCreateTime: cveTools.CveDBCreateTime,
+			CVEDBVersion:    cveDB.CveDBVersion,
+			CVEDBCreateTime: cveDB.CveDBCreateTime,
 			CVEDB:           dbData,
 			RPCServer:       advIP,
 			RPCServerPort:   advPort,
@@ -198,7 +194,7 @@ func main() {
 
 	// acquire tool
 	sys := system.NewSystemTools()
-	cveTools = cvetools.NewCveTools(*rtSock, scan.NewScanUtil(sys))
+	cveDB = common.NewCveDB()
 
 	// output cvedb in json format
 	if *output != "" {
@@ -227,8 +223,8 @@ func main() {
 	}
 
 	// recovered, clean up all possible previous image folders
-	os.RemoveAll(cvetools.ImageWorkingPath)
-	os.MkdirAll(cvetools.ImageWorkingPath, 0755)
+	os.RemoveAll(common.ImageWorkingPath)
+	os.MkdirAll(common.ImageWorkingPath, 0755)
 
 	var err error
 	if sys.IsRunningInContainer() {
@@ -254,6 +250,8 @@ func main() {
 			defer scanTasker.Close()
 		}
 	}
+
+	defer scanTasker.Close()
 
 	done := make(chan bool, 1)
 	c_sig := make(chan os.Signal, 1)

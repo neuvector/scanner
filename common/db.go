@@ -21,6 +21,20 @@ import (
 	"github.com/neuvector/neuvector/share/utils"
 )
 
+const CveDBExpandPath = "/tmp/neuvector/db/"
+
+type CveDB struct {
+	ExpandPath      string
+	CveDBVersion    string
+	CveDBCreateTime string
+}
+
+func NewCveDB() *CveDB {
+	return &CveDB{
+		ExpandPath: CveDBExpandPath,
+	}
+}
+
 const maxExtractSize = 0 // No extract limit
 const maxVersionHeader = 100 * 1024
 const maxBufferSize = 1024 * 1024

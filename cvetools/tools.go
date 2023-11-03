@@ -7,11 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
-
-const ImageWorkingPath = "/tmp/images"
 
 func downloadFromUrl(url, fileName string) error {
 	output, err := os.Create(fileName)
@@ -34,27 +31,6 @@ func downloadFromUrl(url, fileName string) error {
 		return err
 	}
 	return nil
-}
-
-// Get an unique image folder under /tmp, return "" if can not allocate a good folder
-func CreateImagePath(uid string) string {
-	var imgPath string
-
-	// existing uid
-	if uid != "" {
-		imgPath = filepath.Join(ImageWorkingPath, uid)
-	} else {
-		for i := 0; i < 16; i++ {
-			imgPath = filepath.Join(ImageWorkingPath, uuid.New().String())
-			if _, err := os.Stat(imgPath); os.IsNotExist(err) {
-				break
-			}
-		}
-	}
-
-	///
-	os.MkdirAll(imgPath, 0755)
-	return imgPath
 }
 
 // collectImageFileMap creates a virtual file map for a image to save real copy efforts

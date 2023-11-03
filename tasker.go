@@ -17,7 +17,7 @@ import (
 
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/system"
-	"github.com/neuvector/scanner/cvetools"
+	"github.com/neuvector/scanner/common"
 )
 
 const reqTemplate = "/tmp/%s_i.json"
@@ -36,18 +36,14 @@ type Tasker struct {
 /////
 func newTasker(taskPath, rtSock string, showDebug bool, sys *system.SystemTools) *Tasker {
 	log.WithFields(log.Fields{"showDebug": showDebug}).Debug()
-	if _, err := os.Stat(taskPath); err != nil {
-		return nil
-	}
 
-	ts := &Tasker{
+	return &Tasker{
 		bEnable:    true,
 		taskPath:   taskPath, // sannnerTask path
 		rtSock:     rtSock,   // Container socket URL
 		bShowDebug: showDebug,
 		sys:        sys,
 	}
-	return ts
 }
 
 //////
@@ -132,7 +128,7 @@ func (ts *Tasker) Run(ctx context.Context, request interface{}) (*share.ScanResu
 	defer os.Remove(fmt.Sprintf(resTemplate, uid))
 
 	// image working folder
-	workingFolder := cvetools.CreateImagePath(uid)
+	workingFolder := common.CreateImagePath(uid)
 	defer os.RemoveAll(workingFolder)
 
 	log.WithFields(log.Fields{"cmd": ts.taskPath, "wpath": workingFolder, "args": args}).Debug()

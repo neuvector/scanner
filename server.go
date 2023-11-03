@@ -49,7 +49,7 @@ func (rs *rpcService) ScanRunning(ctx context.Context, req *share.ScanRunningReq
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Fail to connect to agent")
 
-		result = &share.ScanResult{Version: cveTools.CveDBVersion, CVEDBCreateTime: cveTools.CveDBCreateTime, Error: share.ScanErrorCode_ScanErrNetwork}
+		result = &share.ScanResult{Version: cveDB.CveDBVersion, CVEDBCreateTime: cveDB.CveDBCreateTime, Error: share.ScanErrorCode_ScanErrNetwork}
 		return result, nil
 	}
 
@@ -66,7 +66,7 @@ func (rs *rpcService) ScanRunning(ctx context.Context, req *share.ScanRunningReq
 		// actual result from enforcer with only 3 conditions
 		switch data.Error {
 		case share.ScanErrorCode_ScanErrContainerExit: // no longer live
-			result = &share.ScanResult{Version: cveTools.CveDBVersion, CVEDBCreateTime: cveTools.CveDBCreateTime, Error: data.Error}
+			result = &share.ScanResult{Version: cveDB.CveDBVersion, CVEDBCreateTime: cveDB.CveDBCreateTime, Error: data.Error}
 			return result, nil
 		case share.ScanErrorCode_ScanErrInProgress: // in progress
 			return &share.ScanResult{Error: data.Error}, status.Error(codes.Unavailable, fmt.Sprintf("In progress: %s", req.ID)) // keep alive
@@ -75,27 +75,21 @@ func (rs *rpcService) ScanRunning(ctx context.Context, req *share.ScanRunningReq
 	} else if data == nil {
 		// rpc request not made
 		log.WithFields(log.Fields{"error": err}).Error("Fail to make rpc call")
-		result = &share.ScanResult{Version: cveTools.CveDBVersion, CVEDBCreateTime: cveTools.CveDBCreateTime, Error: share.ScanErrorCode_ScanErrNetwork}
+		result = &share.ScanResult{Version: cveDB.CveDBVersion, CVEDBCreateTime: cveDB.CveDBCreateTime, Error: share.ScanErrorCode_ScanErrNetwork}
 		return result, nil
 	} else if err != nil || data.Error != share.ScanErrorCode_ScanErrNone {
 		log.WithFields(log.Fields{"error": err}).Error("Fail to read files")
-		result = &share.ScanResult{Version: cveTools.CveDBVersion, CVEDBCreateTime: cveTools.CveDBCreateTime, Error: data.Error}
+		result = &share.ScanResult{Version: cveDB.CveDBVersion, CVEDBCreateTime: cveDB.CveDBCreateTime, Error: data.Error}
 		return result, nil
 	}
 
 	log.WithFields(log.Fields{"id": req.ID, "type": req.Type}).Debug("File read done")
-	if scanTasker != nil {
-		return scanTasker.Run(ctx, *data)
-	}
-	return cveTools.ScanImageData(data)
+	return scanTasker.Run(ctx, *data)
 }
 
 func (rs *rpcService) ScanImageData(ctx context.Context, data *share.ScanData) (*share.ScanResult, error) {
 	log.Debug("")
-	if scanTasker != nil {
-		return scanTasker.Run(ctx, *data)
-	}
-	return cveTools.ScanImageData(data)
+	return scanTasker.Run(ctx, *data)
 }
 
 func (rs *rpcService) ScanImage(ctx context.Context, req *share.ScanImageRequest) (*share.ScanResult, error) {
@@ -103,26 +97,17 @@ func (rs *rpcService) ScanImage(ctx context.Context, req *share.ScanImageRequest
 		"Registry": req.Registry, "image": fmt.Sprintf("%s:%s", req.Repository, req.Tag),
 	}).Debug()
 
-	if scanTasker != nil {
-		return scanTasker.Run(ctx, *req)
-	}
-	return cveTools.ScanImage(ctx, req, "")
+	return scanTasker.Run(ctx, *req)
 }
 
 func (rs *rpcService) ScanAppPackage(ctx context.Context, req *share.ScanAppRequest) (*share.ScanResult, error) {
 	log.WithFields(log.Fields{"Packages": req.Packages}).Debug("")
-	if scanTasker != nil {
-		return scanTasker.Run(ctx, *req)
-	}
-	return cveTools.ScanAppPackage(req, "")
+	return scanTasker.Run(ctx, *req)
 }
 
 func (rs *rpcService) ScanAwsLambda(ctx context.Context, req *share.ScanAwsLambdaRequest) (*share.ScanResult, error) {
 	log.WithFields(log.Fields{"LambdaFunc": req.FuncName}).Debug("")
-	if scanTasker != nil {
-		return scanTasker.Run(ctx, *req)
-	}
-	return cveTools.ScanAwsLambda(req, "")
+	return scanTasker.Run(ctx, *req)
 }
 
 func startGRPCServer() *cluster.GRPCServer {

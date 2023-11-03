@@ -237,18 +237,14 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 	var err error
 
 	newDB := &share.CLUSScannerDB{
-		CVEDBVersion:    cveTools.CveDBVersion,
-		CVEDBCreateTime: cveTools.CveDBCreateTime,
+		CVEDBVersion:    cveDB.CveDBVersion,
+		CVEDBCreateTime: cveDB.CveDBCreateTime,
 		CVEDB:           cvedb,
 	}
 	scanUtils.SetScannerDB(newDB)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*20)
-	if scanTasker != nil {
-		result, err = scanTasker.Run(ctx, *req)
-	} else {
-		result, err = cveTools.ScanImage(ctx, req, "")
-	}
+	result, err = scanTasker.Run(ctx, *req)
 	cancel()
 
 	if req.Registry == "" && result != nil &&
@@ -259,11 +255,7 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute*20)
-		if scanTasker != nil {
-			result, err = scanTasker.Run(ctx, *req)
-		} else {
-			result, err = cveTools.ScanImage(ctx, req, "")
-		}
+		result, err = scanTasker.Run(ctx, *req)
 		cancel()
 	}
 
