@@ -130,6 +130,7 @@ func (cv *ScanTools) ScanImageData(data *share.ScanData) (*share.ScanResult, err
 		Provider:        share.ScanProvider_Neuvector,
 		Version:         cv.CveDBVersion,
 		CVEDBCreateTime: cv.CveDBCreateTime,
+		Secrets:         &share.ScanSecretResult{},
 	}
 
 	pkgs, err := utils.SelectivelyExtractArchive(bytes.NewReader(data.Buffer), func(filename string) bool {
@@ -945,6 +946,15 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 	affectVs := make([]common.VulShort, 0)
 
 	for _, v := range vs {
+		if common.Debugs.Enabled {
+			if common.Debugs.CVEs.Contains(v.Name) && common.Debugs.Features.Contains(ft.Package) {
+				log.WithFields(log.Fields{
+					"name": v.Name, "cpes": v.CPEs, "fixin": v.Fixin,
+					"package": ft.Package, "version": ft.Version, "ft-cpes": ft.CPEs,
+				}).Debug("DEBUG")
+			}
+		}
+
 		// check redhat cpe. Modules in ubi image has no cpe, so always accept them.
 		if v.CPEs != nil && ft.CPEs != nil && ft.CPEs.Cardinality() > 0 {
 			match := false
@@ -1068,6 +1078,15 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 			v.Fixin = append(v.Fixin, common.FeaShort{
 				Name: fix.Name, Version: fix.Version, MinVer: fix.MinVer,
 			})
+
+			if common.Debugs.Enabled {
+				if common.Debugs.CVEs.Contains(v.Name) {
+					log.WithFields(log.Fields{
+						"name": v.Name, "package": ft.Package, "version": ft.Version,
+					}).Debug("DEBUG: report")
+				}
+			}
+
 			affectVs = append(affectVs, v)
 			break
 		}
@@ -1099,9 +1118,6 @@ func makeFeatureMap(vss []common.VulShort, namespace string) map[string][]common
 		}
 
 		for _, ft := range v.Fixin {
-			// if strings.Contains(ft.Name, "openssl-libs") {
-			// 	log.WithFields(log.Fields{"ft": ft, "vns": vns, "name": v.Name}).Debug(" ------------")
-			// }
 			// Only choose the relevant module
 			short := common.VulShort{
 				Name:      v.Name,

@@ -14,6 +14,9 @@ import (
 
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/cluster"
+	"github.com/neuvector/neuvector/share/scan"
+	"github.com/neuvector/neuvector/share/system"
+	"github.com/neuvector/scanner/cvetools"
 )
 
 func createEnforcerScanServiceWrapper(conn *grpc.ClientConn) cluster.Service {
@@ -59,7 +62,7 @@ func (rs *rpcService) ScanRunning(ctx context.Context, req *share.ScanRunningReq
 		// however, 60 sec timeout is set for (controller <-> scanner), and 5 restries from controller
 		// wait for next pulling from ctl and it should return the cache results from enforcer immediately
 		log.WithFields(log.Fields{"id": req.ID}).Debug("session expired")
-		return &share.ScanResult{Error: share.ScanErrorCode_ScanErrCanceled}, status.Error(codes.Aborted, fmt.Sprintf("aborted: %s, %s", ctx.Err(), req.ID))  // aborted by controller
+		return &share.ScanResult{Error: share.ScanErrorCode_ScanErrCanceled}, status.Error(codes.Aborted, fmt.Sprintf("aborted: %s, %s", ctx.Err(), req.ID)) // aborted by controller
 	}
 
 	if data != nil && err == nil {
@@ -84,12 +87,24 @@ func (rs *rpcService) ScanRunning(ctx context.Context, req *share.ScanRunningReq
 	}
 
 	log.WithFields(log.Fields{"id": req.ID, "type": req.Type}).Debug("File read done")
-	return scanTasker.Run(ctx, *data)
+	if scanTasker != nil {
+		return scanTasker.Run(ctx, *data)
+	}
+
+	sys := system.NewSystemTools()
+	cveTools := cvetools.NewScanTools("", scan.NewScanUtil(sys))
+	return cveTools.ScanImageData(data)
 }
 
 func (rs *rpcService) ScanImageData(ctx context.Context, data *share.ScanData) (*share.ScanResult, error) {
 	log.Debug("")
-	return scanTasker.Run(ctx, *data)
+	if scanTasker != nil {
+		return scanTasker.Run(ctx, *data)
+	}
+
+	sys := system.NewSystemTools()
+	cveTools := cvetools.NewScanTools("", scan.NewScanUtil(sys))
+	return cveTools.ScanImageData(data)
 }
 
 func (rs *rpcService) ScanImage(ctx context.Context, req *share.ScanImageRequest) (*share.ScanResult, error) {
@@ -97,17 +112,35 @@ func (rs *rpcService) ScanImage(ctx context.Context, req *share.ScanImageRequest
 		"Registry": req.Registry, "image": fmt.Sprintf("%s:%s", req.Repository, req.Tag),
 	}).Debug()
 
-	return scanTasker.Run(ctx, *req)
+	if scanTasker != nil {
+		return scanTasker.Run(ctx, *req)
+	}
+
+	sys := system.NewSystemTools()
+	cveTools := cvetools.NewScanTools("", scan.NewScanUtil(sys))
+	return cveTools.ScanImage(ctx, req, "")
 }
 
 func (rs *rpcService) ScanAppPackage(ctx context.Context, req *share.ScanAppRequest) (*share.ScanResult, error) {
 	log.WithFields(log.Fields{"Packages": req.Packages}).Debug("")
-	return scanTasker.Run(ctx, *req)
+	if scanTasker != nil {
+		return scanTasker.Run(ctx, *req)
+	}
+
+	sys := system.NewSystemTools()
+	cveTools := cvetools.NewScanTools("", scan.NewScanUtil(sys))
+	return cveTools.ScanAppPackage(req, "")
 }
 
 func (rs *rpcService) ScanAwsLambda(ctx context.Context, req *share.ScanAwsLambdaRequest) (*share.ScanResult, error) {
 	log.WithFields(log.Fields{"LambdaFunc": req.FuncName}).Debug("")
-	return scanTasker.Run(ctx, *req)
+	if scanTasker != nil {
+		return scanTasker.Run(ctx, *req)
+	}
+
+	sys := system.NewSystemTools()
+	cveTools := cvetools.NewScanTools("", scan.NewScanUtil(sys))
+	return cveTools.ScanAwsLambda(req, "")
 }
 
 func startGRPCServer() *cluster.GRPCServer {

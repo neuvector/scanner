@@ -68,6 +68,7 @@ static proc_info_t g_procs[PROC_MAX] = {
 
 static int g_mode = MODE_SCANNER;
 static int g_debug = 0;
+static int g_node = 0;
 static char *g_image = NULL;
 static volatile sig_atomic_t g_exit_signal = 0;
 static int g_exit_monitor_on_proc_exit = 0;
@@ -130,7 +131,16 @@ static pid_t fork_exec(int i)
             args[a ++] = "-x";
         }
 
-        if (g_image != NULL) {
+        if (g_node) {
+            // automatically set to standalone mode
+            args[a ++] = "--license";
+            args[a ++] = "on_demand";
+
+            g_exit_monitor_on_proc_exit = 1;
+
+            args[a ++] = "--pid";
+            args[a ++] = "1";
+        } else if (g_image != NULL) {
             // automatically set to standalone mode
             args[a ++] = "--license";
             args[a ++] = "on_demand";
@@ -331,6 +341,7 @@ static void help(const char *prog)
     printf("%s:\n", prog);
     printf("    d: enable debug\n");
     printf("    h: help\n");
+    printf("    n: scan node in standalone mode\n");
     printf("    i: <image>, scan image in standalone mode\n");
 }
 
@@ -342,13 +353,16 @@ int main (int argc, char **argv)
 
     int arg = 0;
     while (arg != -1) {
-        arg = getopt(argc, argv, "hdi:");
+        arg = getopt(argc, argv, "hdni:");
 
         switch (arg) {
         case -1:
             break;
         case 'd':
             g_debug = 1;
+            break;
+        case 'n':
+            g_node = 1;
             break;
         case 'i':
             g_image = optarg;

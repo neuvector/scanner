@@ -18,7 +18,10 @@ import (
 
 	"github.com/neuvector/neuvector/controller/api"
 	"github.com/neuvector/neuvector/share"
+	"github.com/neuvector/neuvector/share/scan"
 	scanUtils "github.com/neuvector/neuvector/share/scan"
+	"github.com/neuvector/neuvector/share/system"
+	"github.com/neuvector/scanner/cvetools"
 )
 
 // The user must mount volume to /var/neuvector and the result will be written to the mounted folder
@@ -126,7 +129,7 @@ func writeResultToFile(req *share.ScanImageRequest, result *share.ScanResult, er
 	}
 }
 
-func writeResultToStdout(req *share.ScanImageRequest, result *share.ScanResult, showOptions string) {
+func writeResultToStdout(result *share.ScanResult, showOptions string) {
 	var rpt *api.RESTScanRepoReport
 	var high, med, low, unk int
 
@@ -149,7 +152,6 @@ func writeResultToStdout(req *share.ScanImageRequest, result *share.ScanResult, 
 		}
 	}
 
-	fmt.Printf("Image: %s%s:%s\n", req.Registry, req.Repository, req.Tag)
 	fmt.Printf("Base OS: %s\n", rpt.BaseOS)
 	fmt.Printf("Created at: %s\n", rpt.CreatedAt)
 
@@ -232,6 +234,48 @@ func writeResultToStdout(req *share.ScanImageRequest, result *share.ScanResult, 
 	}
 }
 
+func scanRunning(pid int, cvedb map[string]*share.ScanVulnerability, showOptions string) {
+	newDB := &share.CLUSScannerDB{
+		CVEDBVersion:    cveDB.CveDBVersion,
+		CVEDBCreateTime: cveDB.CveDBCreateTime,
+		CVEDB:           cvedb,
+	}
+	scanUtils.SetScannerDB(newDB)
+
+	sys := system.NewSystemTools()
+	sysInfo := sys.GetSystemInfo()
+	scanUtil := scan.NewScanUtil(sys)
+	cveTools := cvetools.NewScanTools("", scanUtil)
+
+	var data share.ScanData
+	data.Buffer, data.Error = scanUtil.GetRunningPackages("1", share.ScanObjectType_HOST, pid, sysInfo.Kernel.Release)
+	if data.Error != share.ScanErrorCode_ScanErrNone {
+		log.WithFields(log.Fields{"pid": pid, "error": data.Error}).Error("Failed to get the packages")
+		return
+	}
+
+	var result *share.ScanResult
+	var err error
+
+	if scanTasker != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute*1)
+		result, err = scanTasker.Run(ctx, data)
+		cancel()
+	} else {
+		result, err = cveTools.ScanImageData(&data)
+	}
+
+	if err != nil {
+		log.WithFields(log.Fields{"pid": pid, "error": err}).Error("Failed to scan the packages")
+		return
+	}
+
+	fmt.Printf("PID: %d\n", pid)
+	writeResultToStdout(result, showOptions)
+
+	return
+}
+
 func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulnerability, showOptions string) *share.ScanResult {
 	var result *share.ScanResult
 	var err error
@@ -244,7 +288,13 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 	scanUtils.SetScannerDB(newDB)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*20)
-	result, err = scanTasker.Run(ctx, *req)
+	if scanTasker != nil {
+		result, err = scanTasker.Run(ctx, *req)
+	} else {
+		sys := system.NewSystemTools()
+		cveTools := cvetools.NewScanTools("", scan.NewScanUtil(sys))
+		result, err = cveTools.ScanImage(ctx, req, "")
+	}
 	cancel()
 
 	if req.Registry == "" && result != nil &&
@@ -267,14 +317,12 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 		log.WithFields(log.Fields{
 			"registry": req.Registry, "repo": req.Repository, "tag": req.Tag, "error": scanUtils.ScanErrorToStr(result.Error),
 		}).Error("Failed to scan repository")
-	} else {
-		// log.WithFields(log.Fields{
-		// 	"registry": req.Registry, "repo": req.Repository, "tag": req.Tag,
-		// }).Info("Scan repository finish")
 	}
 
 	writeResultToFile(req, result, err)
-	writeResultToStdout(req, result, showOptions)
+
+	fmt.Printf("Image: %s%s:%s\n", req.Registry, req.Repository, req.Tag)
+	writeResultToStdout(result, showOptions)
 
 	return result
 }

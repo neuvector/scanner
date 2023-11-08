@@ -43,8 +43,8 @@ type outputCVE struct {
 var dockerhubRegs utils.Set = utils.NewSet("registry.hub.docker.com", "index.docker.io", "registry-1.docker.io", "docker.io")
 
 var ntChan chan uint32 = make(chan uint32, 1)
-var cveDB *common.CveDB // available inside package
-var scanTasker *Tasker  // available inside package
+var cveDB *common.CveDB
+var scanTasker *Tasker
 var selfID string
 
 func dbRead(path string, maxRetry int, output string) map[string]*share.ScanVulnerability {
@@ -158,9 +158,9 @@ func main() {
 	adv := flag.String("a", "", "Advertise address")
 	advPort := flag.Uint("adv_port", 0, "Advertise port")
 	rtSock := flag.String("u", dockerSocket, "Container socket URL") // used for scan local image
-	// for on demand ci/cd scan
-	license := flag.String("license", "", "Scanner license") // it means on-demand stand-alone scanner
-	image := flag.String("image", "", "Scan image")          // overwrite registry, repository and tag
+	license := flag.String("license", "", "Scanner license")         // it means on-demand stand-alone scanner
+	image := flag.String("image", "", "Scan image")                  // overwrite registry, repository and tag
+	pid := flag.Int("pid", 0, "Scan host or container")
 	registry := flag.String("registry", "", "Scan image registry")
 	repository := flag.String("repository", "", "Scan image repository")
 	tag := flag.String("tag", "latest", "Scan image tag")
@@ -177,9 +177,14 @@ func main() {
 	output := flag.String("o", "", "Output CVEDB in json format, specify the output file")
 	show := flag.String("show", "", "Standalone Mode: Stdout print options, cmd,module")
 	getVer := flag.Bool("v", false, "show cve database version")
+	debug := flag.String("debug", "", "debug filters")
 
 	flag.Usage = usage
 	flag.Parse()
+
+	if *debug != "" {
+		common.ParseDebugFilters(*debug)
+	}
 
 	// show cve database version
 	if *getVer {
@@ -208,7 +213,7 @@ func main() {
 	// If license parameter is given, this is an on-demand scanner, no register to the controller,
 	// but if join address is given, the scan result are sent to the controller.
 	if *license != "" {
-		if (*repository == "" || *tag == "") && *image == "" {
+		if (*repository == "" || *tag == "") && *image == "" && *pid == 0 {
 			log.Error("Missing the repository name and tag of the image to be scanned")
 			os.Exit(-2)
 		}
@@ -251,8 +256,6 @@ func main() {
 		}
 	}
 
-	defer scanTasker.Close()
-
 	done := make(chan bool, 1)
 	c_sig := make(chan os.Signal, 1)
 	signal.Notify(c_sig, os.Interrupt, syscall.SIGTERM)
@@ -263,8 +266,18 @@ func main() {
 	}()
 
 	if onDemand {
-		var req *share.ScanImageRequest
+		// DB read error printed inside dbRead()
+		dbData := dbRead(*dbPath, 3, "")
+		if dbData == nil {
+			return
+		}
 
+		if *pid != 0 {
+			scanRunning(*pid, dbData, *show)
+			return
+		}
+
+		var req *share.ScanImageRequest
 		if *image != "" {
 			// This normally is the case when scanner runs by the command line
 			reg, repo, tag := parseImageValue(*image)
@@ -296,34 +309,30 @@ func main() {
 			}
 		}
 
-		// DB read error printed inside dbRead()
-		dbData := dbRead(*dbPath, 3, "")
-		if dbData != nil {
-			result := scanOnDemand(req, dbData, *show)
+		result := scanOnDemand(req, dbData, *show)
 
-			// submit scan result if join address is given
-			if result != nil && result.Error == share.ScanErrorCode_ScanErrNone &&
-				*join != "" && *ctrlUser != "" && *ctrlPass != "" {
-				if *adv == "" {
-					_, addr, err := cluster.ResolveJoinAndBindAddr(*join, sys)
-					if err != nil {
-						log.WithFields(log.Fields{"error": err}).Error()
-						os.Exit(-2)
-					}
-
-					adv = &addr
-				}
-				if *joinPort == 0 {
-					port := (uint)(api.DefaultControllerRESTAPIPort)
-					joinPort = &port
-				}
-
-				err := scanSubmitResult(*join, (uint16)(*joinPort), *adv, *ctrlUser, *ctrlPass, result)
+		// submit scan result if join address is given
+		if result != nil && result.Error == share.ScanErrorCode_ScanErrNone &&
+			*join != "" && *ctrlUser != "" && *ctrlPass != "" {
+			if *adv == "" {
+				_, addr, err := cluster.ResolveJoinAndBindAddr(*join, sys)
 				if err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Failed to sumit scan result")
-				} else {
-					log.Info("Scan result submitted.")
+					log.WithFields(log.Fields{"error": err}).Error()
+					os.Exit(-2)
 				}
+
+				adv = &addr
+			}
+			if *joinPort == 0 {
+				port := (uint)(api.DefaultControllerRESTAPIPort)
+				joinPort = &port
+			}
+
+			err := scanSubmitResult(*join, (uint16)(*joinPort), *adv, *ctrlUser, *ctrlPass, result)
+			if err != nil {
+				log.WithFields(log.Fields{"error": err}).Error("Failed to sumit scan result")
+			} else {
+				log.Info("Scan result submitted.")
 			}
 		}
 
