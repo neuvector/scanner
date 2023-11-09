@@ -1,8 +1,6 @@
 package cvetools
 
 import (
-	"sync"
-
 	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
@@ -20,13 +18,9 @@ type updateData struct {
 	Mariner bool
 }
 
-type CveTools struct {
-	TbPath          string
-	RtSock          string
-	CveDBVersion    string
-	CveDBCreateTime string
-	UpdateMux       sync.RWMutex
-	// Update          updateData
+type ScanTools struct {
+	common.CveDB
+	RtSock    string
 	SupportOs utils.Set
 	ScanTool  *scan.ScanUtil
 }

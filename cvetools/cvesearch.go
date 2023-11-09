@@ -49,7 +49,6 @@ var mariner_fdb map[string]common.VulFull
 var suse_fdb map[string]common.VulFull
 
 ///////
-const tbPath = "/tmp/neuvector/db/"
 
 type featureVulnWindow struct {
 	featureName      string
@@ -61,7 +60,7 @@ type featureVulnWindow struct {
 }
 
 ///////
-var cveTools *CveTools
+var cveTools *ScanTools
 var overrideMap map[string][]featureVulnWindow = map[string][]featureVulnWindow{
 	"CVE-2019-13509": {
 		{
@@ -93,14 +92,15 @@ var overrideMap map[string][]featureVulnWindow = map[string][]featureVulnWindow{
 }
 
 var aliasMap map[string]string = map[string]string{
-	"docker-ce": "docker"}
+	"docker-ce": "docker",
+}
 
-// NewCveTools establishs the initialization of cve tool
-func NewCveTools(rtSock string, scanTool *scan.ScanUtil) *CveTools {
-	return &CveTools{ // available inside package
-		TbPath:   tbPath,
+func NewScanTools(rtSock string, scanUtil *scan.ScanUtil) *ScanTools {
+	cveDB := common.NewCveDB()
+	return &ScanTools{
+		CveDB:    *cveDB,
 		RtSock:   rtSock,
-		ScanTool: scanTool,
+		ScanTool: scanUtil,
 	}
 }
 
@@ -125,11 +125,12 @@ type layerScanFiles struct {
 	apps []detectors.AppFeatureVersion
 }
 
-func (cv *CveTools) ScanImageData(data *share.ScanData) (*share.ScanResult, error) {
+func (cv *ScanTools) ScanImageData(data *share.ScanData) (*share.ScanResult, error) {
 	result := &share.ScanResult{
 		Provider:        share.ScanProvider_Neuvector,
 		Version:         cv.CveDBVersion,
 		CVEDBCreateTime: cv.CveDBCreateTime,
+		Secrets:         &share.ScanSecretResult{},
 	}
 
 	pkgs, err := utils.SelectivelyExtractArchive(bytes.NewReader(data.Buffer), func(filename string) bool {
@@ -165,7 +166,7 @@ func (cv *CveTools) ScanImageData(data *share.ScanData) (*share.ScanResult, erro
 }
 
 // ScanAppPackage helps scanning application packages
-func (cv *CveTools) ScanAppPackage(req *share.ScanAppRequest, namespace string) (*share.ScanResult, error) {
+func (cv *ScanTools) ScanAppPackage(req *share.ScanAppRequest, namespace string) (*share.ScanResult, error) {
 	var apps []detectors.AppFeatureVersion
 
 	for _, ap := range req.Packages {
@@ -180,7 +181,7 @@ func (cv *CveTools) ScanAppPackage(req *share.ScanAppRequest, namespace string) 
 		apps = append(apps, afv)
 	}
 
-	appvuls := cv.DetectAppVul(cv.TbPath, apps, namespace)
+	appvuls := cv.DetectAppVul(cv.ExpandPath, apps, namespace)
 	vulList := getVulItemList(appvuls, common.DBAppName)
 
 	result := &share.ScanResult{
@@ -195,7 +196,7 @@ func (cv *CveTools) ScanAppPackage(req *share.ScanAppRequest, namespace string) 
 }
 
 // ScanImage helps the Image scanning
-func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, imgPath string) (*share.ScanResult, error) {
+func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, imgPath string) (*share.ScanResult, error) {
 	result := &share.ScanResult{
 		Provider:           share.ScanProvider_Neuvector,
 		Version:            cv.CveDBVersion,
@@ -253,7 +254,7 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 
 	// for layered storages
 	if imgPath == "" { // not-defined yet
-		imgPath = CreateImagePath("")
+		imgPath = common.CreateImagePath("")
 		defer os.RemoveAll(imgPath)
 	}
 
@@ -598,7 +599,7 @@ func (cv *CveTools) ScanImage(ctx context.Context, req *share.ScanImageRequest, 
 }
 
 // ScanAwsLambda helps the AWS Lambda scanning
-func (cv *CveTools) ScanAwsLambda(req *share.ScanAwsLambdaRequest, imgPath string) (*share.ScanResult, error) {
+func (cv *ScanTools) ScanAwsLambda(req *share.ScanAwsLambdaRequest, imgPath string) (*share.ScanResult, error) {
 	result := &share.ScanResult{
 		Provider:        share.ScanProvider_Neuvector,
 		Version:         cv.CveDBVersion,
@@ -620,7 +621,7 @@ func (cv *CveTools) ScanAwsLambda(req *share.ScanAwsLambdaRequest, imgPath strin
 	if req.ScanSecrets {
 		// for scan Secrets
 		if imgPath == "" { // not-defined yet
-			imgPath = CreateImagePath("")
+			imgPath = common.CreateImagePath("")
 			defer os.RemoveAll(imgPath)
 		}
 
@@ -670,7 +671,7 @@ func (cv *CveTools) ScanAwsLambda(req *share.ScanAwsLambdaRequest, imgPath strin
 
 var releaseRegexp = regexp.MustCompile(`^([a-z-]+):([0-9.]+)`)
 
-func (cv *CveTools) doScan(layerFiles *layerScanFiles, imageNs *detectors.Namespace) (*detectors.Namespace, share.ScanErrorCode, []*share.ScanVulnerability, []detectors.FeatureVersion, []detectors.AppFeatureVersion) {
+func (cv *ScanTools) doScan(layerFiles *layerScanFiles, imageNs *detectors.Namespace) (*detectors.Namespace, share.ScanErrorCode, []*share.ScanVulnerability, []detectors.FeatureVersion, []detectors.AppFeatureVersion) {
 	features, namespace, apps, serr := cv.getFeatures(layerFiles, imageNs)
 
 	var ns detectors.Namespace
@@ -742,7 +743,8 @@ func os2DB(ns *detectors.Namespace) (string, int) {
 	return nsName, db
 }
 
-func (cv *CveTools) startScan(features []detectors.FeatureVersion, ns *detectors.Namespace, appPkg []detectors.AppFeatureVersion) (share.ScanErrorCode, []*share.ScanVulnerability) {
+func (cv *ScanTools) startScan(features []detectors.FeatureVersion, ns *detectors.Namespace, appPkg []detectors.AppFeatureVersion) (share.ScanErrorCode, []*share.ScanVulnerability) {
+	var db int
 	var vss []common.VulShort
 	var vfs map[string]common.VulFull
 	var err error
@@ -755,16 +757,13 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, ns *detectors
 
 	log.Info("namespace maps to: ", nsName)
 
-	cv.UpdateMux.Lock()
-	defer cv.UpdateMux.Unlock()
-
 	if common.DBS.Buffers[db].Short == nil {
-		common.DBS.Buffers[db].Short, err = common.LoadVulnerabilityIndex(cv.TbPath, common.DBS.Buffers[db].Name)
+		common.DBS.Buffers[db].Short, err = common.LoadVulnerabilityIndex(cv.ExpandPath, common.DBS.Buffers[db].Name)
 		if err != nil {
 			log.WithFields(log.Fields{"error": err}).Error("Load Database error:", common.DBS.Buffers[db].Name)
 			return share.ScanErrorCode_ScanErrDatabase, nil
 		}
-		common.DBS.Buffers[db].Full, err = common.LoadFullVulnerabilities(cv.TbPath, common.DBS.Buffers[db].Name)
+		common.DBS.Buffers[db].Full, err = common.LoadFullVulnerabilities(cv.ExpandPath, common.DBS.Buffers[db].Name)
 		if err != nil {
 			log.WithFields(log.Fields{"error": err}).Error("Load full Database error:", common.DBS.Buffers[db].Name)
 			return share.ScanErrorCode_ScanErrDatabase, nil
@@ -794,7 +793,7 @@ func (cv *CveTools) startScan(features []detectors.FeatureVersion, ns *detectors
 	}
 
 	if len(appPkg) != 0 {
-		appvuls := cv.DetectAppVul(cv.TbPath, appPkg, nsName)
+		appvuls := cv.DetectAppVul(cv.ExpandPath, appPkg, nsName)
 		vulList = append(vulList, getVulItemList(appvuls, common.DBAppName)...)
 	}
 
@@ -854,7 +853,7 @@ func getAffectedVul(mv map[string][]common.VulShort, features []detectors.Featur
 	return avs
 }
 
-func (cv *CveTools) getFeatures(layerFiles *layerScanFiles, imageNs *detectors.Namespace) ([]detectors.FeatureVersion, *detectors.Namespace, []detectors.AppFeatureVersion, share.ScanErrorCode) {
+func (cv *ScanTools) getFeatures(layerFiles *layerScanFiles, imageNs *detectors.Namespace) ([]detectors.FeatureVersion, *detectors.Namespace, []detectors.AppFeatureVersion, share.ScanErrorCode) {
 	var namespace *detectors.Namespace
 
 	// Detect namespace.
@@ -871,7 +870,7 @@ func (cv *CveTools) getFeatures(layerFiles *layerScanFiles, imageNs *detectors.N
 		nsName = namespace.Name
 	}
 
-	features, err := detectors.DetectFeatures(nsName, layerFiles.pkgs, cv.TbPath)
+	features, err := detectors.DetectFeatures(nsName, layerFiles.pkgs, cv.ExpandPath)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("get features error")
 		return features, namespace, layerFiles.apps, share.ScanErrorCode_ScanErrPackage
@@ -947,6 +946,15 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 	affectVs := make([]common.VulShort, 0)
 
 	for _, v := range vs {
+		if common.Debugs.Enabled {
+			if common.Debugs.CVEs.Contains(v.Name) && common.Debugs.Features.Contains(ft.Package) {
+				log.WithFields(log.Fields{
+					"name": v.Name, "cpes": v.CPEs, "fixin": v.Fixin,
+					"package": ft.Package, "version": ft.Version, "ft-cpes": ft.CPEs,
+				}).Debug("DEBUG")
+			}
+		}
+
 		// check redhat cpe. Modules in ubi image has no cpe, so always accept them.
 		if v.CPEs != nil && ft.CPEs != nil && ft.CPEs.Cardinality() > 0 {
 			match := false
@@ -1070,6 +1078,15 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 			v.Fixin = append(v.Fixin, common.FeaShort{
 				Name: fix.Name, Version: fix.Version, MinVer: fix.MinVer,
 			})
+
+			if common.Debugs.Enabled {
+				if common.Debugs.CVEs.Contains(v.Name) {
+					log.WithFields(log.Fields{
+						"name": v.Name, "package": ft.Package, "version": ft.Version,
+					}).Debug("DEBUG: report")
+				}
+			}
+
 			affectVs = append(affectVs, v)
 			break
 		}
@@ -1101,9 +1118,6 @@ func makeFeatureMap(vss []common.VulShort, namespace string) map[string][]common
 		}
 
 		for _, ft := range v.Fixin {
-			// if strings.Contains(ft.Name, "openssl-libs") {
-			// 	log.WithFields(log.Fields{"ft": ft, "vns": vns, "name": v.Name}).Debug(" ------------")
-			// }
 			// Only choose the relevant module
 			short := common.VulShort{
 				Name:      v.Name,

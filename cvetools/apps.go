@@ -20,7 +20,7 @@ const log4jModName = "org.apache.logging.log4j.log4j"
 // "org.apache.logging.log4j:log4j-to-slf4j"
 var log4jComponents = utils.NewSet("org.apache.logging.log4j:log4j-core")
 
-func (cv *CveTools) DetectAppVul(path string, apps []detectors.AppFeatureVersion, namespace string) []vulFullReport {
+func (cv *ScanTools) DetectAppVul(path string, apps []detectors.AppFeatureVersion, namespace string) []vulFullReport {
 	if apps == nil || len(apps) == 0 {
 		return nil
 	}
@@ -51,6 +51,15 @@ func (cv *CveTools) DetectAppVul(path string, apps []detectors.AppFeatureVersion
 func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detectors.AppFeatureVersion, mv []common.AppModuleVul) []vulFullReport {
 	vuls := make([]vulFullReport, 0)
 	for _, v := range mv {
+		if common.Debugs.Enabled {
+			if common.Debugs.CVEs.Contains(v.VulName) && common.Debugs.Features.Contains(app.AppName) {
+				log.WithFields(log.Fields{
+					"name": v.VulName, "affected": v.AffectedVer, "fixin": v.FixedVer,
+					"app": app.AppName, "version": app.Version,
+				}).Debug("DEBUG")
+			}
+		}
+
 		if len(v.UnaffectedVer) > 0 {
 			if unaffected := compareAppVersion(app.Version, v.UnaffectedVer); unaffected {
 				continue
@@ -64,6 +73,14 @@ func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detecto
 				vuls = append(vuls, fv)
 				mcve := detectors.ModuleVul{Name: v.VulName, Status: share.ScanVulStatus_FixExists}
 				apps[appIndex].ModuleVuls = append(apps[appIndex].ModuleVuls, mcve)
+
+				if common.Debugs.Enabled {
+					if common.Debugs.CVEs.Contains(v.VulName) {
+						log.WithFields(log.Fields{
+							"name": v.VulName, "app": app.AppName, "version": app.Version,
+						}).Debug("DEBUG: report")
+					}
+				}
 			}
 		} else {
 			if affected := compareAppVersion(app.Version, v.AffectedVer); affected {
@@ -75,6 +92,14 @@ func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detecto
 				} else {
 					mcve := detectors.ModuleVul{Name: v.VulName, Status: share.ScanVulStatus_Unpatched}
 					apps[appIndex].ModuleVuls = append(apps[appIndex].ModuleVuls, mcve)
+				}
+
+				if common.Debugs.Enabled {
+					if common.Debugs.CVEs.Contains(v.VulName) {
+						log.WithFields(log.Fields{
+							"name": v.VulName, "app": app.AppName, "version": app.Version,
+						}).Debug("DEBUG: report")
+					}
 				}
 			}
 		}

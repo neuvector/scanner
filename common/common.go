@@ -1,7 +1,11 @@
 package common
 
 import (
+	"os"
+	"path/filepath"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type NVDMetadata struct {
@@ -143,4 +147,33 @@ var DebianReleasesMapping = map[string]string{
 	"stable":       "9",
 	"testing":      "10",
 	"unstable":     "unstable",
+}
+
+// --
+
+const ImageWorkingPath = "/tmp/images"
+
+func GetImagePath(uid string) string {
+	return filepath.Join(ImageWorkingPath, uid)
+}
+
+// Get an unique image folder under /tmp, return "" if can not allocate a good folder
+func CreateImagePath(uid string) string {
+	var imgPath string
+
+	// existing uid
+	if uid != "" {
+		imgPath = GetImagePath(uid)
+	} else {
+		for i := 0; i < 16; i++ {
+			imgPath = filepath.Join(ImageWorkingPath, uuid.New().String())
+			if _, err := os.Stat(imgPath); os.IsNotExist(err) {
+				break
+			}
+		}
+	}
+
+	///
+	os.MkdirAll(imgPath, 0755)
+	return imgPath
 }

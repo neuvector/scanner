@@ -20,6 +20,7 @@ const CLUSBenchStore string = "bench/"
 const CLUSRecalculateStore string = "recalculate/" //not to be watched by consul
 const CLUSFqdnStore string = "fqdn/"               //not to be watched by consul
 const CLUSNodeStore string = "node/"
+const CLUSNodeRuleStore string = "noderule/"
 
 // lock
 const CLUSLockConfigKey string = CLUSLockStore + "all"
@@ -211,6 +212,14 @@ const CLUSRecalDlpStore string = CLUSRecalculateStore + "dlp/"       //not to be
 
 func CLUSPolicyIPRulesKey(name string) string {
 	return fmt.Sprintf("%s%s", CLUSNetworkStore, name)
+}
+
+func CLUSPolicyIPRulesKeyNode(name, nodeid string) string {
+	return fmt.Sprintf("%s%s/%s", CLUSNodeRuleStore, nodeid, name)
+}
+
+func CLUSNodeRulesKey(nodeID string) string {
+	return fmt.Sprintf("%s%s/%s", CLUSNodeRuleStore, nodeID, PolicyIPRulesVersionID)
 }
 
 func CLUSRecalPolicyIPRulesKey(name string) string {
@@ -582,6 +591,10 @@ func CLUSNetworkKey2Subject(key string) string {
 	return CLUSKeyNthToken(key, 1)
 }
 
+func CLUSNodeRuleKey2Subject(key string) string {
+	return CLUSKeyNthToken(key, 2)
+}
+
 func CLUSScannerKey2ID(key string) string {
 	return CLUSKeyNthToken(key, 2)
 }
@@ -681,15 +694,16 @@ type CLUSCtrlVersion struct {
 }
 
 type CLUSSyslogConfig struct {
-	SyslogIP         net.IP   `json:"syslog_ip"`
-	SyslogServer     string   `json:"syslog_server"`
-	SyslogIPProto    uint8    `json:"syslog_ip_proto"`
-	SyslogPort       uint16   `json:"syslog_port"`
-	SyslogLevel      string   `json:"syslog_level"`
-	SyslogEnable     bool     `json:"syslog_enable"`
-	SyslogCategories []string `json:"syslog_categories"`
-	SyslogInJSON     bool     `json:"syslog_in_json"`
-	SyslogServerCert string   `json:"syslog_server_cert"`
+	SyslogIP          net.IP   `json:"syslog_ip"`
+	SyslogServer      string   `json:"syslog_server"`
+	SyslogIPProto     uint8    `json:"syslog_ip_proto"`
+	SyslogPort        uint16   `json:"syslog_port"`
+	SyslogLevel       string   `json:"syslog_level"`
+	SyslogEnable      bool     `json:"syslog_enable"`
+	SyslogCategories  []string `json:"syslog_categories"`
+	SyslogInJSON      bool     `json:"syslog_in_json"`
+	SyslogServerCert  string   `json:"syslog_server_cert"`
+	OutputEventToLogs bool     `json:"output_event_to_logs"`
 }
 
 type CLUSSystemUsageReport struct {
@@ -1184,6 +1198,9 @@ type CLUSGroupIPPolicy struct {
 type CLUSGroupIPPolicyVer struct {
 	Key                  string `json:"key"`
 	PolicyIPRulesVersion string `json:"pol_version"`
+	NodeId               string `json:"node_id"`
+	CommonSlotNo         int    `json:"common_slot_no"`
+	CommonRulesLen       int    `json:"common_rules_len"`
 	SlotNo               int    `json:"slot_no"`
 	RulesLen             int    `json:"rules_len"`
 	WorkloadSlot         int    `json:"workload_slot,omitempty"`
@@ -1294,9 +1311,10 @@ const (
 	CLUSEvMemoryPressureController
 	CLUSEvK8sNvRBAC
 	CLUSEvGroupAutoPromote
-	CLUSEvAuthDefAdminPwdUnchanged // default admin's password is not changed yet. reported every 24 hours
-	CLUSEvScannerAutoScaleDisabled // when scanner autoscale is disabled by controller
-	CLUSEvCrdSkipped               // for crd Config import
+	CLUSEvAuthDefAdminPwdUnchanged   // default admin's password is not changed yet. reported every 24 hours
+	CLUSEvScannerAutoScaleDisabled   // when scanner autoscale is disabled by controller
+	CLUSEvCrdSkipped                 // for crd Config import
+	CLUSEvK8sAdmissionWebhookCChange // for admission control
 )
 
 const (
@@ -1784,9 +1802,12 @@ type CLUSAdmissionCertCloaked struct { // a superset of CLUSAdmissionCert
 }
 
 type CLUSX509Cert struct {
-	CN   string `json:"cn"`
-	Key  string `json:"key,cloak"`
-	Cert string `json:"cert,cloak"`
+	CN            string        `json:"cn"`
+	Key           string        `json:"key,cloak"`
+	Cert          string        `json:"cert,cloak"`
+	OldCert       *CLUSX509Cert `json:"oldcert,omitempty"`
+	GeneratedTime string        `json:"generated_time,omitempty"`
+	ExpiredTime   string        `json:"expired_time,omitempty"`
 }
 
 func (c *CLUSX509Cert) IsEmpty() bool {
@@ -1866,6 +1887,7 @@ const (
 
 const (
 	CLUSRootCAKey = "rootCA"
+	CLUSJWTKey    = "neuvector-jwt-signing"
 )
 
 func CLUSObjectCertKey(cn string) string {
@@ -1915,8 +1937,15 @@ func CLUSPolicyKey2AdmCfgSubkey(key string) string {
 }
 
 func CLUSCrdKey(crdType, name string) string {
-
 	return fmt.Sprintf("%s%s/%s", CLUSConfigCrdStore, crdType, name)
+}
+
+const (
+	CLUSCrdContentCount = "crdcontent_count"
+)
+
+func CLUSCrdContentCountKey() string {
+	return fmt.Sprintf("%sdefault/%s", CLUSConfigCrdStore, CLUSCrdContentCount)
 }
 
 func CLUSPolicyRuleKey2AdmRuleType(key, cfgType string) (string, string) {
@@ -1995,6 +2024,8 @@ type CLUSCrdSecurityRule struct {
 	DlpSensor       string                `json:"dlp_sensor"`        // dlp sensor defined in this crd security rule
 	WafSensor       string                `json:"waf_sensor"`        // waf sensor defined in this crd security rule
 	Uid             string                `json:"uid"`               // metadata.uid in admissionreview CREATE request
+	CrdMD5          string                `json:"md5"`               // md5 of k8s crd resource, for metadata, only include name/namespace
+
 }
 
 // Multi-Clusters (Federation)
@@ -2045,6 +2076,7 @@ const (
 	StopFedRestServer
 	UpdateProxyInfo
 	ReportTelemetryData
+	ProcessCrdQueue
 )
 
 const (
@@ -2159,7 +2191,7 @@ type TCspType int
 const (
 	CSP_NONE = iota
 	CSP_EKS
-	CSP_GKE
+	CSP_GCP
 	CSP_AKS
 	CSP_IBM
 )
