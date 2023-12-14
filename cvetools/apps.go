@@ -56,7 +56,7 @@ func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detecto
 				log.WithFields(log.Fields{
 					"name": v.VulName, "affected": v.AffectedVer, "fixin": v.FixedVer,
 					"app": app.AppName, "version": app.Version,
-				}).Debug("DEBUG")
+				}).Info("DEBUG")
 			}
 		}
 
@@ -78,7 +78,7 @@ func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detecto
 					if common.Debugs.CVEs.Contains(v.VulName) {
 						log.WithFields(log.Fields{
 							"name": v.VulName, "app": app.AppName, "version": app.Version,
-						}).Debug("DEBUG: report")
+						}).Info("DEBUG: report")
 					}
 				}
 			}
@@ -98,7 +98,7 @@ func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detecto
 					if common.Debugs.CVEs.Contains(v.VulName) {
 						log.WithFields(log.Fields{
 							"name": v.VulName, "app": app.AppName, "version": app.Version,
-						}).Debug("DEBUG: report")
+						}).Info("DEBUG: report")
 					}
 				}
 			}
@@ -130,7 +130,7 @@ func appVul2FullVul(app detectors.AppFeatureVersion, mv common.AppModuleVul) vul
 }
 
 func moduleVer2FixVer(app detectors.AppFeatureVersion, mv common.AppModuleVul) common.FeaFull {
-	ft := common.FeaFull{Name: mv.ModuleName, Namespace: app.AppName}
+	ft := common.FeaFull{Name: mv.ModuleName}
 	for i, v := range mv.FixedVer {
 		s := strings.Replace(v.OpCode, "or", "||", -1)
 		s = strings.Replace(s, "gt", ">", -1)

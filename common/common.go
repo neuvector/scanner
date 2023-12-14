@@ -50,11 +50,10 @@ type VulShort struct {
 }
 
 type FeaFull struct {
-	Name      string `json:"N"`
-	Namespace string `json:"NS"`
-	Version   string `json:"V"`
-	MinVer    string `json:"MV"`
-	AddedBy   string `json:"A"`
+	Name    string `json:"N"`
+	Version string `json:"V"`
+	MinVer  string `json:"MV"`
+	AddedBy string `json:"A"`
 }
 
 type VulFull struct {

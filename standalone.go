@@ -321,7 +321,7 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 
 	writeResultToFile(req, result, err)
 
-	fmt.Printf("Image: %s%s:%s\n", req.Registry, req.Repository, req.Tag)
+	fmt.Printf("Image: %s/%s:%s\n", req.Registry, req.Repository, req.Tag)
 	writeResultToStdout(result, showOptions)
 
 	return result
