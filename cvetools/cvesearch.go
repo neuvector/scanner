@@ -829,7 +829,7 @@ func getFullAffectedVul(avs []vulShortReport, vfs map[string]common.VulFull) []v
 		if ok {
 			for _, fts := range short.Vs.Fixin {
 				vf.FixedIn = append(vf.FixedIn, common.FeaFull{
-					Name: fts.Name, Namespace: vf.Namespace, Version: fts.Version, MinVer: fts.MinVer, AddedBy: "",
+					Name: fts.Name, Version: fts.Version, MinVer: fts.MinVer, AddedBy: "",
 				})
 			}
 			vfr := vulFullReport{Vf: vf, Ft: short.Ft}
@@ -951,7 +951,7 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 				log.WithFields(log.Fields{
 					"name": v.Name, "cpes": v.CPEs, "fixin": v.Fixin,
 					"package": ft.Package, "version": ft.Version, "ft-cpes": ft.CPEs,
-				}).Debug("DEBUG")
+				}).Info("DEBUG")
 			}
 		}
 
@@ -1017,6 +1017,14 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 			continue
 		}
 
+		if common.Debugs.Enabled {
+			if common.Debugs.CVEs.Contains(v.Name) && common.Debugs.Features.Contains(ft.Package) {
+				log.WithFields(log.Fields{
+					"name": v.Name, "cpes": v.CPEs, "fixin": v.Fixin,
+					"package": ft.Package, "version": ft.Version, "ft-cpes": ft.CPEs,
+				}).Info("DEBUG")
+			}
+		}
 		for _, fix := range v.Fixin {
 			if namespace == "ubuntu:upstream" && (strings.Contains(fix.Version, ":") || fix.Version == "#MINV#" || fix.Version == "#MAXV#") {
 				continue
@@ -1083,7 +1091,7 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 				if common.Debugs.CVEs.Contains(v.Name) {
 					log.WithFields(log.Fields{
 						"name": v.Name, "package": ft.Package, "version": ft.Version,
-					}).Debug("DEBUG: report")
+					}).Info("DEBUG: report")
 				}
 			}
 
