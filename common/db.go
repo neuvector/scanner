@@ -48,6 +48,7 @@ const (
 	DBOracle
 	DBMariner
 	DBSuse
+	DBPhoton
 	DBMax
 )
 
@@ -72,6 +73,7 @@ var DBS dbSpace = dbSpace{
 		DBAmazon:  dbBuffer{Name: "amazon"},
 		DBOracle:  dbBuffer{Name: "oracle"},
 		DBMariner: dbBuffer{Name: "mariner"},
+		DBPhoton:  dbBuffer{Name: "photon"},
 		DBSuse:    dbBuffer{Name: "suse"},
 	},
 }
@@ -122,6 +124,8 @@ func ns2String(ns string) (string, string) {
 		return "SUSE Linux", ns[5:]
 	} else if strings.HasPrefix(ns, "ubuntu:") {
 		return "Ubuntu", ns[7:]
+	} else if strings.HasPrefix(ns, "photon:") {
+		return "Photon", ns[7:]
 	}
 
 	return "", ""
@@ -733,6 +737,8 @@ var fileList = []string{
 	"amazon_full.tb",
 	"mariner_full.tb",
 	"mariner_index.tb",
+	"photon_full.tb",
+	"photon_index.tb",
 	"oracle_index.tb",
 	"oracle_full.tb",
 	"suse_index.tb",

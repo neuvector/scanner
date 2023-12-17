@@ -37,6 +37,7 @@ var alpine_db []common.VulShort = nil
 var amazon_db []common.VulShort = nil
 var oracle_db []common.VulShort = nil
 var mariner_db []common.VulShort = nil
+var photon_Db []common.VulShort = nil
 var suse_db []common.VulShort = nil
 
 var redhat_fdb map[string]common.VulFull
@@ -46,6 +47,7 @@ var alpine_fdb map[string]common.VulFull
 var amazon_fdb map[string]common.VulFull
 var oracle_fdb map[string]common.VulFull
 var mariner_fdb map[string]common.VulFull
+var photon_fdb map[string]common.VulFull
 var suse_fdb map[string]common.VulFull
 
 ///////
@@ -733,6 +735,10 @@ func os2DB(ns *detectors.Namespace) (string, int) {
 		case "mariner":
 			nsName = r[1] + ":" + r[2]
 			db = common.DBMariner
+		case "photon":
+			majorVersion := majorVersion(r[2])
+			nsName = r[1] + ":" + majorVersion
+			db = common.DBPhoton
 		case "sles":
 			db = common.DBSuse
 		case "opensuse-leap":
