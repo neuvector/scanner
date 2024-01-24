@@ -487,7 +487,12 @@ func LoadAppVulsTb(path string) (map[string][]AppModuleVul, error) {
 				vul[m] = vf
 			}
 			if m = mn[colon+1:]; len(m) > 0 {
-				vul[fmt.Sprintf("jar:%s", m)] = vf
+				key := fmt.Sprintf("jar:%s", m)
+				if _, ok := vul[key]; ok {
+					vul[key] = append(vul[key], vf...)
+				} else {
+					vul[key] = vf
+				}
 			}
 		}
 	}
