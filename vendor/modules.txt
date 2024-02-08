@@ -97,14 +97,6 @@ github.com/containerd/fifo
 github.com/containerd/ttrpc
 # github.com/containerd/typeurl v1.0.2
 github.com/containerd/typeurl
-# github.com/containers/storage v1.13.7
-github.com/containers/storage/pkg/fileutils
-github.com/containers/storage/pkg/idtools
-github.com/containers/storage/pkg/mount
-github.com/containers/storage/pkg/system
-# github.com/cri-o/cri-o v0.0.0-00010101000000-000000000000 => github.com/cri-o/cri-o v1.15.4
-github.com/cri-o/cri-o/client
-github.com/cri-o/cri-o/types
 # github.com/docker/distribution v2.7.1+incompatible => github.com/docker/distribution v2.8.0-beta.1+incompatible
 github.com/docker/distribution
 github.com/docker/distribution/digestset
@@ -181,7 +173,7 @@ github.com/mitchellh/mapstructure
 github.com/neuvector/k8s/apis/meta/v1
 github.com/neuvector/k8s/runtime
 github.com/neuvector/k8s/runtime/schema
-# github.com/neuvector/neuvector v0.0.0-20231105024949-6007c837f743
+# github.com/neuvector/neuvector v0.0.0-20240208035950-2370f861f65c
 ## explicit
 github.com/neuvector/neuvector/controller/api
 github.com/neuvector/neuvector/share
@@ -359,6 +351,8 @@ google.golang.org/protobuf/types/known/durationpb
 google.golang.org/protobuf/types/known/timestamppb
 # gopkg.in/inf.v0 v0.9.1
 gopkg.in/inf.v0
+# gopkg.in/yaml.v3 v3.0.1
+gopkg.in/yaml.v3
 # k8s.io/api v0.22.5 => k8s.io/api v0.20.15
 k8s.io/api/admission/v1beta1
 k8s.io/api/authentication/v1
