@@ -675,6 +675,8 @@ github.com/neuvector/k8s v1.2.1-0.20220214174348-d0b3f377461e h1:y7w21QaxlBzeRNW
 github.com/neuvector/k8s v1.2.1-0.20220214174348-d0b3f377461e/go.mod h1:djxl7Js+tfAJJgxKpeN3lnFZT6jRhl1Ikkgd/wMrLQU=
 github.com/neuvector/neuvector v0.0.0-20240208035950-2370f861f65c h1:3aT+XcwEhDJQwcilfVFV9EwFP8ZZHwmBXaqh+hrNCVg=
 github.com/neuvector/neuvector v0.0.0-20240208035950-2370f861f65c/go.mod h1:jSdathPtRTSMDrQz5m/WMYJA/zfVR8tGVfuthRCZo6A=
+github.com/neuvector/neuvector v0.0.0-20240209193646-c22cb526acf9 h1:zvW7dkNNpnusgSVcSaGoU666l1EQ/mnpmkRhXret8yM=
+github.com/neuvector/neuvector v0.0.0-20240209193646-c22cb526acf9/go.mod h1:jSdathPtRTSMDrQz5m/WMYJA/zfVR8tGVfuthRCZo6A=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
 github.com/olekukonko/tablewriter v0.0.0-20170122224234-a0225b3f23b5/go.mod h1:vsDQFd/mU46D+Z4whnwzcISnGGzXWMclvtLoiIKAKIo=
