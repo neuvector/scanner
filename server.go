@@ -14,7 +14,6 @@ import (
 
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/cluster"
-	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/system"
 	"github.com/neuvector/scanner/cvetools"
 )
@@ -92,7 +91,7 @@ func (rs *rpcService) ScanRunning(ctx context.Context, req *share.ScanRunningReq
 	}
 
 	sys := system.NewSystemTools()
-	cveTools := cvetools.NewScanTools("", scan.NewScanUtil(sys))
+	cveTools := cvetools.NewScanTools("", sys)
 	return cveTools.ScanImageData(data)
 }
 
@@ -103,7 +102,7 @@ func (rs *rpcService) ScanImageData(ctx context.Context, data *share.ScanData) (
 	}
 
 	sys := system.NewSystemTools()
-	cveTools := cvetools.NewScanTools("", scan.NewScanUtil(sys))
+	cveTools := cvetools.NewScanTools("", sys)
 	return cveTools.ScanImageData(data)
 }
 
@@ -117,7 +116,7 @@ func (rs *rpcService) ScanImage(ctx context.Context, req *share.ScanImageRequest
 	}
 
 	sys := system.NewSystemTools()
-	cveTools := cvetools.NewScanTools("", scan.NewScanUtil(sys))
+	cveTools := cvetools.NewScanTools("", sys)
 	return cveTools.ScanImage(ctx, req, "")
 }
 
@@ -128,7 +127,7 @@ func (rs *rpcService) ScanAppPackage(ctx context.Context, req *share.ScanAppRequ
 	}
 
 	sys := system.NewSystemTools()
-	cveTools := cvetools.NewScanTools("", scan.NewScanUtil(sys))
+	cveTools := cvetools.NewScanTools("", sys)
 	return cveTools.ScanAppPackage(req, "")
 }
 
@@ -139,7 +138,7 @@ func (rs *rpcService) ScanAwsLambda(ctx context.Context, req *share.ScanAwsLambd
 	}
 
 	sys := system.NewSystemTools()
-	cveTools := cvetools.NewScanTools("", scan.NewScanUtil(sys))
+	cveTools := cvetools.NewScanTools("", sys)
 	return cveTools.ScanAwsLambda(req, "")
 }
 
