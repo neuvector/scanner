@@ -20,6 +20,7 @@ import (
 	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/scan/registry"
 	"github.com/neuvector/neuvector/share/scan/secrets"
+	"github.com/neuvector/neuvector/share/system"
 	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
 	"github.com/neuvector/scanner/detectors"
@@ -97,12 +98,12 @@ var aliasMap map[string]string = map[string]string{
 	"docker-ce": "docker",
 }
 
-func NewScanTools(rtSock string, scanUtil *scan.ScanUtil) *ScanTools {
+func NewScanTools(rtSock string, sys *system.SystemTools) *ScanTools {
 	cveDB := common.NewCveDB()
 	return &ScanTools{
-		CveDB:    *cveDB,
-		RtSock:   rtSock,
-		ScanTool: scanUtil,
+		CveDB:  *cveDB,
+		RtSock: rtSock,
+		sys:    sys,
 	}
 }
 
@@ -244,7 +245,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	}
 
 	var info *scan.ImageInfo
-	var layerFiles map[string]*scan.LayerFiles
+	var lfs map[string]*layerFiles
 	var baseLayers utils.Set = utils.NewSet()
 	var secret *share.ScanSecretResult = &share.ScanSecretResult{
 		Error: share.ScanErrorCode_ScanErrNone,
@@ -305,14 +306,14 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 		}
 
 		// There is a download timeout inside this function
-		layerFiles, errCode = rc.DownloadRemoteImage(ctx, req.Repository, imgPath, info.Layers, info.Sizes)
+		lfs, errCode = DownloadRemoteImage(ctx, rc, req.Repository, imgPath, info.Layers, info.Sizes)
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
 			return result, nil
 		}
 
 		layers = info.Layers
-		for _, lf := range layerFiles {
+		for _, lf := range lfs {
 			result.Size += lf.Size
 		}
 		result.ImageID = info.ID
@@ -330,7 +331,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 				return result, nil
 			}
 
-			meta, errCode := cv.ScanTool.GetLocalImageMeta(ctx, baseRepo, baseTag, cv.RtSock)
+			meta, errCode := cv.GetLocalImageMeta(ctx, baseRepo, baseTag)
 			if errCode != share.ScanErrorCode_ScanErrNone {
 				result.Error = errCode
 				return result, nil
@@ -343,13 +344,13 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 			log.WithFields(log.Fields{"baseImage": req.BaseImage, "base": baseLayers, "layers": len(meta.Layers)}).Debug()
 		}
 
-		info, layerFiles, layers, errCode = cv.ScanTool.LoadLocalImage(ctx, req.Repository, req.Tag, cv.RtSock, imgPath)
+		info, lfs, layers, errCode = cv.LoadLocalImage(ctx, req.Repository, req.Tag, imgPath)
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
 			return result, nil
 		}
 
-		for _, lf := range layerFiles {
+		for _, lf := range lfs {
 			result.Size += lf.Size
 		}
 		result.ImageID = info.ID
@@ -420,7 +421,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	mergedApps := make(map[string][]detectors.AppFeatureVersion)
 	for _, l := range info.Layers {
 		isBase := baseLayers.Contains(l)
-		if lf, ok := layerFiles[l]; ok {
+		if lf, ok := lfs[l]; ok {
 			var hasRpmPackages bool
 			for filename, _ := range lf.Pkgs {
 				if scan.RPMPkgFiles.Contains(filename) {
@@ -502,7 +503,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 					Size:   0,
 				}
 				result.Layers[i] = l
-			} else if lf, ok := layerFiles[layer]; ok {
+			} else if lf, ok := lfs[layer]; ok {
 				if lf.Size > 0 {
 					var vuls []*share.ScanVulnerability
 
@@ -673,8 +674,8 @@ func (cv *ScanTools) ScanAwsLambda(req *share.ScanAwsLambdaRequest, imgPath stri
 
 var releaseRegexp = regexp.MustCompile(`^([a-z-]+):([0-9.]+)`)
 
-func (cv *ScanTools) doScan(layerFiles *layerScanFiles, imageNs *detectors.Namespace) (*detectors.Namespace, share.ScanErrorCode, []*share.ScanVulnerability, []detectors.FeatureVersion, []detectors.AppFeatureVersion) {
-	features, namespace, apps, serr := cv.getFeatures(layerFiles, imageNs)
+func (cv *ScanTools) doScan(lsfs *layerScanFiles, imageNs *detectors.Namespace) (*detectors.Namespace, share.ScanErrorCode, []*share.ScanVulnerability, []detectors.FeatureVersion, []detectors.AppFeatureVersion) {
+	features, namespace, apps, serr := cv.getFeatures(lsfs, imageNs)
 
 	var ns detectors.Namespace
 	if namespace != nil {
@@ -859,11 +860,11 @@ func getAffectedVul(mv map[string][]common.VulShort, features []detectors.Featur
 	return avs
 }
 
-func (cv *ScanTools) getFeatures(layerFiles *layerScanFiles, imageNs *detectors.Namespace) ([]detectors.FeatureVersion, *detectors.Namespace, []detectors.AppFeatureVersion, share.ScanErrorCode) {
+func (cv *ScanTools) getFeatures(lsfs *layerScanFiles, imageNs *detectors.Namespace) ([]detectors.FeatureVersion, *detectors.Namespace, []detectors.AppFeatureVersion, share.ScanErrorCode) {
 	var namespace *detectors.Namespace
 
 	// Detect namespace.
-	layerNs := detectors.DetectNamespace(layerFiles.pkgs)
+	layerNs := detectors.DetectNamespace(lsfs.pkgs)
 	// use image namespace if no namespace find in current layer
 	if imageNs != nil {
 		namespace = imageNs
@@ -876,10 +877,10 @@ func (cv *ScanTools) getFeatures(layerFiles *layerScanFiles, imageNs *detectors.
 		nsName = namespace.Name
 	}
 
-	features, err := detectors.DetectFeatures(nsName, layerFiles.pkgs, cv.ExpandPath)
+	features, err := detectors.DetectFeatures(nsName, lsfs.pkgs, cv.ExpandPath)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("get features error")
-		return features, namespace, layerFiles.apps, share.ScanErrorCode_ScanErrPackage
+		return features, namespace, lsfs.apps, share.ScanErrorCode_ScanErrPackage
 	}
 
 	// get the nginx package from os dpkg or rpm and append it to application package
@@ -887,13 +888,13 @@ func (cv *ScanTools) getFeatures(layerFiles *layerScanFiles, imageNs *detectors.
 		if ft.Package == "nginx" {
 			nginx := scan.AppPackage{AppName: "nginx", ModuleName: "nginx", Version: ft.Version.String(), FileName: "nginx"}
 			app := detectors.AppFeatureVersion{AppPackage: nginx, ModuleVuls: make([]detectors.ModuleVul, 0), InBase: ft.InBase}
-			layerFiles.apps = append(layerFiles.apps, app)
+			lsfs.apps = append(lsfs.apps, app)
 		} else if ft.Package == "openssl" && namespace == nil {
 			// add the openssl to the app to compare
 			ver := ft.Version.String()
 			ssl := scan.AppPackage{AppName: "openssl", ModuleName: "openssl", Version: ver, FileName: "openssl"}
 			app := detectors.AppFeatureVersion{AppPackage: ssl, ModuleVuls: make([]detectors.ModuleVul, 0), InBase: ft.InBase}
-			layerFiles.apps = append(layerFiles.apps, app)
+			lsfs.apps = append(lsfs.apps, app)
 			features[i].Package = "opensslxx"
 		} else if ft.Package == "busybox" && namespace == nil {
 			namespace = &detectors.Namespace{Name: "busybox" + ":" + ft.Version.String()}
@@ -902,12 +903,12 @@ func (cv *ScanTools) getFeatures(layerFiles *layerScanFiles, imageNs *detectors.
 			ver := ft.Version.String()
 			bbox := scan.AppPackage{AppName: "busybox", ModuleName: "busybox", Version: ver, FileName: "busybox"}
 			app := detectors.AppFeatureVersion{AppPackage: bbox, ModuleVuls: make([]detectors.ModuleVul, 0), InBase: ft.InBase}
-			layerFiles.apps = append(layerFiles.apps, app)
+			lsfs.apps = append(lsfs.apps, app)
 		}
 	}
 
-	log.WithFields(log.Fields{"apps": len(layerFiles.apps), "features": len(features), "namespace": namespace}).Debug()
-	return features, namespace, layerFiles.apps, share.ScanErrorCode_ScanErrNone
+	log.WithFields(log.Fields{"apps": len(lsfs.apps), "features": len(features), "namespace": namespace}).Debug()
+	return features, namespace, lsfs.apps, share.ScanErrorCode_ScanErrNone
 }
 
 func isInVulnWindow(window featureVulnWindow, ft detectors.FeatureVersion, minVer utils.Version, maxVer utils.Version) bool {
@@ -1432,7 +1433,7 @@ func getSatisfiedSignatureVerifiersForImage(rc *scan.RegClient, req *share.ScanI
 
 	log.WithFields(log.Fields{"imageDigest": info.Digest}).Info("Fetching signature data for image ...")
 
-	signatureData, errCode := rc.GetSignatureDataForImage(ctx, req.Repository, info.Digest)
+	signatureData, errCode := getSignatureDataForImage(ctx, rc, req.Repository, info.Digest)
 	if errCode != share.ScanErrorCode_ScanErrNone {
 		sigInfo.VerificationError = errCode
 		if errCode == share.ScanErrorCode_ScanErrImageNotFound {

@@ -15,7 +15,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/neuvector/neuvector/share"
-	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/system"
 	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
@@ -103,7 +102,7 @@ func main() {
 
 	// acquire tool
 	sys := system.NewSystemTools()
-	cveTools = cvetools.NewScanTools(*rtSock, scan.NewScanUtil(sys))
+	cveTools = cvetools.NewScanTools(*rtSock, sys)
 
 	// create an imgPath from the input file
 	var imageWorkingPath string

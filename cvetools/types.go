@@ -1,7 +1,7 @@
 package cvetools
 
 import (
-	"github.com/neuvector/neuvector/share/scan"
+	"github.com/neuvector/neuvector/share/system"
 	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
 	"github.com/neuvector/scanner/detectors"
@@ -22,7 +22,7 @@ type ScanTools struct {
 	common.CveDB
 	RtSock    string
 	SupportOs utils.Set
-	ScanTool  *scan.ScanUtil
+	sys       *system.SystemTools
 }
 
 type vulShortReport struct {
