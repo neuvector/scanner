@@ -10,17 +10,16 @@ import (
 	"strings"
 
 	"github.com/neuvector/neuvector/share"
-	"github.com/neuvector/neuvector/share/scan"
 	log "github.com/sirupsen/logrus"
 )
 
 type sigstoreInterfaceConfig struct {
 	ImageDigest   string                      `json:"ImageDigest"`
 	RootsOfTrust  []share.SigstoreRootOfTrust `json:"RootsOfTrust"`
-	SignatureData scan.SignatureData          `json:"SignatureData"`
+	SignatureData SignatureData               `json:"SignatureData"`
 }
 
-func verifyImageSignatures(imgDigest string, rootsOfTrust []*share.SigstoreRootOfTrust, sigData scan.SignatureData, proxyURL string) (verifiers []string, err error) {
+func verifyImageSignatures(imgDigest string, rootsOfTrust []*share.SigstoreRootOfTrust, sigData SignatureData, proxyURL string) (verifiers []string, err error) {
 	confPath, confFile, err := createConfFile(imgDigest)
 	if err != nil {
 		return verifiers, fmt.Errorf("could not create interface config file for image %s: %s", imgDigest, err.Error())
@@ -45,7 +44,7 @@ func verifyImageSignatures(imgDigest string, rootsOfTrust []*share.SigstoreRootO
 	return parseVerifiersFromBinaryOutput(imgDigest, binaryOutput), nil
 }
 
-func getConfJSON(imgDigest string, rootsOfTrust []*share.SigstoreRootOfTrust, sigData scan.SignatureData) ([]byte, error) {
+func getConfJSON(imgDigest string, rootsOfTrust []*share.SigstoreRootOfTrust, sigData SignatureData) ([]byte, error) {
 	dereferencedRoots := []share.SigstoreRootOfTrust{}
 	for _, rootOfTrust := range rootsOfTrust {
 		dereferencedRoots = append(dereferencedRoots, *rootOfTrust)
