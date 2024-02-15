@@ -151,6 +151,11 @@ var DebianReleasesMapping = map[string]string{
 // --
 
 const ImageWorkingPath = "/tmp/images"
+const ImageLayersCachePath = "/tmp/images/caches"
+const ImageLayerLockFile = ImageLayersCachePath + "/lock"
+const ImageLayerCacherFile = ImageLayersCachePath + "/cacher.json"
+const MaxRawDataCacherSizeMB = 0  // disabled
+const MaxRecordCacherSizeMB = 1000
 
 func GetImagePath(uid string) string {
 	return filepath.Join(ImageWorkingPath, uid)

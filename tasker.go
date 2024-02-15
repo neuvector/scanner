@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -31,10 +32,12 @@ type Tasker struct {
 	taskPath   string
 	rtSock     string // Container socket URL
 	sys        *system.SystemTools
+	maxCacherRawDataSize int64
+	maxCacherRecordSize  int64
 }
 
 /////
-func newTasker(taskPath, rtSock string, showDebug bool, sys *system.SystemTools) *Tasker {
+func newTasker(taskPath, rtSock string, showDebug bool, sys *system.SystemTools, maxCacherRawDataSize, maxCacherRecordSize int64) *Tasker {
 	log.WithFields(log.Fields{"showDebug": showDebug}).Debug()
 
 	return &Tasker{
@@ -43,6 +46,8 @@ func newTasker(taskPath, rtSock string, showDebug bool, sys *system.SystemTools)
 		rtSock:     rtSock,   // Container socket URL
 		bShowDebug: showDebug,
 		sys:        sys,
+		maxCacherRawDataSize: maxCacherRawDataSize,  // MB
+		maxCacherRecordSize: maxCacherRecordSize, // MB
 	}
 }
 
@@ -58,6 +63,8 @@ func (ts *Tasker) putInputFile(request interface{}) (string, []string, error) {
 		data, _ = json.Marshal(req)
 		args = append(args, "-t", "reg")
 		args = append(args, "-u", ts.rtSock)
+		args = append(args, "-maxrac", strconv.FormatInt(ts.maxCacherRawDataSize, 10))
+		args = append(args, "-maxrec", strconv.FormatInt(ts.maxCacherRecordSize, 10))
 	case share.ScanAppRequest:
 		req := request.(share.ScanAppRequest)
 		data, _ = json.Marshal(req)

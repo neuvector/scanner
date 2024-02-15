@@ -20,9 +20,10 @@ type updateData struct {
 
 type ScanTools struct {
 	common.CveDB
-	RtSock    string
-	SupportOs utils.Set
-	sys       *system.SystemTools
+	RtSock      string
+	SupportOs   utils.Set
+	sys         *system.SystemTools
+	LayerCacher *ImageLayerCacher
 }
 
 type vulShortReport struct {

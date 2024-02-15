@@ -39,6 +39,10 @@
 #define ENV_SCANNER_BASE_IMAGE  "SCANNER_BASE_IMAGE"
 #define ENV_SCANNER_CTRL_USER   "SCANNER_CTRL_API_USERNAME"
 #define ENV_SCANNER_CTRL_PASS   "SCANNER_CTRL_API_PASSWORD"
+#define ENV_SCANNER_CTRL_PASS   "SCANNER_CTRL_API_PASSWORD"
+
+#define ENV_CACHE_RAW_MAX       "MAX_CACHE_RAW_MB"
+#define ENV_CACHE_RECORD_MAX    "MAX_CACHE_RECORD_MB"
 
 enum {
     PROC_SCANNER = 0,
@@ -117,7 +121,7 @@ static pid_t fork_exec(int i)
     char *args[PROC_ARGS_MAX], *join, *adv, *url;
     char *join_port, *adv_port;
     char *license, *registry, *repository, *tag, *user, *pass, *base, *api_user, *api_pass, *enable;
-    char *on_demand;
+    char *on_demand, *cache_layer_max, *cache_record_max;
     int a;
 
     switch (i) {
@@ -222,7 +226,14 @@ static pid_t fork_exec(int i)
             args[a ++] = "--ctrl_password";
             args[a ++] = api_pass;
         }
-
+        if ((cache_layer_max = getenv(ENV_CACHE_RAW_MAX)) != NULL) {
+               args[a ++] = "-maxrac";
+               args[a ++] = cache_layer_max;
+        }
+        if ((cache_record_max = getenv(ENV_CACHE_RECORD_MAX)) != NULL) {
+               args[a ++] = "-maxrec";
+               args[a ++] = cache_record_max;
+        }
         args[a] = NULL;
         break;
     default:
