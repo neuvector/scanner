@@ -178,7 +178,8 @@ func main() {
 	show := flag.String("show", "", "Standalone Mode: Stdout print options, cmd,module")
 	getVer := flag.Bool("v", false, "show cve database version")
 	debug := flag.String("debug", "", "debug filters")
-
+	maxCacherRawDataSize := flag.Int64("maxrac", common.MaxRawDataCacherSizeMB, "maximum raw data cacher size in MB")
+	maxCacherRecordSize := flag.Int64("maxrec", common.MaxRecordCacherSizeMB, "maximum record cacher size in MB")
 	flag.Usage = usage
 	flag.Parse()
 
@@ -249,7 +250,8 @@ func main() {
 	}
 
 	if *noTask == false {
-		scanTasker = newTasker(taskerPath, *rtSock, showTaskDebug, sys)
+		log.WithFields(log.Fields{"raw": *maxCacherRawDataSize, "record": *maxCacherRecordSize}).Info("Scan cacher maximum sizes")
+		scanTasker = newTasker(taskerPath, *rtSock, showTaskDebug, sys, *maxCacherRawDataSize, *maxCacherRecordSize)
 		if scanTasker != nil {
 			log.Debug("Use scannerTask")
 			defer scanTasker.Close()
