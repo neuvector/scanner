@@ -752,51 +752,49 @@ func os2DB(ns *detectors.Namespace) (string, int) {
 
 func (cv *ScanTools) startScan(features []detectors.FeatureVersion, ns *detectors.Namespace, appPkg []detectors.AppFeatureVersion) (share.ScanErrorCode, []*share.ScanVulnerability) {
 	var db int
-	var vss []common.VulShort
-	var vfs map[string]common.VulFull
 	var err error
 
+	vulList := make([]*share.ScanVulnerability, 0)
+
 	nsName, db := os2DB(ns)
-	if db == common.DBMax {
+	if db != common.DBMax {
+		log.Info("namespace maps to: ", nsName)
+
+		if common.DBS.Buffers[db].Short == nil {
+			common.DBS.Buffers[db].Short, err = common.LoadVulnerabilityIndex(cv.ExpandPath, common.DBS.Buffers[db].Name)
+			if err != nil {
+				log.WithFields(log.Fields{"error": err}).Error("Load Database error:", common.DBS.Buffers[db].Name)
+				return share.ScanErrorCode_ScanErrDatabase, nil
+			}
+			common.DBS.Buffers[db].Full, err = common.LoadFullVulnerabilities(cv.ExpandPath, common.DBS.Buffers[db].Name)
+			if err != nil {
+				log.WithFields(log.Fields{"error": err}).Error("Load full Database error:", common.DBS.Buffers[db].Name)
+				return share.ScanErrorCode_ScanErrDatabase, nil
+			}
+		}
+
+		vss := common.DBS.Buffers[db].Short
+		vfs := common.DBS.Buffers[db].Full
+
+		log.WithFields(log.Fields{"db": common.DBS.Buffers[db].Name, "namespace": nsName, "short": len(vss), "full": len(vfs)}).Info("Load Database")
+
+		if vss != nil {
+			var vuls []vulFullReport
+
+			// build feature -> vul version map for search use
+			mv := makeFeatureMap(vss, nsName)
+			log.WithFields(log.Fields{"count": len(mv)}).Info("Packages in database to be examed")
+
+			// get the vulnerbilitys from the hash map, associate them with the modules in features.
+			avsr := getAffectedVul(mv, features, nsName)
+			updateModuleCVEStatus(nsName, features, vfs)
+
+			// get the full vulneribility description from full database
+			vuls = getFullAffectedVul(avsr, vfs)
+			vulList = append(vulList, getVulItemList(vuls, common.DBS.Buffers[db].Name)...)
+		}
+	} else {
 		log.WithFields(log.Fields{"os": nsName}).Info("Unsupported OS")
-		return share.ScanErrorCode_ScanErrNone, make([]*share.ScanVulnerability, 0)
-	}
-
-	log.Info("namespace maps to: ", nsName)
-
-	if common.DBS.Buffers[db].Short == nil {
-		common.DBS.Buffers[db].Short, err = common.LoadVulnerabilityIndex(cv.ExpandPath, common.DBS.Buffers[db].Name)
-		if err != nil {
-			log.WithFields(log.Fields{"error": err}).Error("Load Database error:", common.DBS.Buffers[db].Name)
-			return share.ScanErrorCode_ScanErrDatabase, nil
-		}
-		common.DBS.Buffers[db].Full, err = common.LoadFullVulnerabilities(cv.ExpandPath, common.DBS.Buffers[db].Name)
-		if err != nil {
-			log.WithFields(log.Fields{"error": err}).Error("Load full Database error:", common.DBS.Buffers[db].Name)
-			return share.ScanErrorCode_ScanErrDatabase, nil
-		}
-	}
-
-	vss = common.DBS.Buffers[db].Short
-	vfs = common.DBS.Buffers[db].Full
-
-	log.WithFields(log.Fields{"db": common.DBS.Buffers[db].Name, "namespace": nsName, "short": len(vss), "full": len(vfs)}).Info("Load Database")
-
-	var vulList []*share.ScanVulnerability
-	var vuls []vulFullReport
-
-	if vss != nil {
-		// build feature -> vul version map for search use
-		mv := makeFeatureMap(vss, nsName)
-		log.WithFields(log.Fields{"count": len(mv)}).Info("Packages in database to be examed")
-
-		// get the vulnerbilitys from the hash map, associate them with the modules in features.
-		avsr := getAffectedVul(mv, features, nsName)
-		updateModuleCVEStatus(nsName, features, vfs)
-
-		// get the full vulneribility description from full database
-		vuls = getFullAffectedVul(avsr, vfs)
-		vulList = append(vulList, getVulItemList(vuls, common.DBS.Buffers[db].Name)...)
 	}
 
 	if len(appPkg) != 0 {
