@@ -365,7 +365,10 @@ func (t *Table) renderRowsHeader(out *strings.Builder) {
 func (t *Table) renderTitle(out *strings.Builder) {
 	if t.title != "" {
 		colors := t.style.Title.Colors
-		colorsBorder := t.getBorderColors(renderHint{isTitleRow: true})
+		colorsBorder := colors
+		if t.style.Options.DoNotColorBordersAndSeparators {
+			colorsBorder = nil
+		}
 		rowLength := t.maxRowLength
 		if t.allowedRowLength != 0 && t.allowedRowLength < rowLength {
 			rowLength = t.allowedRowLength
