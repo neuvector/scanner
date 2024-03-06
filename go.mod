@@ -43,9 +43,9 @@ require (
 	github.com/aws/aws-sdk-go v1.42.36 // indirect
 	github.com/docker/docker v20.10.12+incompatible // indirect
 	github.com/google/uuid v1.3.0
-	github.com/jedib0t/go-pretty/v6 v6.4.6
+	github.com/jedib0t/go-pretty/v6 v6.4.4
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/neuvector/neuvector v0.0.0-20240214073000-e6d7d91c234d
+	github.com/neuvector/neuvector v0.0.0-20240227190857-91dfa049536e
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.2 // indirect

@@ -37,6 +37,10 @@ func GetGlobalAddrs() map[string]NetIface {
 	}
 
 	for _, link := range links {
+		if link == nil || link.Attrs() == nil {
+			continue
+		}
+		
 		attrs := link.Attrs()
 
 		iface := NetIface{
@@ -82,6 +86,9 @@ func GetRouteIfaceAddr(ip net.IP) (string, *net.IPNet, error) {
 	if err != nil {
 		return "", nil, err
 	}
+	if link == nil || link.Attrs() == nil {
+		return "", nil, errors.New("no link to address")
+	}
 	if link.Attrs().Flags&net.FlagLoopback != 0 {
 		// If route is resolved to loopback interface, then it's a local IP
 		return link.Attrs().Name, &net.IPNet{IP: ip, Mask: net.CIDRMask(0, 128)}, nil
@@ -106,6 +113,10 @@ func GetNetLinkAttrs() map[string]NetLinkAttrs {
 	}
 
 	for _, link := range links {
+		if link == nil || link.Attrs() == nil {
+			continue
+		}
+
 		attrs := link.Attrs()
 
 		linkAttr := NetLinkAttrs{
