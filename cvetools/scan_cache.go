@@ -237,14 +237,14 @@ func (lc *ImageLayerCacher) pruneRecordCache(name string, cacher *CacherData, ke
 		}
 
 		if cc, ok := cacher.CacheRecordMap[key]; ok {
-			// log.WithFields(log.Fields{"path": cc.Path, "size": cc.Size, "last": cc.RefLast, "cnt": cc.RefCnt}).Debug("remove")
+			log.WithFields(log.Fields{"path": cc.Path, "size": cc.Size, "last": cc.RefLast, "cnt": cc.RefCnt}).Debug("remove")
 			removedSize += cc.Size
 			os.RemoveAll(cc.Path)
 			delete(cacher.CacheRecordMap, key)
 		}
     }
 	cacher.CurRecordSize -= removedSize
-	log.WithFields(log.Fields{"cacher": cacher, "removed": removedSize}).Debug("done")
+	log.WithFields(log.Fields{"removed": removedSize}).Debug("done")
 }
 
 ///////////////// Layer data caches ////////////////
@@ -320,7 +320,7 @@ func (lc *ImageLayerCacher) pruneLayerDataCache(cacher *CacherData, keeper utils
 
 	if len(keys) > pickVictimCnt {
 		sort.SliceStable(keys, func(i, j int) bool {
-			return cacher.CacheRecordMap[keys[i]].RefLast.Before(cacher.CacheRecordMap[keys[j]].RefLast)
+			return cacher.CacheLayerMap[keys[i]].RefLast.Before(cacher.CacheLayerMap[keys[j]].RefLast)
 			// return cacher.CacheLayerMap[keys[i]].RefCnt < cacher.CacheLayerMap[keys[j]].RefCnt
 		})
 	}
@@ -332,14 +332,14 @@ func (lc *ImageLayerCacher) pruneLayerDataCache(cacher *CacherData, keeper utils
 		}
 
 		if cc, ok := cacher.CacheLayerMap[layerID]; ok {
-			// log.WithFields(log.Fields{"path": cc.Path, "size": cc.Size, "last": cc.RefLast, "cnt": cc.RefCnt}).Debug("remove")
+			log.WithFields(log.Fields{"path": cc.Path, "size": cc.Size, "last": cc.RefLast, "cnt": cc.RefCnt}).Debug("remove")
 			removedSize += cc.Size
 			os.RemoveAll(cc.Path)
 			delete(cacher.CacheLayerMap, layerID)
 		}
     }
 	cacher.CurLayerSize -= removedSize
-	log.WithFields(log.Fields{"cacher": cacher, "removed": removedSize}).Debug("done")
+	log.WithFields(log.Fields{"removed": removedSize}).Debug("done")
 }
 
 
