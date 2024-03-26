@@ -148,7 +148,7 @@ github.com/hashicorp/go-version
 github.com/hashicorp/golang-lru/simplelru
 # github.com/hashicorp/serf v0.9.7
 github.com/hashicorp/serf/coordinate
-# github.com/jedib0t/go-pretty/v6 v6.4.4
+# github.com/jedib0t/go-pretty/v6 v6.4.6
 ## explicit
 github.com/jedib0t/go-pretty/v6/table
 github.com/jedib0t/go-pretty/v6/text
@@ -173,7 +173,7 @@ github.com/mitchellh/mapstructure
 github.com/neuvector/k8s/apis/meta/v1
 github.com/neuvector/k8s/runtime
 github.com/neuvector/k8s/runtime/schema
-# github.com/neuvector/neuvector v0.0.0-20240227190857-91dfa049536e
+# github.com/neuvector/neuvector v0.0.0-20240326081851-904f4f14d54f
 ## explicit
 github.com/neuvector/neuvector/controller/api
 github.com/neuvector/neuvector/share
@@ -248,7 +248,7 @@ golang.org/x/net/trace
 # golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.0.0-20220209214540-3681064d5158
+# golang.org/x/sys v0.1.0
 golang.org/x/sys/execabs
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
