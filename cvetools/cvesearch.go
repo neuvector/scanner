@@ -246,19 +246,20 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	}
 
 	var info *scan.ImageInfo
-	var layerFiles map[string]*LayerFiles
 	var baseLayers utils.Set = utils.NewSet()
-	var secret *share.ScanSecretResult = &share.ScanSecretResult{
+	var secret *share.ScanSecretResult = &share.ScanSecretResult {
 		Error: share.ScanErrorCode_ScanErrNone,
 		Logs:  make([]*share.ScanSecretLog, 0),
 	}
 	// var layeredSecret []*share.ScanSecretResult
 	var setidPerm []*share.ScanSetIdPermLog
-	var layers []string
-	var bFoundSecretLogs bool
-	var fmap ContainerFileMap
-	keepers := utils.NewSet()
-
+	layers := make([]string, 0)
+	layerFiles := make(map[string]*LayerFiles)
+	secretLogs := make(map[string][]share.CLUSSecretLog)
+	setidPermLogs := make(map[string][]share.CLUSSetIdPermLog)
+	fmap := make(map[string][]string)
+	removed := make(map[string][]string)
+	bFromRawData := true
 	// for layered storages
 	if imgPath == "" { // not-defined yet
 		imgPath = common.CreateImagePath("")
@@ -291,7 +292,6 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 		}
 
 		rc := scan.NewRegClient(req.Registry, req.Token, req.Username, req.Password, req.Proxy, new(httptrace.NopTracer))
-
 		info, errCode = rc.GetImageInfo(ctx, req.Repository, req.Tag, registry.ManifestRequest_Default)
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
@@ -308,49 +308,30 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 			return result, nil
 		}
 
-		bForceDownload := true
-		if cv.LayerCacher != nil {
-			var files []string
-			var lf LayerFiles
-			for _, layerID := range info.Layers {
-				if layerID == "" {
-					continue
-				}
-				files = append(files, cv.LayerCacher.RecordName(layerID, &lf))
-			}
-
-			if miss, ok := cv.LayerCacher.IsExistInCache(files); ok {
-				log.Debug("Hit: sublayers")
-				bForceDownload = false
-			} else {
-				log.WithFields(log.Fields{"miss": miss}).Debug("Miss: sublayer")
-			}
-
-			if req.ScanSecrets {
-				var secretLogs SecretPermLogs
-				if _, err := cv.LayerCacher.ReadRecordCache(info.ID, &secretLogs); err == nil {
-					// log.WithFields(log.Fields{"fpath": fpath}).Debug()
-					bFoundSecretLogs = true
-					secret =  &share.ScanSecretResult{
-								Error: share.ScanErrorCode_ScanErrNone,
-								Logs: secretLogs.SecretLogs, }
-					setidPerm = secretLogs.SetidPerm
-				} else {
-					bForceDownload = true // reset to the default value
-				}
-			}
-		}
-
+		bFromRawData = (cv.LayerCacher == nil)
 		// There is a download timeout inside this function
-		layerFiles, errCode = DownloadRemoteImage(ctx, rc, req.Repository, imgPath, info.Layers, info.Sizes, cv.LayerCacher, keepers, bForceDownload)
+		layerRecords, errCode := DownloadRemoteImage(ctx, rc, req.Repository, imgPath, info.Layers, info.Sizes, cv.LayerCacher)
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
 			return result, nil
 		}
 
 		layers = info.Layers
-		for _, lf := range layerFiles {
-			result.Size += lf.Size
+		for id, lr := range layerRecords {
+			layerFiles[id] = lr.Modules
+			result.Size += lr.Modules.Size
+			if !bFromRawData {
+				if lr.Secrets != nil {
+					secretLogs[id] = lr.Secrets.SecretLogs
+					setidPermLogs[id] = lr.Secrets.SetidPerm
+				}
+				if lr.Files != nil {
+					fmap[id] = lr.Files
+				}
+				if lr.Removed != nil {
+					removed[id] = lr.Removed
+				}
+			}
 		}
 		result.ImageID = info.ID
 		result.Digest = info.Digest
@@ -416,51 +397,34 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	}
 
 	// Build a map for whole image
-	var bFoundFmap bool
-	if cv.LayerCacher != nil {
-		if _, err := cv.LayerCacher.ReadRecordCache(info.ID, &fmap); err == nil {
-			log.WithFields(log.Fields{"ID": info.ID}).Debug("reused fmap")
-			bFoundFmap = true
-		}
-	}
-
-	if !bFoundFmap {
-		var fpaths, layerIDs []string
-		fmap.FileMap = make(map[string]string)  // [path]:[file from untar layers]
-		bFromRawData := true
+	fileMap := make(map[string]string)
+	if bFromRawData {
+		// Build a map for whole image, v1: top-bottom, reverse order
+		log.Info("build image map")
 		for i := len(layers) - 1; i >= 0; i-- {
-			if layers[i] == "" {
-				continue
-			}
-			layerIDs = append(layerIDs, layers[i])
 			layerPath := filepath.Join(imgPath, layers[i])
-			fpaths = append(fpaths, layerPath)
-			if _, err := os.Stat(layerPath); err != nil {
-				bFromRawData = false
+			if _, _, err := collectImageFileMap(layerPath, fileMap); err != nil {
+				log.WithFields(log.Fields{"error": err, "layer": layerPath}).Error("virtual image map")
+				break
 			}
 		}
-
-		if bFromRawData {
-			log.Debug("build image map")
-			for _, layerPath := range fpaths {
-				collectImageFileMap(layerPath, fmap.FileMap)
-			}
-			if cv.LayerCacher != nil {
-				keepers.Add(cv.LayerCacher.RecordName(info.ID, &fmap))
-				cv.LayerCacher.WriteRecordCache(info.ID, &fmap, keepers)
-			}
-		} else {
-			// build an absrtact map from records
-			for _, lid := range layerIDs {
-				if lf, ok := layerFiles[lid]; ok {
-					for path, _ := range lf.Pkgs {
-						fmap.FileMap[path] = ""
-					}
-
-					for path, _ := range lf.Apps {
-						fmap.FileMap[path] = ""
+	} else {
+		// build an absrtact map from records; v2: bottom-top, normal order
+		log.Info("generate image map")
+		for _, layerID := range layers {
+			// remove the opaque directories/files from lower layers
+			for _, dir := range removed[layerID] {
+				for fpath, _ := range fileMap {
+					if strings.HasPrefix(fpath, dir) {
+						log.WithFields(log.Fields{"fpath": fpath, "dir": dir}).Info("Remove")
+						delete(fileMap, fpath)
 					}
 				}
+			}
+
+			// log.WithFields(log.Fields{"fmap": fmap[layerID], "layerID": layerID}).Info()
+			for _, fpath := range fmap[layerID] {
+				fileMap[fpath] = layerID  // reference
 			}
 		}
 	}
@@ -470,30 +434,45 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	if req.ScanSecrets {
 		go func() {
 			log.Info("Scanning secrets ....")
-			if !bFoundSecretLogs {
-				config := secrets.Config{
-					MiniWeight: 0.1, // Some other texts will dilute the weight, so it is better to stay at a smaller weight
+			var err error
+			logs := make([]share.CLUSSecretLog, 0)
+			perms := make([]share.CLUSSetIdPermLog, 0)
+
+			config := secrets.Config {
+				MiniWeight: 0.1, // Some other texts will dilute the weight, so it is better to stay at a smaller weight
+			}
+			// Include env variables into the search
+			buffers := &bytes.Buffer{}
+			for _, s := range info.Envs {
+				buffers.WriteString(s)
+				buffers.WriteByte('\n')
+			}
+			envVars, _ := ioutil.ReadAll(buffers)
+
+			if bFromRawData {
+				logs, perms, err = secrets.FindSecretsByFilePathMap(fileMap, envVars, config)
+			} else {
+				logs, _, _ = secrets.FindSecretsByFilePathMap(nil, envVars, config)
+				for sid, slogs := range secretLogs {
+					for _, log := range slogs {
+						if id, ok := fileMap[log.File]; ok && id == sid {
+							// top layer id matched
+							logs = append(logs, log)
+						}
+					}
 				}
 
-				// Include env variables into the search
-				buffers := &bytes.Buffer{}
-				for _, s := range info.Envs {
-					buffers.WriteString(s)
-					buffers.WriteByte('\n')
-				}
-				envVars, _ := ioutil.ReadAll(buffers)
-				logs, perms, err := secrets.FindSecretsByFilePathMap(fmap.FileMap, envVars, config)
-				secret = buildSecretResult(logs, err)
-				setidPerm = buildSetIdPermLogs(perms)
-				if cv.LayerCacher != nil {
-					secretLogs := SecretPermLogs {
-						SecretLogs: secret.Logs,
-						SetidPerm: 	setidPerm,
+				for sid, plogs := range setidPermLogs {
+					for _, log := range plogs {
+						if id, ok := fileMap[log.File]; ok && id == sid {
+							// top layer id matched
+							perms = append(perms, log)
+						}
 					}
-					keepers.Add(cv.LayerCacher.RecordName(info.ID, &secretLogs))
-					cv.LayerCacher.WriteRecordCache(info.ID, &secretLogs, keepers)
 				}
 			}
+			secret = buildSecretResult(logs, err)
+			setidPerm = buildSetIdPermLogs(perms)
 			log.Info("Done secrets ....")
 			done <- true
 		}()
@@ -536,9 +515,13 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 					fpath = fpath[:pos]
 				}
 
-				if _, ok :=  fmap.FileMap[fpath]; !ok {
+				if ref, ok := fileMap[fpath]; !ok {
 					// log.WithFields(log.Fields{"filename": fpath, "apps": apps}).Info("Ignore")
 					continue
+				} else {
+					if !bFromRawData && ref != l { // not exist at upper layer
+						continue
+					}
 				}
 
 				if _, ok := mergedApps[filename]; !ok {
