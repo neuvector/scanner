@@ -126,6 +126,9 @@ var UbuntuReleasesMapping = map[string]string{
 	"impish":           "21.10",
 	"jammy":            "22.04",
 	"kinetic":          "22.10",
+	"lunar":            "23.04",
+	"mantic":           "23.10",
+	"noble":            "24.04",
 }
 
 var DebianReleasesMapping = map[string]string{
@@ -138,6 +141,7 @@ var DebianReleasesMapping = map[string]string{
 	"bullseye": "11",
 	"bookworm": "12",
 	"trixie":   "13",
+	"forky":    "14",
 	"sid":      "unstable",
 
 	// Class names
