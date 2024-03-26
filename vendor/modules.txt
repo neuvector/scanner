@@ -173,7 +173,7 @@ github.com/mitchellh/mapstructure
 github.com/neuvector/k8s/apis/meta/v1
 github.com/neuvector/k8s/runtime
 github.com/neuvector/k8s/runtime/schema
-# github.com/neuvector/neuvector v0.0.0-20240211064658-97612c7beab8
+# github.com/neuvector/neuvector v0.0.0-20240326081851-904f4f14d54f
 ## explicit
 github.com/neuvector/neuvector/controller/api
 github.com/neuvector/neuvector/share
@@ -197,6 +197,7 @@ github.com/neuvector/neuvector/share/system/sysinfo
 github.com/neuvector/neuvector/share/system/sysinfo/cpuid
 github.com/neuvector/neuvector/share/utils
 # github.com/opencontainers/go-digest v1.0.0
+## explicit
 github.com/opencontainers/go-digest
 # github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 github.com/opencontainers/image-spec/identity
