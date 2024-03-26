@@ -24,6 +24,7 @@ import (
 	"github.com/neuvector/neuvector/share/container/dockerclient"
 	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/scan/registry"
+	"github.com/neuvector/neuvector/share/scan/secrets"
 	"github.com/neuvector/neuvector/share/utils"
 )
 
@@ -605,13 +606,47 @@ func layerURL(pathTemplate string, url string, args ...interface{}) string {
 	return fmt.Sprintf("%s%s", url, pathSuffix)
 }
 
-func DownloadRemoteImage(ctx context.Context, rc *scan.RegClient, name, imgPath string, layers []string, sizes map[string]int64, cacher *ImageLayerCacher, keepers utils.Set, bForceDownload bool) (map[string]*LayerFiles, share.ScanErrorCode) {
-	var downloads []string		// download layer requests
-	var layerFile LayerFiles
+func collectLayerRawRecord(imgPath string, downloads []string) (map[string][]share.CLUSSecretLog, map[string][]share.CLUSSetIdPermLog, map[string][]string, map[string][]string) {
+	secretLogs := make(map[string][]share.CLUSSecretLog)
+	setidPermLogs := make(map[string][]share.CLUSSetIdPermLog)
+	fmap := make(map[string][]string)
+	removed := make(map[string][]string)
 
-	log.WithFields(log.Fields{"name": name, "bForceDownload": bForceDownload}).Debug()
-	cacheFiles := make(map[string]*LayerFiles)
-	cacheLayers := utils.NewSet()
+	config := secrets.Config {
+		MiniWeight: 0.1, // Some other texts will dilute the weight, so it is better to stay at a smaller weight
+	}
+
+	for _, id := range downloads {
+		fpath := filepath.Join(imgPath, id)
+		if sLogs, pLogs, err := secrets.FindSecretsByRootpath(fpath, nil, config); err == nil {
+			secretLogs[id] = sLogs
+			setidPermLogs[id] = pLogs
+		} else {
+			log.WithFields(log.Fields{"fpath": fpath, "error": err}).Error("secrets")
+		}
+
+		lmap := make(map[string]string)
+		if _, rFiles, err := collectImageFileMap(fpath, lmap); err == nil {
+			files := make([]string, 0)
+			for f, _ := range lmap {
+				files = append(files, f)
+			}
+			fmap[id] = files
+			removed[id] = rFiles
+		} else {
+			log.WithFields(log.Fields{"fpath": fpath, "error": err}).Error("fmap")
+		}
+	}
+	return secretLogs, setidPermLogs, fmap, removed
+}
+
+func DownloadRemoteImage(ctx context.Context, rc *scan.RegClient, name, imgPath string, layers []string, sizes map[string]int64, cacher *ImageLayerCacher) (map[string]*LayerRecord, share.ScanErrorCode) {
+	var downloads 	[]string		// download layer requests
+	var total_downloaded int64
+
+	log.WithFields(log.Fields{"name": name}).Debug()
+	cacheLayers := make(map[string]*LayerRecord)
+	keepers := utils.NewSet()
 	for i := len(layers) - 1; i >= 0; i-- {  // v2
 		layer := layers[i]
 		if layer == "" {
@@ -619,58 +654,60 @@ func DownloadRemoteImage(ctx context.Context, rc *scan.RegClient, name, imgPath 
 		}
 
 		// log.WithFields(log.Fields{"i": i, "layer": layer, "size": sizes[layer]}).Debug()
-		keepers.Add(cacher.RecordName(layer, &layerFile))	// reference for write recor
-		if cacheLayers.Cardinality() < 2 {	// take bottom 0, 1 layers
-			cacheLayers.Add(layer)	// reference for write layers
-		}
-
-		if cacher == nil || bForceDownload {
+		if cacher == nil {
 			downloads = append(downloads, layer)
 			continue
 		}
 
-		if _, err := cacher.ReadRecordCache(layer, &layerFile); err == nil {
-			// log.WithFields(log.Fields{"fpath": fpath}).Debug("rec")
-			cacheFiles[layer] = &layerFile
+		lr := LayerRecord{}
+		keepers.Add(cacher.RecordName(layer, &lr))	// reference for write recor
+		if _, err := cacher.ReadRecordCache(layer, &lr); err == nil {
+			log.WithFields(log.Fields{"layer": layer}).Debug("rec")
+			cacheLayers[layer] = &lr
 		} else {
 			downloads = append(downloads, layer)
 		}
 	}
 
+	log.WithFields(log.Fields{"downloads": downloads}).Debug("rec")
 	// scheme is always set to v1 because layers of v2 image have been reversed in GetImageInfo.
-	layerFiles, err := getImageLayerIterate(ctx, downloads, sizes, true, imgPath, func(ctx context.Context, layer string) (interface{}, int64, error) {
-		if cacher == nil || (cacher != nil && cacher.IsLayerDataDisable()) {
-			return downloadRemoteLayer(ctx, rc, name, goDigest.Digest(layer))
-		}
-
-		rd, size, err := cacher.ReadLayerDataCache(layer)
-		if err != nil { // the data cache has been purged or not existed.
-			if rd, size, err = downloadRemoteLayer(ctx, rc, name, goDigest.Digest(layer)); err == nil {
-				if cacheLayers.Contains(layer) {
-					rd, _ = cacher.WriteLayerDataCache(layer, rd, size, cacheLayers)
-				}
-			}
-		}
-		return rd, size, err
+	layerModules, err := getImageLayerIterate(ctx, downloads, sizes, true, imgPath, func(ctx context.Context, layer string) (interface{}, int64, error) {
+		return downloadRemoteLayer(ctx, rc, name, goDigest.Digest(layer))
 	})
 
 	if cacher != nil {
-		var total_downloaded int64
+		secrets, setIDs, fmap, removed := collectLayerRawRecord(imgPath, downloads)
 		// save downloaded records
-		for layer, files := range layerFiles {
-			if err := cacher.WriteRecordCache(layer, files, keepers); err != nil {
+		for layer, mod := range layerModules {
+			slogs, _ := secrets[layer]
+			plogs, _ := setIDs[layer]
+			flogs, _ := fmap[layer]
+			rlogs, _ := removed[layer]
+			layerRec := LayerRecord{
+				Modules: mod,
+				Secrets: &SecretPermLogs {
+					SecretLogs: slogs,
+					SetidPerm: plogs,
+				},
+				Files: flogs,
+				Removed: rlogs,
+			}
+
+			if err := cacher.WriteRecordCache(layer, &layerRec, keepers); err != nil {
 				log.WithFields(log.Fields{"error": err, "layer": layer}).Error()
 			}
-			total_downloaded += files.Size
+			// merging cacher's records
+			cacheLayers[layer] = &layerRec
+			total_downloaded += mod.Size
 		}
-		log.WithFields(log.Fields{"total_downloaded": total_downloaded}).Debug()
-
-		// merging cacher's records
-		for layer, files := range cacheFiles {
-			layerFiles[layer] = files
+	} else {
+		for layer, mod := range layerModules {
+			cacheLayers[layer] = &LayerRecord{ Modules: mod, }
+			total_downloaded += mod.Size
 		}
 	}
-	return layerFiles, err
+	log.WithFields(log.Fields{"total_downloaded": total_downloaded}).Debug()
+	return cacheLayers, err
 }
 
 func downloadRemoteLayer(ctx context.Context, rc *scan.RegClient, repository string, digest digest.Digest) (io.ReadCloser, int64, error) {
