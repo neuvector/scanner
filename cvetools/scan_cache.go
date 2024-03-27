@@ -37,7 +37,16 @@ type cacheData struct {
 
 type CacherData struct {
 	CacheRecordMap 	map[string]*cacheData	`json:"cache_records,omitempty"`
-	CurRecordSize   int64					`json:"current_record_size"`
+	MissCnt         int64	`json:"cache_misses,omitempty"`
+	HitCnt          int64	`json:"cache_hits,omitempty"`
+	CurRecordSize   int64	`json:"current_record_size"`
+}
+
+type CacherStat struct {
+	RecordCnt       int     `json:"record_cnt,omitempty"`
+	RecordSize      int64	`json:"record_size,omitempty"`
+	MissCnt         int64	`json:"cache_misses,omitempty"`
+	HitCnt          int64	`json:"cache_hits,omitempty"`
 }
 
 type ImageLayerCacher struct {
@@ -48,7 +57,7 @@ type ImageLayerCacher struct {
 	maxRecordSize	int64	// scanned record: modules
 }
 
-const pickVictimCnt = 8
+const pickVictimCnt = 512
 const subRecordFolder = "ref"
 
 ////////
@@ -135,12 +144,14 @@ func (lc *ImageLayerCacher) ReadRecordCache(id string, record interface{}) (stri
 	defer lc.unlock()
 
 	cacher := lc.readCacheFile()
+	defer lc.writeCacheFile(cacher) // update reference count
+
 	cc, ok := cacher.CacheRecordMap[name]
 	if !ok {
+		cacher.MissCnt++
 		return "", errors.New("Not found: " + name)
 	}
-
-	defer lc.writeCacheFile(cacher) // update reference count
+	cacher.HitCnt++
 
 	// double check
 	if _, err := os.Stat(cc.Path); err != nil {
@@ -228,15 +239,22 @@ func (lc *ImageLayerCacher) pruneRecordCache(name string, cacher *CacherData, ke
 	log.WithFields(log.Fields{"removed": removedSize}).Debug("done")
 }
 
-func (lc *ImageLayerCacher) IsExistInCache(files []string) (string, bool) {
+func (lc *ImageLayerCacher) GetStat() *CacherStat {
 	lc.lock()
 	defer lc.unlock()
 
 	cacher := lc.readCacheFile()
-	for _, name := range files {
-		if _, ok := cacher.CacheRecordMap[name]; !ok {
-			return name, false	// return first missing item
-		}
+	return &CacherStat {
+		RecordCnt: len(cacher.CacheRecordMap),
+		RecordSize: cacher.CurRecordSize,
+		MissCnt: cacher.MissCnt,
+		HitCnt: cacher.HitCnt,
 	}
-	return "", true
+}
+
+func (lc *ImageLayerCacher) GetIndexFile() []byte {
+	lc.lock()
+	defer lc.unlock()
+	value, _ := ioutil.ReadFile(lc.dataFile)
+	return utils.GunzipBytes(value)		// zipped
 }
