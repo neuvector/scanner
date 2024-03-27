@@ -706,7 +706,7 @@ func DownloadRemoteImage(ctx context.Context, rc *scan.RegClient, name, imgPath 
 			total_downloaded += mod.Size
 		}
 	}
-	log.WithFields(log.Fields{"total_downloaded": total_downloaded}).Debug()
+	log.WithFields(log.Fields{"total_downloaded": total_downloaded}).Info()
 	return cacheLayers, err
 }
 
