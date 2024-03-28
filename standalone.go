@@ -248,7 +248,7 @@ func scanRunning(pid int, cvedb map[string]*share.ScanVulnerability, showOptions
 	cveTools := cvetools.NewScanTools("", sys, nil)
 
 	var data share.ScanData
-	data.Buffer, data.Error = scanUtil.GetRunningPackages("1", share.ScanObjectType_HOST, pid, sysInfo.Kernel.Release)
+	data.Buffer, data.Error = scanUtil.GetRunningPackages("1", share.ScanObjectType_HOST, pid, sysInfo.Kernel.Release, false)
 	if data.Error != share.ScanErrorCode_ScanErrNone {
 		log.WithFields(log.Fields{"pid": pid, "error": data.Error}).Error("Failed to get the packages")
 		return

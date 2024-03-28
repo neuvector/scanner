@@ -13,6 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/neuvector/neuvector/share"
+	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/utils"
 )
 
@@ -42,13 +43,6 @@ type CacherData struct {
 	CurRecordSize   int64	`json:"current_record_size"`
 }
 
-type CacherStat struct {
-	RecordCnt       int     `json:"record_cnt,omitempty"`
-	RecordSize      int64	`json:"record_size,omitempty"`
-	MissCnt         int64	`json:"cache_misses,omitempty"`
-	HitCnt          int64	`json:"cache_hits,omitempty"`
-}
-
 type ImageLayerCacher struct {
 	flock			int
 	cachePath 		string
@@ -57,7 +51,7 @@ type ImageLayerCacher struct {
 	maxRecordSize	int64	// scanned record: modules
 }
 
-const pickVictimCnt = 512
+const pickVictimCnt = 256
 const subRecordFolder = "ref"
 
 ////////
@@ -239,22 +233,42 @@ func (lc *ImageLayerCacher) pruneRecordCache(name string, cacher *CacherData, ke
 	log.WithFields(log.Fields{"removed": removedSize}).Debug("done")
 }
 
-func (lc *ImageLayerCacher) GetStat() *CacherStat {
+func (lc *ImageLayerCacher) GetStat() *share.ScanCacheStatRes {
+	log.Debug()
 	lc.lock()
 	defer lc.unlock()
-
 	cacher := lc.readCacheFile()
-	return &CacherStat {
-		RecordCnt: len(cacher.CacheRecordMap),
-		RecordSize: cacher.CurRecordSize,
-		MissCnt: cacher.MissCnt,
-		HitCnt: cacher.HitCnt,
+	return &share.ScanCacheStatRes {
+		RecordCnt: uint64(len(cacher.CacheRecordMap)),
+		RecordSize: uint64(cacher.CurRecordSize),
+		MissCnt: uint64(cacher.MissCnt),
+		HitCnt: uint64(cacher.HitCnt),
 	}
 }
 
 func (lc *ImageLayerCacher) GetIndexFile() []byte {
+	log.Debug()
 	lc.lock()
 	defer lc.unlock()
-	value, _ := ioutil.ReadFile(lc.dataFile)
-	return utils.GunzipBytes(value)		// zipped
+
+	cacher := lc.readCacheFile()
+	cache_data := scan.CacherData {
+		MissCnt:        uint64(cacher.MissCnt),
+		HitCnt:      	uint64(cacher.HitCnt),
+		CurRecordSize:	uint64(cacher.CurRecordSize),
+		CacheRecords:	make([]scan.CacheRecord, 0),
+	}
+
+	for id, rec := range cacher.CacheRecordMap {
+		r := scan.CacheRecord {
+			Layer: 		id,
+			Size:  		uint64(rec.Size),
+			RefCnt: 	uint32(rec.RefCnt),
+			RefLast:	rec.RefLast,
+		}
+		cache_data.CacheRecords = append(cache_data.CacheRecords, r)
+	}
+
+	data, _ := json.Marshal(cache_data)
+	return utils.GzipBytes(data)		// zipped
 }

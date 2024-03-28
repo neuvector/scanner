@@ -15,6 +15,7 @@ import (
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/cluster"
 	"github.com/neuvector/neuvector/share/system"
+	"github.com/neuvector/scanner/common"
 	"github.com/neuvector/scanner/cvetools"
 )
 
@@ -135,6 +136,26 @@ func (rs *rpcService) ScanAwsLambda(ctx context.Context, req *share.ScanAwsLambd
 
 	cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil)
 	return cveTools.ScanAwsLambda(req, "")
+}
+
+func (rs *rpcService) ScanCacheGetStat(ctx context.Context, v *share.RPCVoid) (*share.ScanCacheStatRes, error) {
+	log.Debug()
+	res := &share.ScanCacheStatRes {}
+	if layerCacher, _ :=  cvetools.InitImageLayerCacher(common.ImageLayerCacherFile, common.ImageLayerLockFile, common.ImageLayersCachePath, 1); layerCacher != nil {
+		defer layerCacher.LeaveLayerCacher()
+		res = layerCacher.GetStat()
+	}
+	return res, nil
+}
+
+func (rs *rpcService) ScanCacheGetData(ctx context.Context, v *share.RPCVoid) (*share.ScanCacheDataRes, error) {
+	log.Debug()
+	res := share.ScanCacheDataRes {  DataZb: make([]byte, 0) }
+	if layerCacher, _ :=  cvetools.InitImageLayerCacher(common.ImageLayerCacherFile, common.ImageLayerLockFile, common.ImageLayersCachePath, 1); layerCacher != nil {
+		defer layerCacher.LeaveLayerCacher()
+		res.DataZb = layerCacher.GetIndexFile()
+	}
+	return &res, nil
 }
 
 func startGRPCServer() *cluster.GRPCServer {
