@@ -27,7 +27,7 @@ var (
 	rh140YAMLFolder               = dstPrefix + "rh-1.4.0/"
 	gke140YAMLFolder              = dstPrefix + "gke-1.4.0/"
 	aks140YAMLFolder              = dstPrefix + "aks-1.4.0/"
-	eks140YAMLFolder              = dstPrefix + "eks-1.4.0/
+	eks140YAMLFolder              = dstPrefix + "eks-1.4.0/"
 	defaultYAMLFolder             = dstPrefix + "cis-1.8.0/"
 	catchDescription              = regexp.MustCompile(`^(.*?) \([^)]*\)$`)
 	complianceMetas               []api.RESTBenchMeta
