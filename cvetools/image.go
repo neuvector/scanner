@@ -33,6 +33,8 @@ const (
 	manifestJson = "manifest.json"
 	layerJson    = "/json"
 	dockerfile   = "root/buildinfo/Dockerfile-"
+	ociIndexJson = "index.json"
+	ociLayout    = "oci-layout"
 )
 
 type imageManifest struct {
@@ -146,17 +148,18 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	}
 
 	// obtain layer information, then extract the layers into tar files
-	layers, _, _, _, err := getImageLayers(repoFolder, imageFile)
+	layers, blobs, err := getImageLayers(repoFolder, imageFile)
 	if err != nil {
 		log.Errorf("could not extract image layers: %s", err)
 		return nil, nil, nil, share.ScanErrorCode_ScanErrPackage
 	}
 
+	log.WithFields(log.Fields{"layers": layers, "blobs": blobs}).Debug()
+
 	lfs, errCode := getImageLayerIterate(ctx, layers, nil, false, imgPath,
 		func(ctx context.Context, layer string) (interface{}, int64, error) {
-			layer += "_layer.tar" // restore file name
-			layerTarPath := filepath.Join(repoFolder, layer)
-			file, err := os.Open(layerTarPath)
+			blob, _ := blobs[layer]
+			file, err := os.Open(filepath.Join(repoFolder, blob))
 			if err != nil {
 				return nil, -1, err
 			}
@@ -253,31 +256,38 @@ type layerMetadata struct {
 	Os           string `json:"os"`
 }
 
-func getImageLayers(tmpDir string, imageTar string) ([]string, []string, []string, map[string]string, error) {
+func getImageLayers(tmpDir string, imageTar string) ([]string, map[string]string, error) {
 	var image []imageManifest
+
 	reader, err := os.Open(imageTar)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, err
 	}
 	defer reader.Close()
 
 	//get the manifest from the image tar
 	files, err := utils.SelectivelyExtractArchive(bufio.NewReader(reader), func(filename string) bool {
-		if filename == manifestJson || strings.HasSuffix(filename, layerJson) {
+		if filename == manifestJson || strings.HasSuffix(filename, layerJson) || filename == ociLayout {
 			return true
 		} else {
 			return false
 		}
 	}, maxFileSize)
-	dat, ok := files[manifestJson]
-	if !ok {
-		return nil, nil, nil, nil, fmt.Errorf("Can not locate the manifest.json in image")
-	}
-	if err = json.Unmarshal(dat, &image); err != nil {
-		return nil, nil, nil, nil, err
-	}
-	if len(image) == 0 {
-		return nil, nil, nil, nil, fmt.Errorf("Can not extract layer from the image")
+
+	// https://github.com/opencontainers/image-spec/blob/main/image-layout.md
+	// Optional: Following the index.json to find a manifest
+	_, bOciLayout := files[ociLayout]
+	log.WithFields(log.Fields{"bOciLayout": bOciLayout}).Debug()
+
+	if dat, ok := files[manifestJson]; !ok {
+		return nil, nil, fmt.Errorf("Can not locate the manifest.json in image")
+	} else {
+		if err = json.Unmarshal(dat, &image); err != nil {
+			return nil, nil, err
+		}
+		if len(image) == 0 {
+			return nil, nil, fmt.Errorf("Can not extract layer from the image")
+		}
 	}
 
 	//extract all the layers to tar files
@@ -290,45 +300,29 @@ func getImageLayers(tmpDir string, imageTar string) ([]string, []string, []strin
 		}
 		return false
 	}, tmpDir)
+
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	layerCount := len(fileMap)
-	list := make([]string, layerCount)
-	cmds := make([]string, layerCount)
-	envs := make([]string, 0)
-	labels := make(map[string]string)
+	layers := make([]string, layerCount)
+	blobs := make(map[string]string)
 	for i, ftar := range image[0].Layers {
-		fpath, ok := fileMap[ftar]
-		if !ok {
-			log.Errorf("could not find the image layer: %s", ftar)
-			return nil, nil, nil, nil, err
-		}
-		jsonFile := strings.Replace(ftar, "layer.tar", "json", 1)
-		jsonData, ok := files[jsonFile]
-		if !ok {
-			log.Errorf("could not find the layer json file %s", jsonFile)
-			return nil, nil, nil, nil, err
-		}
-		var lmeta layerMetadata
-		if err = json.Unmarshal(jsonData, &lmeta); err != nil {
-			return nil, nil, nil, nil, err
-		}
-
-		fname := filepath.Base(fpath)                                  // ignore parent path
-		list[layerCount-i-1] = strings.TrimSuffix(fname, "_layer.tar") // remove unwanted suffix
-		cmds[layerCount-i-1] = strings.Join(lmeta.Config.Cmd, " ")
-		if lmeta.Config.Env != nil {
-			envs = append(envs, lmeta.Config.Env...)
-		}
-		if lmeta.Config.Labels != nil {
-			for k, v := range lmeta.Config.Labels {
-				labels[k] = v
+		if fpath, ok := fileMap[ftar]; !ok {
+			return layers, blobs, fmt.Errorf("could not find the image layer: " + ftar)
+		} else {
+			fpath = filepath.Base(fpath)
+			layer := strings.TrimSuffix(fpath, "_layer.tar") // remove unwanted suffix
+			if bOciLayout {
+				ls := strings.Split(layer, "_")
+				layer = ls[len(ls)-1]
 			}
+			layers[layerCount-i-1] = layer
+			blobs[layer] = fpath
 		}
 	}
-	return list, cmds, envs, labels, nil
+	return layers, blobs, nil
 }
 
 type LayerFiles struct {
