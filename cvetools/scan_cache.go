@@ -43,15 +43,26 @@ type CacherData struct {
 	CurRecordSize   int64	`json:"current_record_size"`
 }
 
+type CacheVersion struct {
+	Version         int     `json:"version"`
+	Description     string	`json:"description"`
+}
+
 type ImageLayerCacher struct {
 	flock			int
 	cachePath 		string
-	dataFile		string
+	indexFile		string
     lockFile		string
 	maxRecordSize	int64	// scanned record: modules
 }
 
+// TODO
+const curVersion = 0
+const versionDescription = "initial implementation"
+
+//
 const pickVictimCnt = 256
+const versionFile = "version"
 const subRecordFolder = "ref"
 
 ////////
@@ -64,22 +75,66 @@ func InitImageLayerCacher(cacheFile, lockFile, cachePath string, maxRecordSize i
 
 	os.MkdirAll(cachePath, 0755)
 	os.MkdirAll(filepath.Join(cachePath, subRecordFolder), 0755)
-	return &ImageLayerCacher{
+	cacher := &ImageLayerCacher{
 		flock:			-1,
 		lockFile:       lockFile,
-		dataFile:  		cacheFile,
+		indexFile:  	cacheFile,
 		cachePath: 		cachePath,
 		maxRecordSize: 	maxRecordSize*1024*1024,
-	}, nil
+	}
+
+	cacher.InvaldateCache()
+	return cacher, nil
 }
 
 func (lc *ImageLayerCacher) LeaveLayerCacher() {
 	log.Debug()
-	syscall.Close(lc.flock)
+	lc.reset_lock()
+}
+
+func (lc *ImageLayerCacher) writeVersionFile() {
+	log.Debug()
+	ver := CacheVersion {
+		Version:     curVersion,
+		Description: versionDescription,
+	}
+
+	log.WithFields(log.Fields{"ver": ver}).Info()
+	data, _ := json.Marshal(&ver)
+	ioutil.WriteFile(filepath.Join(lc.cachePath, versionFile), data, 0644)
+}
+
+func (lc *ImageLayerCacher) InvaldateCache() bool {
+	lc.lock()
+	defer lc.unlock()
+	defer lc.reset_lock()
+
+	bReset := false
+	if file, err := ioutil.ReadFile(filepath.Join(lc.cachePath, versionFile)); err == nil {
+		var ver CacheVersion
+		json.Unmarshal([]byte(file), &ver)
+		if ver.Version != curVersion {
+			log.WithFields(log.Fields{"old ver": ver}).Info("Invalidate old caches")
+			bReset = true
+		}
+	} else {
+		log.Info("Missing version file: invalidate old caches")
+		bReset = true
+	}
+
+	if bReset {
+		os.Remove(lc.indexFile)
+		os.RemoveAll(filepath.Join(lc.cachePath, subRecordFolder))
+		os.MkdirAll(filepath.Join(lc.cachePath, subRecordFolder), 0755)
+		lc.writeVersionFile()
+		return true
+	}
+
+	return false
 }
 
 func (lc *ImageLayerCacher) lock() {
-	if lc.flock == -1 { // need to keep it within the same goroutine (pid)
+	if lc.flock == -1 { // the file lock because it is thread-depedent
 		if fd, err := syscall.Open(lc.lockFile, syscall.O_CREAT|syscall.O_RDONLY, 0600); err == nil {
 			lc.flock = fd
 		} else {
@@ -89,7 +144,7 @@ func (lc *ImageLayerCacher) lock() {
 	}
 
 	if err := syscall.Flock(lc.flock, syscall.LOCK_EX); err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("Wait")
+		log.WithFields(log.Fields{"error": err, "flock": lc.flock}).Error("Wait")
 	}
 	// log.WithFields(log.Fields{"fn": utils.GetCaller(3, nil)}).Debug()
 	// time.Sleep(time.Second*10)
@@ -100,9 +155,14 @@ func (lc *ImageLayerCacher) unlock() {
 	syscall.Flock(lc.flock, syscall.LOCK_UN)
 }
 
+func (lc *ImageLayerCacher) reset_lock() {
+	syscall.Close(lc.flock)
+	lc.flock = -1  // reset the file lock because it is thread-depedent
+}
+
 func (lc *ImageLayerCacher) readCacheFile() *CacherData {
 	var cache CacherData
-	file, _ := ioutil.ReadFile(lc.dataFile)
+	file, _ := ioutil.ReadFile(lc.indexFile)
 	json.Unmarshal([]byte(file), &cache)
 	if cache.CacheRecordMap == nil {
 		cache.CacheRecordMap = make(map[string]*cacheData)
@@ -115,7 +175,7 @@ func (lc *ImageLayerCacher) readCacheFile() *CacherData {
 func (lc *ImageLayerCacher) writeCacheFile(cache *CacherData) {
 	data, _ := json.Marshal(cache)
 	// log.WithFields(log.Fields{"data": string(data)}).Debug()
-	ioutil.WriteFile(lc.dataFile, data, 0644)
+	ioutil.WriteFile(lc.indexFile, data, 0644)
 }
 
 ///////////////// Record caches ////////////////
