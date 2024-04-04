@@ -253,13 +253,15 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	}
 	// var layeredSecret []*share.ScanSecretResult
 	var setidPerm []*share.ScanSetIdPermLog
+	var layerRecords map[string]*LayerRecord
 	layers := make([]string, 0)
 	layerFiles := make(map[string]*LayerFiles)
 	secretLogs := make(map[string][]share.CLUSSecretLog)
 	setidPermLogs := make(map[string][]share.CLUSSetIdPermLog)
 	fmap := make(map[string][]string)
 	removed := make(map[string][]string)
-	bFromRawData := true
+	bFromRawData := (cv.LayerCacher == nil)
+
 	// for layered storages
 	if imgPath == "" { // not-defined yet
 		imgPath = common.CreateImagePath("")
@@ -308,9 +310,8 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 			return result, nil
 		}
 
-		bFromRawData = (cv.LayerCacher == nil)
 		// There is a download timeout inside this function
-		layerRecords, errCode := DownloadRemoteImage(ctx, rc, req.Repository, imgPath, info.Layers, info.Sizes, cv.LayerCacher)
+		layerRecords, errCode = DownloadRemoteImage(ctx, rc, req.Repository, imgPath, info.Layers, info.Sizes, cv.LayerCacher)
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
 			return result, nil
@@ -361,18 +362,43 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 			log.WithFields(log.Fields{"baseImage": req.BaseImage, "base": baseLayers, "layers": len(meta.Layers)}).Debug()
 		}
 
-		info, layerFiles, layers, errCode = cv.LoadLocalImage(ctx, req.Repository, req.Tag, imgPath)
+		layerRecords, info, errCode = cv.LoadLocalImage(ctx, req.Repository, req.Tag, imgPath, cv.LayerCacher)
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
 			return result, nil
 		}
 
-		for _, lf := range layerFiles {
-			result.Size += lf.Size
+		layers = info.Layers
+		if !bFromRawData {
+			// reverse layers to v2 sequence
+			var rlayers []string
+			for i := len(layers) - 1; i >= 0; i-- {
+				rlayers = append(rlayers, layers[i])
+			}
+			layers = rlayers
 		}
+
+		// log.WithFields(log.Fields{"layers": layers}).Debug()
+		for id, lr := range layerRecords {
+			layerFiles[id] = lr.Modules
+			result.Size += lr.Modules.Size
+			if !bFromRawData {
+				if lr.Secrets != nil {
+					secretLogs[id] = lr.Secrets.SecretLogs
+					setidPermLogs[id] = lr.Secrets.SetidPerm
+				}
+				if lr.Files != nil {
+					fmap[id] = lr.Files
+				}
+				if lr.Removed != nil {
+					removed[id] = lr.Removed
+				}
+			}
+		}
+
 		result.ImageID = info.ID
 		result.Digest = info.Digest
-		log.WithFields(log.Fields{"layers": len(info.Layers), "id": info.ID, "digest": info.Digest, "size": result.Size}).Debug("scan local image")
+		log.WithFields(log.Fields{"layers": len(info.Layers), "id": info.ID, "digest": info.Digest}).Debug("scan local image")
 
 		// The following 2 commands actually inpect the same image
 		// 	echo -e "GET /images/nvlab/iperf/json HTTP/1.0\r\n" | nc -U /var/run/docker.sock
