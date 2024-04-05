@@ -819,10 +819,8 @@ func os2DB(ns *detectors.Namespace) (string, int) {
 			nsName = removeSubVersion(nsName)
 			db = common.DBAlpine
 		case "amzn":
-			// amazon linux only has two versions: 1, 2
-			if v := strings.TrimPrefix(nsName, "amzn:"); v != "2" {
-				nsName = "amzn:1"
-			}
+			majorVersion := majorVersion(r[2])
+			nsName = "amzn:" + majorVersion
 			db = common.DBAmazon
 		case "ol":
 			majorVersion := majorVersion(r[2])
