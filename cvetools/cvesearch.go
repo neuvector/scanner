@@ -442,13 +442,13 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 			for _, dir := range removed[layerID] {
 				for fpath, _ := range fileMap {
 					if strings.HasPrefix(fpath, dir) {
-						log.WithFields(log.Fields{"fpath": fpath, "dir": dir}).Info("Remove")
+						// log.WithFields(log.Fields{"fpath": fpath, "dir": dir}).Debug("Remove")
 						delete(fileMap, fpath)
 					}
 				}
 			}
 
-			// log.WithFields(log.Fields{"fmap": fmap[layerID], "layerID": layerID}).Info()
+			// log.WithFields(log.Fields{"fmap": fmap[layerID], "layerID": layerID}).Debug()
 			for _, fpath := range fmap[layerID] {
 				fileMap[fpath] = layerID  // reference
 			}
