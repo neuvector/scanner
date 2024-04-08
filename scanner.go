@@ -178,7 +178,7 @@ func main() {
 	show := flag.String("show", "", "Standalone Mode: Stdout print options, cmd,module")
 	getVer := flag.Bool("v", false, "show cve database version")
 	debug := flag.String("debug", "", "debug filters")
-	maxCacherRecordSize := flag.Int64("maxrec", common.MaxRecordCacherSizeMB, "maximum record cacher size in MB")
+	maxCacherRecordSize := flag.Int64("maxrec", 0, "maximum record cacher size in MB") // common.MaxRecordCacherSizeMB
 	flag.Usage = usage
 	flag.Parse()
 
@@ -228,7 +228,9 @@ func main() {
 	}
 
 	// recovered, clean up all possible previous image folders
-	os.RemoveAll(common.ImageWorkingPath)
+	if *maxCacherRecordSize <= 0 {
+		os.RemoveAll(common.ImageWorkingPath)
+	}
 	os.MkdirAll(common.ImageWorkingPath, 0755)
 
 	var err error

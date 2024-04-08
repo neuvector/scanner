@@ -97,7 +97,7 @@ func main() {
 	infile := flag.String("i", "input.json", "input json name")    // uuid input filename
 	outfile := flag.String("o", "result.json", "output json name") // uuid output filename
 	rtSock := flag.String("u", "", "Container socket URL")         // used for scan local image
-	maxCacherRecordSize := flag.Int64("maxrec", common.MaxRecordCacherSizeMB, "maximum layer cacher size in MB")
+	maxCacherRecordSize := flag.Int64("maxrec", 0, "maximum layer cacher size in MB") // common.MaxRecordCacherSizeMB
 	flag.Usage = usage
 	flag.Parse()
 
