@@ -2,6 +2,7 @@ package cvetools
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -23,6 +24,7 @@ import (
 	"github.com/neuvector/neuvector/share/container/dockerclient"
 	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/scan/registry"
+	"github.com/neuvector/neuvector/share/scan/secrets"
 	"github.com/neuvector/neuvector/share/utils"
 )
 
@@ -83,8 +85,9 @@ func (s *ScanTools) GetLocalImageMeta(ctx context.Context, repository, tag strin
 	return meta, share.ScanErrorCode_ScanErrNone
 }
 
-func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath string) (
-	*scan.ImageInfo, map[string]*layerFiles, []string, share.ScanErrorCode) {
+func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath string, cacher *ImageLayerCacher) (
+	map[string]*LayerRecord, *scan.ImageInfo, share.ScanErrorCode) {
+
 	sock, repo := parseSocketFromRepo(repository)
 	if sock == "" {
 		sock = s.RtSock
@@ -93,7 +96,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	rt, err := container.ConnectDocker(sock, s.sys)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Connect docker server fail")
-		return nil, nil, nil, share.ScanErrorCode_ScanErrContainerAPI
+		return nil, nil, share.ScanErrorCode_ScanErrContainerAPI
 	}
 
 	imageName := fmt.Sprintf("%s:%s", repo, tag)
@@ -102,29 +105,29 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to get local image")
 		if err == dockerclient.ErrImageNotFound {
-			return nil, nil, nil, share.ScanErrorCode_ScanErrImageNotFound
+			return nil, nil, share.ScanErrorCode_ScanErrImageNotFound
 		}
-		return nil, nil, nil, share.ScanErrorCode_ScanErrContainerAPI
+		return nil, nil, share.ScanErrorCode_ScanErrContainerAPI
 	}
 
 	histories, err := rt.GetImageHistory(imageName)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to get local image history")
 		if err == dockerclient.ErrImageNotFound {
-			return nil, nil, nil, share.ScanErrorCode_ScanErrImageNotFound
+			return nil, nil, share.ScanErrorCode_ScanErrImageNotFound
 		}
-		return nil, nil, nil, share.ScanErrorCode_ScanErrContainerAPI
+		return nil, nil, share.ScanErrorCode_ScanErrContainerAPI
 	}
 
 	file, err := rt.GetImageFile(meta.ID)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to get image")
 		if err == dockerclient.ErrImageNotFound {
-			return nil, nil, nil, share.ScanErrorCode_ScanErrImageNotFound
+			return nil, nil, share.ScanErrorCode_ScanErrImageNotFound
 		} else if err == container.ErrMethodNotSupported {
-			return nil, nil, nil, share.ScanErrorCode_ScanErrDriverAPINotSupport
+			return nil, nil, share.ScanErrorCode_ScanErrDriverAPINotSupport
 		}
-		return nil, nil, nil, share.ScanErrorCode_ScanErrContainerAPI
+		return nil, nil, share.ScanErrorCode_ScanErrContainerAPI
 	}
 
 	// create an image file and image layered folders
@@ -142,19 +145,45 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	file.Close()
 	if err != nil {
 		log.Errorf("could not write to image: %s", err)
-		return nil, nil, nil, share.ScanErrorCode_ScanErrFileSystem
+		return nil, nil, share.ScanErrorCode_ScanErrFileSystem
 	}
 
 	// obtain layer information, then extract the layers into tar files
 	layers, blobs, err := getImageLayers(repoFolder, imageFile)
 	if err != nil {
 		log.Errorf("could not extract image layers: %s", err)
-		return nil, nil, nil, share.ScanErrorCode_ScanErrPackage
+		return nil, nil, share.ScanErrorCode_ScanErrPackage
 	}
 
-	log.WithFields(log.Fields{"layers": layers, "blobs": blobs}).Debug()
+	//log.WithFields(log.Fields{"layers": layers, "blobs": blobs}).Debug()
 
-	lfs, errCode := getImageLayerIterate(ctx, layers, nil, false, imgPath,
+	var downloads 	[]string		// download layer requests
+	cacheLayers := make(map[string]*LayerRecord)
+	keepers := utils.NewSet()
+	for _, layer := range layers {
+		if layer == "" {
+			continue
+		}
+
+		// log.WithFields(log.Fields{"i": i, "layer": layer, "size": sizes[layer]}).Debug()
+		if cacher == nil {
+			downloads = append(downloads, layer)
+			continue
+		}
+
+		lr := LayerRecord{}
+		keepers.Add(cacher.RecordName(layer, &lr))	// reference for write record
+		if _, err := cacher.ReadRecordCache(layer, &lr); err == nil {
+			// log.WithFields(log.Fields{"layer": layer}).Debug("rec")
+			cacheLayers[layer] = &lr
+		} else {
+			downloads = append(downloads, layer)
+		}
+	}
+
+	log.WithFields(log.Fields{"imageName": imageName, "downloads": downloads}).Debug()
+
+	layerModules, errCode := getImageLayerIterate(ctx, downloads, nil, false, imgPath,
 		func(ctx context.Context, layer string) (interface{}, int64, error) {
 			blob, _ := blobs[layer]
 			file, err := os.Open(filepath.Join(repoFolder, blob))
@@ -170,16 +199,45 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 			return file, bytes, nil
 		})
 
+	if cacher != nil {
+		secrets, setIDs, fmap, removed := collectLayerRawRecord(imgPath, downloads)
+		// save downloaded records
+		for layer, mod := range layerModules {
+			slogs, _ := secrets[layer]
+			plogs, _ := setIDs[layer]
+			flogs, _ := fmap[layer]
+			rlogs, _ := removed[layer]
+			layerRec := LayerRecord {
+							Modules: mod,
+							Secrets: &SecretPermLogs {
+								SecretLogs: slogs,
+								SetidPerm: plogs,
+							},
+							Files: flogs,
+							Removed: rlogs,
+						}
+
+			if err := cacher.WriteRecordCache(layer, &layerRec, keepers); err != nil {
+				log.WithFields(log.Fields{"error": err, "layer": layer}).Error()
+			}
+			// merging cacher's records
+			cacheLayers[layer] = &layerRec
+		}
+	} else {
+		for layer, mod := range layerModules {
+			cacheLayers[layer] = &LayerRecord{ Modules: mod, }
+		}
+	}
+
 	// GetImage(sha256:xxxx) and getImageLayers (yyyy) return different sets of layer ID, make them consistent.
 	// In the "inspect image" CLI command, users can only read the "sha256:xxxx" list.
 	// however, "yyyy" is the real data storage and referrable.
-	var tarLayers []string
-	for i, l2 := range layers {
-		tarLayers = append(tarLayers, l2)
-		l1 := meta.Layers[i]
-		if files, ok := lfs[l2]; ok {
-			lfs[l1] = files
-			delete(lfs, l2)
+	// SWAP tarID into layerID
+	for i, tarID := range layers {		// tar
+		shaID := meta.Layers[i]		// sha
+		if lr, ok := cacheLayers[tarID]; ok {
+			cacheLayers[shaID] = lr
+			delete(cacheLayers, tarID)
 		}
 	}
 
@@ -187,27 +245,11 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	layers = make([]string, len(histories))
 	cmds := make([]string, len(histories))
 	ml := 0
-	lenML := len(meta.Layers)
 	for i, h := range histories {
 		cmds[i] = scan.NormalizeImageCmd(h.Cmd)
 		if h.Size > 0 {
-			// Some layer size is 0, remove them from layerFiles and layers, otherwise, layers won't match with history
-			for ml < lenML {
-				l := meta.Layers[ml]
-				if files, ok := lfs[l]; ok {
-					if files.Size > 0 {
-						layers[i] = meta.Layers[ml]
-						ml++
-						break
-					} else {
-						delete(lfs, l)
-						ml++
-					}
-				} else {
-					// shouldn't happen, advance ml
-					ml++
-				}
-			}
+			layers[i] = meta.Layers[ml]
+			ml++
 		} else {
 			layers[i] = ""
 		}
@@ -223,7 +265,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 		RepoTags: meta.RepoTags,
 	}
 
-	return repoInfo, lfs, tarLayers, errCode
+	return cacheLayers, repoInfo, errCode
 }
 
 type layerMetadata struct {
@@ -323,17 +365,38 @@ func getImageLayers(tmpDir string, imageTar string) ([]string, map[string]string
 	return layers, blobs, nil
 }
 
-type layerFiles struct {
+type LayerFiles struct {
 	Size int64
 	Pkgs map[string][]byte
 	Apps map[string][]scan.AppPackage
 }
 
+func getApkPackages(fullpath string) ([]byte, error)  {
+	inputFile, err := os.Open(fullpath)
+	if err != nil {
+		return nil, err
+	}
+
+	buf := new(bytes.Buffer)
+	scanner := bufio.NewScanner(inputFile)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(line, "P:") ||
+			strings.HasPrefix(line, "V:") ||
+			strings.HasPrefix(line, "o:") ||
+			line == "" {
+			buf.WriteString(line)
+			buf.WriteString("\n")
+		}
+	}
+	return buf.Bytes(), nil
+}
+
 func getImageLayerIterate(
 	ctx context.Context, layers []string, sizes map[string]int64, schemaV1 bool, imgPath string,
 	layerReader func(ctx context.Context, layer string) (interface{}, int64, error),
-) (map[string]*layerFiles, share.ScanErrorCode) { // layer -> filename -> file content
-	lfs := make(map[string]*layerFiles)
+) (map[string]*LayerFiles, share.ScanErrorCode) { // layer -> filename -> file content
+	lfs := make(map[string]*LayerFiles)
 
 	// download layered images into image folder
 	layerInfo, err := downloadLayers(ctx, layers, sizes, imgPath, layerReader)
@@ -387,6 +450,11 @@ func getImageLayerIterate(
 				if err != nil {
 					continue
 				}
+			} else if filename == "lib/apk/db/installed" {
+				data, err = getApkPackages(fullpath)
+				if err != nil {
+					continue
+				}
 			} else if scan.IsAppsPkgFile(filename, fullpath) {
 				curLayerApps.ExtractAppPkg(filename, fullpath)
 				continue
@@ -398,7 +466,7 @@ func getImageLayerIterate(
 			curLayerFiles[filename] = data
 		}
 
-		lfs[layer] = &layerFiles{Size: size, Pkgs: curLayerFiles, Apps: curLayerApps.Data()}
+		lfs[layer] = &LayerFiles{Size: size, Pkgs: curLayerFiles, Apps: curLayerApps.Data()}
 	}
 
 	return lfs, share.ScanErrorCode_ScanErrNone
@@ -472,7 +540,7 @@ func downloadLayers(ctx context.Context, layers []string, sizes map[string]int64
 			res := <-done
 			results[res.layer] = res
 			accumlates -= res.TarSize
-			log.WithFields(log.Fields{"res": res}).Debug()
+			// log.WithFields(log.Fields{"res": res}).Debug()
 			if res.err != nil {
 				err = res.err // reporting just one error
 			}
@@ -493,7 +561,7 @@ func downloadLayers(ctx context.Context, layers []string, sizes map[string]int64
 
 			layerPath := filepath.Join(imgPath, ml)
 			if bHasSizeInfo && sl == 0 {
-				log.WithFields(log.Fields{"layer": ml}).Debug("skip")
+				//log.WithFields(log.Fields{"layer": ml}).Debug("skip")
 				os.MkdirAll(layerPath, 0755) // empty folder
 				done <- &downloadLayerResult{layer: ml, err: nil, Size: 0, TarSize: 0}
 				return
@@ -572,15 +640,108 @@ func layerURL(pathTemplate string, url string, args ...interface{}) string {
 	return fmt.Sprintf("%s%s", url, pathSuffix)
 }
 
-func DownloadRemoteImage(
-	ctx context.Context, rc *scan.RegClient, name, imgPath string, layers []string, sizes map[string]int64,
-) (map[string]*layerFiles, share.ScanErrorCode) {
-	log.WithFields(log.Fields{"name": name}).Debug()
+func collectLayerRawRecord(imgPath string, downloads []string) (map[string][]share.CLUSSecretLog, map[string][]share.CLUSSetIdPermLog, map[string][]string, map[string][]string) {
+	secretLogs := make(map[string][]share.CLUSSecretLog)
+	setidPermLogs := make(map[string][]share.CLUSSetIdPermLog)
+	fmap := make(map[string][]string)
+	removed := make(map[string][]string)
 
+	config := secrets.Config {
+		MiniWeight: 0.1, // Some other texts will dilute the weight, so it is better to stay at a smaller weight
+	}
+
+	for _, id := range downloads {
+		fpath := filepath.Join(imgPath, id)
+		if sLogs, pLogs, err := secrets.FindSecretsByRootpath(fpath, nil, config); err == nil {
+			secretLogs[id] = sLogs
+			setidPermLogs[id] = pLogs
+		} else {
+			log.WithFields(log.Fields{"fpath": fpath, "error": err}).Error("secrets")
+		}
+
+		lmap := make(map[string]string)
+		if _, rFiles, err := collectImageFileMap(fpath, lmap); err == nil {
+			files := make([]string, 0)
+			for f, _ := range lmap {
+				files = append(files, f)
+			}
+			fmap[id] = files
+			removed[id] = rFiles
+		} else {
+			log.WithFields(log.Fields{"fpath": fpath, "error": err}).Error("fmap")
+		}
+	}
+	return secretLogs, setidPermLogs, fmap, removed
+}
+
+func DownloadRemoteImage(ctx context.Context, rc *scan.RegClient, name, imgPath string, layers []string, sizes map[string]int64, cacher *ImageLayerCacher) (map[string]*LayerRecord, share.ScanErrorCode) {
+	var downloads 	[]string		// download layer requests
+	var total_downloaded int64
+
+	log.WithFields(log.Fields{"name": name}).Debug()
+	cacheLayers := make(map[string]*LayerRecord)
+	keepers := utils.NewSet()
+	for i := len(layers) - 1; i >= 0; i-- {  // v2
+		layer := layers[i]
+		if layer == "" {
+			continue
+		}
+
+		// log.WithFields(log.Fields{"i": i, "layer": layer, "size": sizes[layer]}).Debug()
+		if cacher == nil {
+			downloads = append(downloads, layer)
+			continue
+		}
+
+		lr := LayerRecord{}
+		keepers.Add(cacher.RecordName(layer, &lr))	// reference for write recor
+		if _, err := cacher.ReadRecordCache(layer, &lr); err == nil {
+			//log.WithFields(log.Fields{"layer": layer}).Debug("rec")
+			cacheLayers[layer] = &lr
+		} else {
+			downloads = append(downloads, layer)
+		}
+	}
+
+	log.WithFields(log.Fields{"downloads": downloads}).Debug()
 	// scheme is always set to v1 because layers of v2 image have been reversed in GetImageInfo.
-	return getImageLayerIterate(ctx, layers, sizes, true, imgPath, func(ctx context.Context, layer string) (interface{}, int64, error) {
+	layerModules, err := getImageLayerIterate(ctx, downloads, sizes, true, imgPath, func(ctx context.Context, layer string) (interface{}, int64, error) {
 		return downloadRemoteLayer(ctx, rc, name, goDigest.Digest(layer))
 	})
+
+	if cacher != nil {
+		secrets, setIDs, fmap, removed := collectLayerRawRecord(imgPath, downloads)
+		// save downloaded records
+		for layer, mod := range layerModules {
+			slogs, _ := secrets[layer]
+			plogs, _ := setIDs[layer]
+			flogs, _ := fmap[layer]
+			rlogs, _ := removed[layer]
+			layerRec := LayerRecord{
+				Modules: mod,
+				Secrets: &SecretPermLogs {
+					SecretLogs: slogs,
+					SetidPerm: plogs,
+				},
+				Files: flogs,
+				Removed: rlogs,
+			}
+
+			if err := cacher.WriteRecordCache(layer, &layerRec, keepers); err != nil {
+				log.WithFields(log.Fields{"error": err, "layer": layer}).Error()
+			}
+			// merging cacher's records
+			cacheLayers[layer] = &layerRec
+			total_downloaded += mod.Size
+		}
+	} else {
+		for layer, mod := range layerModules {
+			cacheLayers[layer] = &LayerRecord{ Modules: mod, }
+			total_downloaded += mod.Size
+		}
+	}
+	log.WithFields(log.Fields{"total_downloaded": total_downloaded}).Info()
+	return cacheLayers, err
 }
 
 func downloadRemoteLayer(ctx context.Context, rc *scan.RegClient, repository string, digest digest.Digest) (io.ReadCloser, int64, error) {

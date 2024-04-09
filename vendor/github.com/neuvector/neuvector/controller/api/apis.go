@@ -328,6 +328,7 @@ type RESTServerLDAP struct {
 	Port            uint16 `json:"port"`
 	SSL             bool   `json:"ssl"`
 	BaseDN          string `json:"base_dn"`
+	GroupDN         string `json:"group_dn"`
 	BindDN          string `json:"bind_dn"`
 	BindPasswd      string `json:"bind_password,cloak"`
 	GroupMemberAttr string `json:"group_member_attr"`
@@ -410,6 +411,7 @@ type RESTServerLDAPConfig struct {
 	Port            *uint16 `json:"port,omitempty"`
 	SSL             *bool   `json:"ssl,omitempty"`
 	BaseDN          *string `json:"base_dn,omitempty"`
+	GroupDN         *string `json:"group_dn,omitempty"`
 	BindDN          *string `json:"bind_dn,omitempty"`
 	BindPasswd      *string `json:"bind_password,cloak,omitempty"`
 	GroupMemberAttr *string `json:"group_member_attr,omitempty"`
@@ -2110,6 +2112,27 @@ type RESTScanStatus struct {
 
 type RESTScanStatusData struct {
 	Status *RESTScanStatus `json:"status"`
+}
+
+type RESTScanCacheStat struct {
+	RecordCnt       uint64  `json:"record_count,omitempty"`
+	RecordSize      uint64	`json:"record_total_size,omitempty"`
+	MissCnt         uint64	`json:"cache_misses,omitempty"`
+	HitCnt          uint64	`json:"cache_hits,omitempty"`
+}
+
+type RESTScanCacheRecord struct {
+	Layer	string		`json:"layer_id,omitempty"`
+	Size	uint64		`json:"size,omitempty"`
+	RefCnt	uint32		`json:"reference_count,omitempty"`
+	RefLast	time.Time	`json:"last_referred,omitempty"`
+}
+
+type RESTScanCacheData struct {
+	CacheRecords 	[]RESTScanCacheRecord	`json:"cache_records,omitempty"`
+	RecordSize      uint64	`json:"record_total_size,omitempty"`
+	MissCnt         uint64	`json:"cache_misses,omitempty"`
+	HitCnt          uint64	`json:"cache_hits,omitempty"`
 }
 
 const ScanStatusIdle string = ""

@@ -90,19 +90,23 @@ func processRequest(tm *taskMain, scanType, infile, workingPath string) int {
 ///////////////////////
 func main() {
 	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel) // change it later
+	log.SetLevel(log.InfoLevel) // change it later
 	log.SetFormatter(&utils.LogFormatter{Module: "SCT"})
 
 	scanType := flag.String("t", "", "scan type: reg, pkg, dat or awl (Required)")
 	infile := flag.String("i", "input.json", "input json name")    // uuid input filename
 	outfile := flag.String("o", "result.json", "output json name") // uuid output filename
 	rtSock := flag.String("u", "", "Container socket URL")         // used for scan local image
+	maxCacherRecordSize := flag.Int64("maxrec", 0, "maximum layer cacher size in MB") // common.MaxRecordCacherSizeMB
 	flag.Usage = usage
 	flag.Parse()
 
 	// acquire tool
-	sys := system.NewSystemTools()
-	cveTools = cvetools.NewScanTools(*rtSock, sys)
+	layerCacher, _ :=  cvetools.InitImageLayerCacher(common.ImageLayerCacherFile, common.ImageLayerLockFile, common.ImageLayersCachePath, *maxCacherRecordSize)
+	if layerCacher != nil {
+		defer layerCacher.LeaveLayerCacher()
+	}
+	cveTools = cvetools.NewScanTools(*rtSock, system.NewSystemTools(), layerCacher)
 
 	// create an imgPath from the input file
 	var imageWorkingPath string
