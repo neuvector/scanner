@@ -245,7 +245,7 @@ func scanRunning(pid int, cvedb map[string]*share.ScanVulnerability, showOptions
 	sys := system.NewSystemTools()
 	sysInfo := sys.GetSystemInfo()
 	scanUtil := scan.NewScanUtil(sys)
-	cveTools := cvetools.NewScanTools("", sys)
+	cveTools := cvetools.NewScanTools("", sys, nil)
 
 	var data share.ScanData
 	data.Buffer, data.Error = scanUtil.GetRunningPackages("1", share.ScanObjectType_HOST, pid, sysInfo.Kernel.Release, false)
@@ -291,8 +291,7 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 	if scanTasker != nil {
 		result, err = scanTasker.Run(ctx, *req)
 	} else {
-		sys := system.NewSystemTools()
-		cveTools := cvetools.NewScanTools("", sys)
+		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil)
 		result, err = cveTools.ScanImage(ctx, req, "")
 	}
 	cancel()
@@ -308,8 +307,7 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 		if scanTasker != nil {
 			result, err = scanTasker.Run(ctx, *req)
 		} else {
-			sys := system.NewSystemTools()
-			cveTools := cvetools.NewScanTools("", sys)
+			cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil)
 			result, err = cveTools.ScanImage(ctx, req, "")
 		}
 		cancel()

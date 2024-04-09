@@ -10,6 +10,7 @@ replace (
 	github.com/kubernetes/cri-api => k8s.io/cri-api v0.22.3
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc5
 	golang.org/x/net => golang.org/x/net v0.0.0-20170421174939-0b588ed7a0cd
+	golang.org/x/sys => golang.org/x/sys v0.0.0-20220209214540-3681064d5158
 	google.golang.org/grpc => google.golang.org/grpc v1.30.1
 	k8s.io/api => k8s.io/api v0.20.15
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.20.15
@@ -45,7 +46,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/jedib0t/go-pretty/v6 v6.4.6
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/neuvector/neuvector v0.0.0-20240405170959-f9407d679ee9
+	github.com/neuvector/neuvector v0.0.0-20240409044813-8e34c951bba0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.2 // indirect
