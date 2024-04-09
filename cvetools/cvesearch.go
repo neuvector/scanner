@@ -98,12 +98,13 @@ var aliasMap map[string]string = map[string]string{
 	"docker-ce": "docker",
 }
 
-func NewScanTools(rtSock string, sys *system.SystemTools) *ScanTools {
+func NewScanTools(rtSock string, sys *system.SystemTools, layerCacher *ImageLayerCacher) *ScanTools {
 	cveDB := common.NewCveDB()
 	return &ScanTools{
 		CveDB:  *cveDB,
 		RtSock: rtSock,
 		sys:    sys,
+		LayerCacher: layerCacher,
 	}
 }
 
@@ -245,15 +246,21 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	}
 
 	var info *scan.ImageInfo
-	var lfs map[string]*layerFiles
 	var baseLayers utils.Set = utils.NewSet()
-	var secret *share.ScanSecretResult = &share.ScanSecretResult{
+	var secret *share.ScanSecretResult = &share.ScanSecretResult {
 		Error: share.ScanErrorCode_ScanErrNone,
 		Logs:  make([]*share.ScanSecretLog, 0),
 	}
 	// var layeredSecret []*share.ScanSecretResult
 	var setidPerm []*share.ScanSetIdPermLog
-	var layers []string
+	var layerRecords map[string]*LayerRecord
+	layers := make([]string, 0)
+	layerFiles := make(map[string]*LayerFiles)
+	secretLogs := make(map[string][]share.CLUSSecretLog)
+	setidPermLogs := make(map[string][]share.CLUSSetIdPermLog)
+	fmap := make(map[string][]string)
+	removed := make(map[string][]string)
+	bFromRawData := (cv.LayerCacher == nil)
 
 	// for layered storages
 	if imgPath == "" { // not-defined yet
@@ -263,7 +270,6 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 
 	if req.Registry != "" {
 		var errCode share.ScanErrorCode
-
 		if baseRepo != "" {
 			if baseReg == "" {
 				log.WithFields(log.Fields{
@@ -288,7 +294,6 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 		}
 
 		rc := scan.NewRegClient(req.Registry, req.Token, req.Username, req.Password, req.Proxy, new(httptrace.NopTracer))
-
 		info, errCode = rc.GetImageInfo(ctx, req.Repository, req.Tag, registry.ManifestRequest_Default)
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
@@ -306,15 +311,28 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 		}
 
 		// There is a download timeout inside this function
-		lfs, errCode = DownloadRemoteImage(ctx, rc, req.Repository, imgPath, info.Layers, info.Sizes)
+		layerRecords, errCode = DownloadRemoteImage(ctx, rc, req.Repository, imgPath, info.Layers, info.Sizes, cv.LayerCacher)
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
 			return result, nil
 		}
 
 		layers = info.Layers
-		for _, lf := range lfs {
-			result.Size += lf.Size
+		for id, lr := range layerRecords {
+			layerFiles[id] = lr.Modules
+			result.Size += lr.Modules.Size
+			if !bFromRawData {
+				if lr.Secrets != nil {
+					secretLogs[id] = lr.Secrets.SecretLogs
+					setidPermLogs[id] = lr.Secrets.SetidPerm
+				}
+				if lr.Files != nil {
+					fmap[id] = lr.Files
+				}
+				if lr.Removed != nil {
+					removed[id] = lr.Removed
+				}
+			}
 		}
 		result.ImageID = info.ID
 		result.Digest = info.Digest
@@ -344,18 +362,43 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 			log.WithFields(log.Fields{"baseImage": req.BaseImage, "base": baseLayers, "layers": len(meta.Layers)}).Debug()
 		}
 
-		info, lfs, layers, errCode = cv.LoadLocalImage(ctx, req.Repository, req.Tag, imgPath)
+		layerRecords, info, errCode = cv.LoadLocalImage(ctx, req.Repository, req.Tag, imgPath, cv.LayerCacher)
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
 			return result, nil
 		}
 
-		for _, lf := range lfs {
-			result.Size += lf.Size
+		layers = info.Layers
+		if !bFromRawData {
+			// reverse layers to v2 sequence
+			var rlayers []string
+			for i := len(layers) - 1; i >= 0; i-- {
+				rlayers = append(rlayers, layers[i])
+			}
+			layers = rlayers
 		}
+
+		// log.WithFields(log.Fields{"layers": layers}).Debug()
+		for id, lr := range layerRecords {
+			layerFiles[id] = lr.Modules
+			result.Size += lr.Modules.Size
+			if !bFromRawData {
+				if lr.Secrets != nil {
+					secretLogs[id] = lr.Secrets.SecretLogs
+					setidPermLogs[id] = lr.Secrets.SetidPerm
+				}
+				if lr.Files != nil {
+					fmap[id] = lr.Files
+				}
+				if lr.Removed != nil {
+					removed[id] = lr.Removed
+				}
+			}
+		}
+
 		result.ImageID = info.ID
 		result.Digest = info.Digest
-		log.WithFields(log.Fields{"layers": len(info.Layers), "id": info.ID, "digest": info.Digest, "size": result.Size}).Debug("scan local image")
+		log.WithFields(log.Fields{"layers": len(info.Layers), "id": info.ID, "digest": info.Digest}).Debug("scan local image")
 
 		// The following 2 commands actually inpect the same image
 		// 	echo -e "GET /images/nvlab/iperf/json HTTP/1.0\r\n" | nc -U /var/run/docker.sock
@@ -380,12 +423,35 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	}
 
 	// Build a map for whole image
-	fileMap := make(map[string]string) // [path]:[file from untar layers]
-	for i := len(layers) - 1; i >= 0; i-- {
-		layerPath := filepath.Join(imgPath, layers[i])
-		if _, err := collectImageFileMap(layerPath, fileMap); err != nil {
-			log.WithFields(log.Fields{"error": err, "layer": layerPath}).Error("virtual image map")
-			break
+	fileMap := make(map[string]string)
+	if bFromRawData {
+		// Build a map for whole image, v1: top-bottom, reverse order
+		log.Info("build image map")
+		for i := len(layers) - 1; i >= 0; i-- {
+			layerPath := filepath.Join(imgPath, layers[i])
+			if _, _, err := collectImageFileMap(layerPath, fileMap); err != nil {
+				log.WithFields(log.Fields{"error": err, "layer": layerPath}).Error("virtual image map")
+				break
+			}
+		}
+	} else {
+		// build an absrtact map from records; v2: bottom-top, normal order
+		log.Info("generate image map")
+		for _, layerID := range layers {
+			// remove the opaque directories/files from lower layers
+			for _, dir := range removed[layerID] {
+				for fpath, _ := range fileMap {
+					if strings.HasPrefix(fpath, dir) {
+						// log.WithFields(log.Fields{"fpath": fpath, "dir": dir}).Debug("Remove")
+						delete(fileMap, fpath)
+					}
+				}
+			}
+
+			// log.WithFields(log.Fields{"fmap": fmap[layerID], "layerID": layerID}).Debug()
+			for _, fpath := range fmap[layerID] {
+				fileMap[fpath] = layerID  // reference
+			}
 		}
 	}
 
@@ -394,10 +460,13 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	if req.ScanSecrets {
 		go func() {
 			log.Info("Scanning secrets ....")
-			config := secrets.Config{
+			var err error
+			logs := make([]share.CLUSSecretLog, 0)
+			perms := make([]share.CLUSSetIdPermLog, 0)
+
+			config := secrets.Config {
 				MiniWeight: 0.1, // Some other texts will dilute the weight, so it is better to stay at a smaller weight
 			}
-
 			// Include env variables into the search
 			buffers := &bytes.Buffer{}
 			for _, s := range info.Envs {
@@ -405,7 +474,29 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 				buffers.WriteByte('\n')
 			}
 			envVars, _ := ioutil.ReadAll(buffers)
-			logs, perms, err := secrets.FindSecretsByFilePathMap(fileMap, envVars, config)
+
+			if bFromRawData {
+				logs, perms, err = secrets.FindSecretsByFilePathMap(fileMap, envVars, config)
+			} else {
+				logs, _, _ = secrets.FindSecretsByFilePathMap(nil, envVars, config)
+				for sid, slogs := range secretLogs {
+					for _, log := range slogs {
+						if id, ok := fileMap[log.File]; ok && id == sid {
+							// top layer id matched
+							logs = append(logs, log)
+						}
+					}
+				}
+
+				for sid, plogs := range setidPermLogs {
+					for _, log := range plogs {
+						if id, ok := fileMap[log.File]; ok && id == sid {
+							// top layer id matched
+							perms = append(perms, log)
+						}
+					}
+				}
+			}
 			secret = buildSecretResult(logs, err)
 			setidPerm = buildSetIdPermLogs(perms)
 			log.Info("Done secrets ....")
@@ -421,7 +512,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	mergedApps := make(map[string][]detectors.AppFeatureVersion)
 	for _, l := range info.Layers {
 		isBase := baseLayers.Contains(l)
-		if lf, ok := lfs[l]; ok {
+		if lf, ok := layerFiles[l]; ok {
 			var hasRpmPackages bool
 			for filename, _ := range lf.Pkgs {
 				if scan.RPMPkgFiles.Contains(filename) {
@@ -450,9 +541,13 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 					fpath = fpath[:pos]
 				}
 
-				if _, ok := fileMap[fpath]; !ok {
+				if ref, ok := fileMap[fpath]; !ok {
 					// log.WithFields(log.Fields{"filename": fpath, "apps": apps}).Info("Ignore")
 					continue
+				} else {
+					if !bFromRawData && ref != l { // not exist at upper layer
+						continue
+					}
 				}
 
 				if _, ok := mergedApps[filename]; !ok {
@@ -503,7 +598,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 					Size:   0,
 				}
 				result.Layers[i] = l
-			} else if lf, ok := lfs[layer]; ok {
+			} else if lf, ok := layerFiles[layer]; ok {
 				if lf.Size > 0 {
 					var vuls []*share.ScanVulnerability
 
@@ -552,7 +647,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	// parallely scanning: done and collecting data
 	<-done
 	close(done)
-	log.WithFields(log.Fields{"id": info.ID, "secrets": len(secret.Logs), "vuls": len(vuls)}).Info("scan image done")
+	log.WithFields(log.Fields{"id": info.ID, "secrets": len(secret.Logs), "setPerm": len(setidPerm),"vuls": len(vuls)}).Info("scan image done")
 
 	// Correct CVE in-base flag
 	if req.BaseImage != "" {

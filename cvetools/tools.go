@@ -34,9 +34,9 @@ func downloadFromUrl(url, fileName string) error {
 }
 
 // collectImageFileMap creates a virtual file map for a image to save real copy efforts
-func collectImageFileMap(rootPath string, fmap map[string]string) (int, error) {
+func collectImageFileMap(rootPath string, fmap map[string]string) (int, []string, error) {
 	if len(rootPath) == 0 {
-		return 0, nil
+		return 0, nil, nil
 	}
 	//
 	var opqDirs []string
@@ -98,5 +98,5 @@ func collectImageFileMap(rootPath string, fmap map[string]string) (int, error) {
 		fmap[path] = ref
 		// log.WithFields(log.Fields{"path": path}).Info("Add")
 	}
-	return len(curfmap), err
+	return len(curfmap), opqDirs, err
 }
