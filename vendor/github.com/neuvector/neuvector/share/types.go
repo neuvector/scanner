@@ -30,6 +30,7 @@ const (
 
 const UnusedGroupAgingDefault uint8 = 24 //aging time in Hour
 const UnusedGroupAgingMax uint8 = 168    //aging time in Hour,24*7
+
 const (
 	PolicyModeLearn       string = "Discover"
 	PolicyModeEvaluate    string = "Monitor"
@@ -79,9 +80,6 @@ const DomainDelimiter string = "."
 const (
 	PlatformDocker     = "Docker"
 	PlatformAmazonECS  = "Amazon-ECS"
-	PlatformAmazonEKS  = "Amazon-EKS"
-	PlatformAzureAKS   = "Azure-AKS"
-	PlatformGoogleGKE  = "Google-GKE"
 	PlatformKubernetes = "Kubernetes"
 	PlatformRancher    = "Rancher"
 	PlatformAliyun     = "Aliyun"
@@ -92,8 +90,6 @@ const (
 	FlavorRancher   = "Rancher"
 	FlavorIKE       = "IKE"
 	FlavorGKE       = "GKE"
-	FlavorAKS 	   	= "AKS"
-	FlavorEKS 	   	= "EKS"
 
 	NetworkFlannel   = "Flannel"
 	NetworkCalico    = "Calico"

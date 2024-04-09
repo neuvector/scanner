@@ -866,6 +866,7 @@ type CLUSServerLDAP struct {
 	Port            uint16 `json:"port"`
 	SSL             bool   `json:"ssl"`
 	BaseDN          string `json:"base_dn"`
+	GroupDN         string `json:"group_dn"`
 	BindDN          string `json:"bind_dn"` // Must handle upgrade if it is cloaked
 	BindPasswd      string `json:"bind_password,cloak"`
 	GroupMemberAttr string `json:"group_member_attr"`
@@ -1013,21 +1014,6 @@ type CLUSNetworkEP struct {
 	IP        []net.IP `json:"ip"`
 }
 
-type CLUSGroupMetric struct {
-	GroupName       string `json:"group_name"`
-	GroupSessCurIn	uint32 `json:"group_sess_cur_in"`
-	GroupSessIn60	uint32 `json:"group_sess_in60"`
-	GroupByteIn60   uint64 `json:"group_byte_in60"`
-	WlMetric        map[string]*CLUSWlMetric  `json:"wl_metric"`
-}
-
-type CLUSWlMetric struct {
-	WlID	    string `json:"wlid"`
-	WlSessCurIn uint32 `json:"wl_sess_cur_in"`
-	WlSessIn60  uint32 `json:"wl_sess_in60"`
-	WlByteIn60  uint64 `json:"wl_byte_in60"`
-}
-
 type CLUSWorkload struct {
 	ID           string                    `json:"id"`
 	Name         string                    `json:"name"`
@@ -1114,10 +1100,6 @@ type CLUSGroup struct {
 	CapIntcp        bool                `json:"cap_intcp"`
 	CfgType         TCfgType            `json:"cfg_type"`
 	BaselineProfile string              `json:"baseline_profile"`
-	MonMetric       bool                `json:"mon_metric,omitempty"`
-	GrpSessCur      uint32              `json:"grp_sess_cur,omitempty"`
-	GrpSessRate     uint32              `json:"grp_sess_rate,omitempty"`
-	GrpBandWidth    uint32              `json:"grp_band_width,omitempty"`
 }
 
 type CLUSPolicyRule struct {
@@ -1352,7 +1334,6 @@ const (
 	CLUSEvScannerAutoScaleDisabled   // when scanner autoscale is disabled by controller
 	CLUSEvCrdSkipped                 // for crd Config import
 	CLUSEvK8sAdmissionWebhookCChange // for admission control
-	CLUSEvGroupMetricViolation //network metric violation per group level
 )
 
 const (
