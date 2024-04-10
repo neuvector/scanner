@@ -673,8 +673,8 @@ github.com/nbutton23/zxcvbn-go v0.0.0-20160627004424-a22cb81b2ecd/go.mod h1:o96d
 github.com/nbutton23/zxcvbn-go v0.0.0-20171102151520-eafdab6b0663/go.mod h1:o96djdrsSGy3AWPyBgZMAGfxZNfgntdJG+11KU4QvbU=
 github.com/neuvector/k8s v1.2.1-0.20220214174348-d0b3f377461e h1:y7w21QaxlBzeRNW1PEdBfR/rA0S801uCEvubsiq1AJ0=
 github.com/neuvector/k8s v1.2.1-0.20220214174348-d0b3f377461e/go.mod h1:djxl7Js+tfAJJgxKpeN3lnFZT6jRhl1Ikkgd/wMrLQU=
-github.com/neuvector/neuvector v0.0.0-20240409044813-8e34c951bba0 h1:s/umzBJHJCzHOQRjs0mJnsq/UTgKPS/ckex4DviarR8=
-github.com/neuvector/neuvector v0.0.0-20240409044813-8e34c951bba0/go.mod h1:jSdathPtRTSMDrQz5m/WMYJA/zfVR8tGVfuthRCZo6A=
+github.com/neuvector/neuvector v0.0.0-20240410075618-872d006a5ffb h1:nZA+tGngU6YULrvUGSDkxffP7YYYEMDGyh1HveepilY=
+github.com/neuvector/neuvector v0.0.0-20240410075618-872d006a5ffb/go.mod h1:jSdathPtRTSMDrQz5m/WMYJA/zfVR8tGVfuthRCZo6A=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
 github.com/olekukonko/tablewriter v0.0.0-20170122224234-a0225b3f23b5/go.mod h1:vsDQFd/mU46D+Z4whnwzcISnGGzXWMclvtLoiIKAKIo=
