@@ -2114,27 +2114,6 @@ type RESTScanStatusData struct {
 	Status *RESTScanStatus `json:"status"`
 }
 
-type RESTScanCacheStat struct {
-	RecordCnt       uint64  `json:"record_count,omitempty"`
-	RecordSize      uint64	`json:"record_total_size,omitempty"`
-	MissCnt         uint64	`json:"cache_misses,omitempty"`
-	HitCnt          uint64	`json:"cache_hits,omitempty"`
-}
-
-type RESTScanCacheRecord struct {
-	Layer	string		`json:"layer_id,omitempty"`
-	Size	uint64		`json:"size,omitempty"`
-	RefCnt	uint32		`json:"reference_count,omitempty"`
-	RefLast	time.Time	`json:"last_referred,omitempty"`
-}
-
-type RESTScanCacheData struct {
-	CacheRecords 	[]RESTScanCacheRecord	`json:"cache_records,omitempty"`
-	RecordSize      uint64	`json:"record_total_size,omitempty"`
-	MissCnt         uint64	`json:"cache_misses,omitempty"`
-	HitCnt          uint64	`json:"cache_hits,omitempty"`
-}
-
 const ScanStatusIdle string = ""
 const ScanStatusScheduled string = "scheduled"
 const ScanStatusScanning string = "scanning"
