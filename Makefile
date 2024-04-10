@@ -1,7 +1,7 @@
 .PHONY: db copy_scan stage_init stage_scan scanner_image
 
 BASE_IMAGE_TAG = latest
-BUILD_IMAGE_TAG = latest
+BUILD_IMAGE_TAG = v2
 
 # Keep this as the first
 all:
