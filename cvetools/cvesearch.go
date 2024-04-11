@@ -101,9 +101,9 @@ var aliasMap map[string]string = map[string]string{
 func NewScanTools(rtSock string, sys *system.SystemTools, layerCacher *ImageLayerCacher) *ScanTools {
 	cveDB := common.NewCveDB()
 	return &ScanTools{
-		CveDB:  *cveDB,
-		RtSock: rtSock,
-		sys:    sys,
+		CveDB:       *cveDB,
+		RtSock:      rtSock,
+		sys:         sys,
 		LayerCacher: layerCacher,
 	}
 }
@@ -164,6 +164,8 @@ func (cv *ScanTools) ScanImageData(data *share.ScanData) (*share.ScanResult, err
 	if namespace != nil {
 		result.Namespace = namespace.Name
 		result.Modules = feature2Module(namespace.Name, features, apps)
+	} else {
+		result.Modules = feature2Module("", nil, apps)
 	}
 
 	return result, nil
@@ -247,7 +249,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 
 	var info *scan.ImageInfo
 	var baseLayers utils.Set = utils.NewSet()
-	var secret *share.ScanSecretResult = &share.ScanSecretResult {
+	var secret *share.ScanSecretResult = &share.ScanSecretResult{
 		Error: share.ScanErrorCode_ScanErrNone,
 		Logs:  make([]*share.ScanSecretLog, 0),
 	}
@@ -450,7 +452,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 
 			// log.WithFields(log.Fields{"fmap": fmap[layerID], "layerID": layerID}).Debug()
 			for _, fpath := range fmap[layerID] {
-				fileMap[fpath] = layerID  // reference
+				fileMap[fpath] = layerID // reference
 			}
 		}
 	}
@@ -464,7 +466,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 			logs := make([]share.CLUSSecretLog, 0)
 			perms := make([]share.CLUSSetIdPermLog, 0)
 
-			config := secrets.Config {
+			config := secrets.Config{
 				MiniWeight: 0.1, // Some other texts will dilute the weight, so it is better to stay at a smaller weight
 			}
 			// Include env variables into the search
@@ -576,6 +578,8 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	if namespace != nil {
 		result.Namespace = namespace.Name
 		result.Modules = feature2Module(namespace.Name, features, apps)
+	} else {
+		result.Modules = feature2Module("", nil, apps)
 	}
 	result.Error = serr
 	result.Vuls = vuls
@@ -647,7 +651,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	// parallely scanning: done and collecting data
 	<-done
 	close(done)
-	log.WithFields(log.Fields{"id": info.ID, "secrets": len(secret.Logs), "setPerm": len(setidPerm),"vuls": len(vuls)}).Info("scan image done")
+	log.WithFields(log.Fields{"id": info.ID, "secrets": len(secret.Logs), "setPerm": len(setidPerm), "vuls": len(vuls)}).Info("scan image done")
 
 	// Correct CVE in-base flag
 	if req.BaseImage != "" {
