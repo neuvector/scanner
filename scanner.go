@@ -218,38 +218,43 @@ func main() {
 	var internalCertControllerCancel context.CancelFunc
 	var err error
 
-	if os.Getenv("AUTO_INTERNAL_CERT") != "" {
+	// This is to support development usage, e.g.,
+	// ./scanner -d ./ --license xx -image ghcr.io/chaos-mesh/chaos-coredns:v0.2.6 -no_wait -x -no_task -show module
+	if sys.IsRunningInContainer() {
 
-		log.Info("start initializing k8s internal secret controller and wait for internal secret creation if it's not created")
+		if os.Getenv("AUTO_INTERNAL_CERT") != "" {
 
-		go func() {
-			if err := healthz.StartHealthzServer(); err != nil {
-				log.WithError(err).Warn("failed to start healthz server")
-			}
-		}()
+			log.Info("start initializing k8s internal secret controller and wait for internal secret creation if it's not created")
 
-		ctx, internalCertControllerCancel = context.WithCancel(context.Background())
-		defer internalCertControllerCancel()
-		// Initialize secrets.  Most of services are not running at this moment, so skip their reload functions.
-		err = migration.InitializeInternalSecretController(ctx, []func([]byte, []byte, []byte) error{
-			// Reload grpc server
-			func(cacert []byte, cert []byte, key []byte) error {
-				log.Info("Reloading gRPC servers/clients")
-				if err := cluster.ReloadInternalCert(); err != nil {
-					return fmt.Errorf("failed to reload gRPC's certificate: %w", err)
+			go func() {
+				if err := healthz.StartHealthzServer(); err != nil {
+					log.WithError(err).Warn("failed to start healthz server")
 				}
-				return nil
-			},
-		})
-		if err != nil {
-			log.WithError(err).Error("failed to initialize internal secret controller")
-			os.Exit(-2)
+			}()
+
+			ctx, internalCertControllerCancel = context.WithCancel(context.Background())
+			defer internalCertControllerCancel()
+			// Initialize secrets.  Most of services are not running at this moment, so skip their reload functions.
+			err = migration.InitializeInternalSecretController(ctx, []func([]byte, []byte, []byte) error{
+				// Reload grpc server
+				func(cacert []byte, cert []byte, key []byte) error {
+					log.Info("Reloading gRPC servers/clients")
+					if err := cluster.ReloadInternalCert(); err != nil {
+						return fmt.Errorf("failed to reload gRPC's certificate: %w", err)
+					}
+					return nil
+				},
+			})
+			if err != nil {
+				log.WithError(err).Error("failed to initialize internal secret controller")
+				os.Exit(-2)
+			}
+			log.Info("internal certificate is initialized")
 		}
-		log.Info("internal certificate is initialized")
-	}
-	err = cluster.ReloadInternalCert()
-	if err != nil {
-		log.WithError(err).Fatal("failed to reload internal certificate")
+		err = cluster.ReloadInternalCert()
+		if err != nil {
+			log.WithError(err).Fatal("failed to reload internal certificate")
+		}
 	}
 
 	// If license parameter is given, this is an on-demand scanner, no register to the controller,
