@@ -144,7 +144,9 @@ func (lc *ImageLayerCacher) lock() {
 	}
 
 	if err := syscall.Flock(lc.flock, syscall.LOCK_EX); err != nil {
-		log.WithFields(log.Fields{"error": err, "flock": lc.flock}).Error("Wait")
+		if err.Error() != "bad file descriptor" {	// PVC cases
+			log.WithFields(log.Fields{"error": err, "flock": lc.flock}).Error("Wait")
+		}
 	}
 	// log.WithFields(log.Fields{"fn": utils.GetCaller(3, nil)}).Debug()
 	// time.Sleep(time.Second*10)

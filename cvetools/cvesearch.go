@@ -249,7 +249,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 
 	var info *scan.ImageInfo
 	var baseLayers utils.Set = utils.NewSet()
-	var secret *share.ScanSecretResult = &share.ScanSecretResult{
+	var secret *share.ScanSecretResult = &share.ScanSecretResult {
 		Error: share.ScanErrorCode_ScanErrNone,
 		Logs:  make([]*share.ScanSecretLog, 0),
 	}
@@ -341,6 +341,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 		log.WithFields(log.Fields{"layers": len(info.Layers), "id": info.ID, "digest": info.Digest, "size": result.Size}).Debug("scan remote image")
 	} else {
 		var errCode share.ScanErrorCode
+		var tarLayers []string
 
 		if baseRepo != "" {
 			if baseReg != "" {
@@ -364,22 +365,13 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 			log.WithFields(log.Fields{"baseImage": req.BaseImage, "base": baseLayers, "layers": len(meta.Layers)}).Debug()
 		}
 
-		layerRecords, info, errCode = cv.LoadLocalImage(ctx, req.Repository, req.Tag, imgPath, cv.LayerCacher)
+		layerRecords, info, tarLayers, errCode = cv.LoadLocalImage(ctx, req.Repository, req.Tag, imgPath, cv.LayerCacher)
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
 			return result, nil
 		}
 
 		layers = info.Layers
-		if !bFromRawData {
-			// reverse layers to v2 sequence
-			var rlayers []string
-			for i := len(layers) - 1; i >= 0; i-- {
-				rlayers = append(rlayers, layers[i])
-			}
-			layers = rlayers
-		}
-
 		// log.WithFields(log.Fields{"layers": layers}).Debug()
 		for id, lr := range layerRecords {
 			layerFiles[id] = lr.Modules
@@ -396,6 +388,10 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 					removed[id] = lr.Removed
 				}
 			}
+		}
+
+		if bFromRawData {
+			layers = tarLayers
 		}
 
 		result.ImageID = info.ID
@@ -427,32 +423,35 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	// Build a map for whole image
 	fileMap := make(map[string]string)
 	if bFromRawData {
-		// Build a map for whole image, v1: top-bottom, reverse order
+		// Build a map from raw layer data
 		log.Info("build image map")
 		for i := len(layers) - 1; i >= 0; i-- {
-			layerPath := filepath.Join(imgPath, layers[i])
-			if _, _, err := collectImageFileMap(layerPath, fileMap); err != nil {
-				log.WithFields(log.Fields{"error": err, "layer": layerPath}).Error("virtual image map")
-				break
+			if layers[i] != "" {
+				// log.WithFields(log.Fields{"i": i, "layer": layers[i]}).Debug("layers")
+				layerPath := filepath.Join(imgPath, layers[i])
+				if _, _, err := collectImageFileMap(layerPath, fileMap); err != nil {
+					log.WithFields(log.Fields{"error": err, "layer": layerPath}).Error("virtual image map")
+					break
+				}
 			}
 		}
 	} else {
-		// build an absrtact map from records; v2: bottom-top, normal order
+		// build an absrtact map from records
 		log.Info("generate image map")
-		for _, layerID := range layers {
+		for i := len(layers) - 1; i >= 0; i-- {
 			// remove the opaque directories/files from lower layers
-			for _, dir := range removed[layerID] {
+			for _, dir := range removed[layers[i]] {
+				// log.WithFields(log.Fields{"dir": dir, "layerID": layers[i]}).Debug("Remove")
 				for fpath, _ := range fileMap {
 					if strings.HasPrefix(fpath, dir) {
-						// log.WithFields(log.Fields{"fpath": fpath, "dir": dir}).Debug("Remove")
 						delete(fileMap, fpath)
 					}
 				}
 			}
 
-			// log.WithFields(log.Fields{"fmap": fmap[layerID], "layerID": layerID}).Debug()
-			for _, fpath := range fmap[layerID] {
-				fileMap[fpath] = layerID // reference
+			// log.WithFields(log.Fields{"fmap": fmap[layers[i]], "layerID": layers[i]}).Debug()
+			for _, fpath := range fmap[layers[i]] {
+				fileMap[fpath] = layers[i]  // reference
 			}
 		}
 	}
@@ -466,7 +465,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 			logs := make([]share.CLUSSecretLog, 0)
 			perms := make([]share.CLUSSetIdPermLog, 0)
 
-			config := secrets.Config{
+			config := secrets.Config {
 				MiniWeight: 0.1, // Some other texts will dilute the weight, so it is better to stay at a smaller weight
 			}
 			// Include env variables into the search
