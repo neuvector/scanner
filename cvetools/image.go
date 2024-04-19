@@ -86,7 +86,7 @@ func (s *ScanTools) GetLocalImageMeta(ctx context.Context, repository, tag strin
 }
 
 func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath string, cacher *ImageLayerCacher) (
-	map[string]*LayerRecord, *scan.ImageInfo, share.ScanErrorCode) {
+	map[string]*LayerRecord, *scan.ImageInfo, []string, share.ScanErrorCode) {
 
 	sock, repo := parseSocketFromRepo(repository)
 	if sock == "" {
@@ -96,7 +96,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	rt, err := container.ConnectDocker(sock, s.sys)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Connect docker server fail")
-		return nil, nil, share.ScanErrorCode_ScanErrContainerAPI
+		return nil, nil, nil, share.ScanErrorCode_ScanErrContainerAPI
 	}
 
 	imageName := fmt.Sprintf("%s:%s", repo, tag)
@@ -105,29 +105,29 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to get local image")
 		if err == dockerclient.ErrImageNotFound {
-			return nil, nil, share.ScanErrorCode_ScanErrImageNotFound
+			return nil, nil, nil, share.ScanErrorCode_ScanErrImageNotFound
 		}
-		return nil, nil, share.ScanErrorCode_ScanErrContainerAPI
+		return nil, nil, nil, share.ScanErrorCode_ScanErrContainerAPI
 	}
 
 	histories, err := rt.GetImageHistory(imageName)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to get local image history")
 		if err == dockerclient.ErrImageNotFound {
-			return nil, nil, share.ScanErrorCode_ScanErrImageNotFound
+			return nil, nil, nil, share.ScanErrorCode_ScanErrImageNotFound
 		}
-		return nil, nil, share.ScanErrorCode_ScanErrContainerAPI
+		return nil, nil, nil, share.ScanErrorCode_ScanErrContainerAPI
 	}
 
 	file, err := rt.GetImageFile(meta.ID)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to get image")
 		if err == dockerclient.ErrImageNotFound {
-			return nil, nil, share.ScanErrorCode_ScanErrImageNotFound
+			return nil, nil, nil, share.ScanErrorCode_ScanErrImageNotFound
 		} else if err == container.ErrMethodNotSupported {
-			return nil, nil, share.ScanErrorCode_ScanErrDriverAPINotSupport
+			return nil, nil, nil, share.ScanErrorCode_ScanErrDriverAPINotSupport
 		}
-		return nil, nil, share.ScanErrorCode_ScanErrContainerAPI
+		return nil, nil, nil, share.ScanErrorCode_ScanErrContainerAPI
 	}
 
 	// create an image file and image layered folders
@@ -145,14 +145,14 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	file.Close()
 	if err != nil {
 		log.Errorf("could not write to image: %s", err)
-		return nil, nil, share.ScanErrorCode_ScanErrFileSystem
+		return nil, nil, nil, share.ScanErrorCode_ScanErrFileSystem
 	}
 
 	// obtain layer information, then extract the layers into tar files
 	layers, blobs, err := getImageLayers(repoFolder, imageFile)
 	if err != nil {
 		log.Errorf("could not extract image layers: %s", err)
-		return nil, nil, share.ScanErrorCode_ScanErrPackage
+		return nil, nil, nil, share.ScanErrorCode_ScanErrPackage
 	}
 
 	//log.WithFields(log.Fields{"layers": layers, "blobs": blobs}).Debug()
@@ -233,7 +233,9 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	// In the "inspect image" CLI command, users can only read the "sha256:xxxx" list.
 	// however, "yyyy" is the real data storage and referrable.
 	// SWAP tarID into layerID
-	for i, tarID := range layers {		// tar
+	tars := layers
+	for i, tarID := range tars {		// tar
+		// log.WithFields(log.Fields{"i": i, "tarID": tarID}).Debug()
 		shaID := meta.Layers[i]		// sha
 		if lr, ok := cacheLayers[tarID]; ok {
 			cacheLayers[shaID] = lr
@@ -242,17 +244,32 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	}
 
 	// Use cmds from "docker history" API, add 0-sized layer back in.
+	tarLayers := make([]string, len(histories))
 	layers = make([]string, len(histories))
 	cmds := make([]string, len(histories))
+	lenML := len(meta.Layers)
 	ml := 0
 	for i, h := range histories {
 		cmds[i] = scan.NormalizeImageCmd(h.Cmd)
-		if h.Size > 0 {
-			layers[i] = meta.Layers[ml]
-			ml++
-		} else {
-			layers[i] = ""
+		if ml < lenML {
+			matched := (h.Size > 0)
+			if !matched {
+				if mod, ok := layerModules[tars[ml]]; ok {
+					matched = (mod.Size == 0)   // symblic blobs, not exactly at its position but it is near enough
+				}
+			}
+
+			if matched {
+				layers[i] = meta.Layers[ml]
+				tarLayers[i] = tars[ml]
+				ml++
+				continue
+			}
 		}
+
+		// empty layer
+		layers[i] = ""
+		tarLayers[i] = ""
 	}
 
 	repoInfo := &scan.ImageInfo{
@@ -265,7 +282,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 		RepoTags: meta.RepoTags,
 	}
 
-	return cacheLayers, repoInfo, errCode
+	return cacheLayers, repoInfo, tarLayers, errCode
 }
 
 type layerMetadata struct {
