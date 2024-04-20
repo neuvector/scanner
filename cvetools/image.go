@@ -362,7 +362,7 @@ func getImageLayers(tmpDir string, imageTar string) ([]string, map[string]string
 		return nil, nil, err
 	}
 
-	layerCount := len(fileMap)
+	layerCount := len(image[0].Layers)
 	layers := make([]string, layerCount)
 	blobs := make(map[string]string)
 	for i, ftar := range image[0].Layers {
