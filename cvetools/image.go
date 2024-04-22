@@ -174,7 +174,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 		lr := LayerRecord{}
 		keepers.Add(cacher.RecordName(layer, &lr))	// reference for write record
 		if _, err := cacher.ReadRecordCache(layer, &lr); err == nil {
-			// log.WithFields(log.Fields{"layer": layer}).Debug("rec")
+			log.WithFields(log.Fields{"layer": layer}).Info("cache")
 			cacheLayers[layer] = &lr
 		} else {
 			downloads = append(downloads, layer)
@@ -557,7 +557,7 @@ func downloadLayers(ctx context.Context, layers []string, sizes map[string]int64
 			res := <-done
 			results[res.layer] = res
 			accumlates -= res.TarSize
-			// log.WithFields(log.Fields{"res": res}).Debug()
+			log.WithFields(log.Fields{"res": res}).Info()
 			if res.err != nil {
 				err = res.err // reporting just one error
 			}
@@ -713,7 +713,7 @@ func DownloadRemoteImage(ctx context.Context, rc *scan.RegClient, name, imgPath 
 		lr := LayerRecord{}
 		keepers.Add(cacher.RecordName(layer, &lr))	// reference for write recor
 		if _, err := cacher.ReadRecordCache(layer, &lr); err == nil {
-			//log.WithFields(log.Fields{"layer": layer}).Debug("rec")
+			log.WithFields(log.Fields{"layer": layer}).Info("cache")
 			cacheLayers[layer] = &lr
 		} else {
 			downloads = append(downloads, layer)
