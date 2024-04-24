@@ -66,7 +66,7 @@ func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detecto
 			}
 		}
 		// ruby reports patched version. The affected version is converted from patched version.
-		// The conversion logic is not correct.
+		// The conversion logic has flaws.
 		if strings.HasPrefix(app.ModuleName, "ruby:") && len(v.FixedVer) > 0 {
 			if fixed := compareAppVersion(app.Version, v.FixedVer); !fixed {
 				fv := appVul2FullVul(app, v)
