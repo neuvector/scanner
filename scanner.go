@@ -152,7 +152,7 @@ func adjustContainerPod(selfID string, containers []*container.ContainerMeta) st
 
 func main() {
 	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	log.SetFormatter(&utils.LogFormatter{Module: "SCN"})
 
 	dbPath := flag.String("d", "./dbgen/", "cve database file directory")
@@ -184,6 +184,17 @@ func main() {
 	maxCacherRecordSize := flag.Int64("maxrec", 0, "maximum record cacher size in MB") // common.MaxRecordCacherSizeMB
 	flag.Usage = usage
 	flag.Parse()
+
+	logLevel := os.Getenv("LOG_LEVEL")
+
+	if logLevel != "" {
+		ll, err := log.ParseLevel(logLevel)
+		if err != nil {
+			log.Error("failed to load log level")
+		} else {
+			log.SetLevel(ll)
+		}
+	}
 
 	if *debug != "" {
 		common.ParseDebugFilters(*debug)
@@ -264,7 +275,6 @@ func main() {
 
 		// Less debug in interactive mode
 		if *image != "" && *verbose == false {
-			log.SetLevel(log.InfoLevel)
 			showTaskDebug = false
 		}
 	}

@@ -30,7 +30,7 @@ func usage() {
 var ntChan chan uint32 = make(chan uint32, 1)
 var cveTools *cvetools.ScanTools // available inside package
 
-////
+// //
 func checkDbReady() bool {
 	var dbReady bool
 	for {
@@ -46,7 +46,7 @@ func checkDbReady() bool {
 	return dbReady
 }
 
-////////////////////////
+// //////////////////////
 func processRequest(tm *taskMain, scanType, infile, workingPath string) int {
 	var err error
 	jsonFile, err := os.Open(infile)
@@ -87,22 +87,33 @@ func processRequest(tm *taskMain, scanType, infile, workingPath string) int {
 	return -1
 }
 
-///////////////////////
+// /////////////////////
 func main() {
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.InfoLevel) // change it later
 	log.SetFormatter(&utils.LogFormatter{Module: "SCT"})
 
 	scanType := flag.String("t", "", "scan type: reg, pkg, dat or awl (Required)")
-	infile := flag.String("i", "input.json", "input json name")    // uuid input filename
-	outfile := flag.String("o", "result.json", "output json name") // uuid output filename
-	rtSock := flag.String("u", "", "Container socket URL")         // used for scan local image
+	infile := flag.String("i", "input.json", "input json name")                       // uuid input filename
+	outfile := flag.String("o", "result.json", "output json name")                    // uuid output filename
+	rtSock := flag.String("u", "", "Container socket URL")                            // used for scan local image
 	maxCacherRecordSize := flag.Int64("maxrec", 0, "maximum layer cacher size in MB") // common.MaxRecordCacherSizeMB
 	flag.Usage = usage
 	flag.Parse()
 
+	logLevel := os.Getenv("LOG_LEVEL")
+
+	if logLevel != "" {
+		ll, err := log.ParseLevel(logLevel)
+		if err != nil {
+			log.Error("failed to load log level")
+		} else {
+			log.SetLevel(ll)
+		}
+	}
+
 	// acquire tool
-	layerCacher, _ :=  cvetools.InitImageLayerCacher(common.ImageLayerCacherFile, common.ImageLayerLockFile, common.ImageLayersCachePath, *maxCacherRecordSize)
+	layerCacher, _ := cvetools.InitImageLayerCacher(common.ImageLayerCacherFile, common.ImageLayerLockFile, common.ImageLayersCachePath, *maxCacherRecordSize)
 	if layerCacher != nil {
 		defer layerCacher.LeaveLayerCacher()
 	}
