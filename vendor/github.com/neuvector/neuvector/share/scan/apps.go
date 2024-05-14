@@ -15,8 +15,6 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-
-	"github.com/neuvector/neuvector/share/utils"
 )
 
 const (
@@ -26,7 +24,7 @@ const (
 	nodeModules2 = "/usr/local/lib/node_modules"
 	nodeModules  = "node_modules"
 	nodePackage  = "package.json"
-	nodeJs       = "node.js"
+	nodeJs       = "npm"
 
 	wpname           = "Wordpress"
 	WPVerFileSuffix  = "wp-includes/version.php"
@@ -55,6 +53,13 @@ const (
 	dotnetDepsMaxSize = 10 * 1024 * 1024
 
 	golang = "golang"
+
+	// R language
+	rlang = "r"
+	rDefaultPath    = "usr/lib/R/library/"
+	rDefaultPath2   = "usr/local/lib/R/library/"
+	rRepositoryPath = "usr/local/lib/R/site-library/"
+	rDescFileName   = "DESCRIPTION"
 )
 
 var verRegexp = regexp.MustCompile(`<([a-zA-Z0-9\.]+)>([0-9\.]+)</([a-zA-Z0-9\.]+)>`)
@@ -112,18 +117,17 @@ type dotnetPackage struct {
 }
 
 type ScanApps struct {
-	dedup   utils.Set               // Used by some apps to remove duplicated modules
 	pkgs    map[string][]AppPackage // AppPackage set
 	replace bool
 }
 
 func NewScanApps(v2 bool) *ScanApps {
-	return &ScanApps{pkgs: make(map[string][]AppPackage), dedup: utils.NewSet(), replace: v2}
+	return &ScanApps{pkgs: make(map[string][]AppPackage), replace: v2}
 }
 
 func IsAppsPkgFile(filename, fullpath string) bool {
 	if isNodejs(filename) || IsJava(filename) || isPython(filename) ||
-		isRuby(filename) || isDotNet(filename) || isWordpress(filename) || isPhpComposer(filename) {
+		isRuby(filename) || isDotNet(filename) || isWordpress(filename) || isPhpComposer(filename) || IsRlangPackage(filename) {
 		return true
 	}
 	// Keep golang check at last as it requires reading file data
@@ -185,6 +189,8 @@ func (s *ScanApps) ExtractAppPkg(filename, fullpath string) {
 		s.parseWordpressPackage(filename, fullpath)
 	} else if isPhpComposer(filename) {
 		s.parsePhpComposerJson(filename, fullpath)
+	} else if IsRlangPackage(filename) {
+		s.parseRLangPackage(filename, fullpath)
 	} else {
 		s.parseGolangPackage(filename, fullpath)
 	}
@@ -425,7 +431,7 @@ func parseJarManifestFile(path string, rc io.Reader) (*AppPackage, error) {
 	return &pkg, nil
 }
 
-func (s *ScanApps) parseJarPackage(r zip.Reader, tfile, filename, fullpath string, depth int) {
+func (s *ScanApps) parseJarPackage(r zip.Reader, origJar, filename, fullpath string, depth int) {
 	tempDir, err := ioutil.TempDir("", "")
 	if err == nil {
 		defer os.RemoveAll(tempDir)
@@ -436,7 +442,7 @@ func (s *ScanApps) parseJarPackage(r zip.Reader, tfile, filename, fullpath strin
 	// the real filepath
 	path := filename
 	if depth > 0 {
-		path = tfile + ":" + filename
+		path = origJar + ":" + filename
 	}
 
 	pkgs := make(map[string][]AppPackage)
@@ -453,7 +459,7 @@ func (s *ScanApps) parseJarPackage(r zip.Reader, tfile, filename, fullpath strin
 					if _, err := io.Copy(dstFile, jarFile); err == nil {
 						dstFile.Close()
 						if jarReader, err := zip.OpenReader(dstPath); err == nil {
-							s.parseJarPackage(jarReader.Reader, tfile, f.Name, dstPath, depth+1)
+							s.parseJarPackage(jarReader.Reader, origJar, f.Name, dstPath, depth+1)
 							jarReader.Close()
 						}
 					} else {
@@ -509,7 +515,12 @@ func (s *ScanApps) parseJarPackage(r zip.Reader, tfile, filename, fullpath strin
 				ModuleName: fmt.Sprintf("%s:%s", groupId, artifactId),
 				Version:    version,
 			}
-			pkgs[path] = []AppPackage{pkg}
+			if _, ok := pkgs[path]; !ok {
+				pkgs[path] = []AppPackage{pkg}
+			} else {
+				pkgs[path] = append(pkgs[path], pkg)
+			}
+
 			continue //higher priority
 		} else if strings.HasSuffix(f.Name, javaManifest) {
 			rc, err := f.Open()
@@ -519,7 +530,11 @@ func (s *ScanApps) parseJarPackage(r zip.Reader, tfile, filename, fullpath strin
 			}
 
 			if pkg, err := parseJarManifestFile(path, rc); err == nil {
-				pkgs[path] = []AppPackage{*pkg}
+				if _, ok := pkgs[path]; !ok {
+					pkgs[path] = []AppPackage{*pkg}
+				} else {
+					pkgs[path] = append(pkgs[path], *pkg)
+				}
 			}
 
 			rc.Close()
@@ -551,6 +566,13 @@ func isPhpComposer(filename string) bool {
 	return strings.HasSuffix(filename, ComposerFile)
 }
 
+func IsRlangPackage(filename string) bool {
+	if filepath.Base(filename) != rDescFileName {
+		return false
+	}
+	return strings.HasPrefix(filename, rDefaultPath) || strings.HasPrefix(filename, rRepositoryPath) || strings.HasPrefix(filename, rDefaultPath2)
+}
+
 func (s *ScanApps) parsePhpComposerJson(filename string, filepath string) {
 	data := ComposerLock{}
 	//extract json data
@@ -578,7 +600,7 @@ func (s *ScanApps) parsePhpComposerJson(filename string, filepath string) {
 		if _, ok := s.pkgs[filename]; !ok {
 			s.pkgs[filename] = []AppPackage{appPackage}
 		} else {
-			s.pkgs[filename] = append(s.pkgs[appPackage.ModuleName], appPackage)
+			s.pkgs[filename] = append(s.pkgs[filename], appPackage)
 		}
 	}
 }
@@ -730,13 +752,7 @@ func (s *ScanApps) parseDotNetPackage(filename, fullpath string) {
 					Version:    v,
 					FileName:   filename,
 				}
-
-				// There can be several files that list the same dependency, such as .NET Core, so to dedup them
-				key := fmt.Sprintf("%s-%s-%s", pkg.AppName, pkg.ModuleName, pkg.Version)
-				if !s.dedup.Contains(key) {
-					s.dedup.Add(key)
-					pkgs = append(pkgs, pkg)
-				}
+				pkgs = append(pkgs, pkg)
 			}
 		}
 	}
@@ -748,16 +764,54 @@ func (s *ScanApps) parseDotNetPackage(filename, fullpath string) {
 			Version:    coreVersion,
 			FileName:   filename,
 		}
-
-		// There can be several files that list the same dependency, such as .NET Core, so to dedup them
-		key := fmt.Sprintf("%s-%s-%s", pkg.AppName, pkg.ModuleName, pkg.Version)
-		if !s.dedup.Contains(key) {
-			s.dedup.Add(key)
-			pkgs = append(pkgs, pkg)
-		}
+		pkgs = append(pkgs, pkg)
 	}
 
 	if len(pkgs) > 0 {
 		s.pkgs[filename] = pkgs
+	}
+}
+
+func (s *ScanApps) parseRLangPackage(filename, fullpath string) {
+	if _, err := os.Stat(fullpath); err != nil {
+		log.WithFields(log.Fields{"err": err, "fullpath": fullpath, "filename": filename}).Error("Failed to stat file")
+		return
+	}
+
+	var name, version, repository string
+
+	inputFile, err := os.Open(fullpath)
+	if err != nil {
+		log.WithFields(log.Fields{"err": err, "fullpath": fullpath, "filename": filename}).Debug("Open file fail")
+		return
+	}
+	defer inputFile.Close()
+
+	scanner := bufio.NewScanner(inputFile)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(line, "Package: ") {
+			name = strings.TrimSpace(strings.TrimPrefix(line, "Package: "))
+		} else if strings.HasPrefix(line, "Version: ") {
+			version = strings.TrimSpace(strings.TrimPrefix(line, "Version: "))
+		} else if strings.HasPrefix(line, "Repository:") {
+			repository = strings.TrimSpace(strings.TrimPrefix(line, "Repository: "))
+		}
+	}
+
+	if name != "" {
+		var rname string
+		if repository == "" {
+			rname = name
+		} else {
+			rname = fmt.Sprintf("%s-%s", repository, name)
+		}
+		pkg := AppPackage {
+			AppName:    rlang,
+			ModuleName: strings.ToLower(rname),
+			Version:    version,
+			FileName:   strings.TrimSuffix(filename, "/"+ rDescFileName),
+		}
+		s.pkgs[filename] = []AppPackage{pkg}
 	}
 }
