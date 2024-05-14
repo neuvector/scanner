@@ -30,7 +30,12 @@ func (cv *ScanTools) DetectAppVul(path string, apps []detectors.AppFeatureVersio
 	}
 	vuls := make([]vulFullReport, 0)
 	for i, app := range apps {
-		//If the entry exists, find vulnerabilities.
+		if common.Debugs.CVEs.Cardinality() == 0 && common.Debugs.Features.Contains(app.AppName) {
+			log.WithFields(log.Fields{
+				"app": app.AppName, "file": app.FileName, "module": app.ModuleName, "version": app.Version,
+			}).Info("DEBUG")
+		}
+
 		if mv, found := modVuls[app.ModuleName]; found {
 			results := checkForVulns(app, i, apps, mv)
 			vuls = append(vuls, results...)
@@ -55,8 +60,8 @@ func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detecto
 			if common.Debugs.CVEs.Contains(v.VulName) && common.Debugs.Features.Contains(app.AppName) {
 				log.WithFields(log.Fields{
 					"name": v.VulName, "affected": v.AffectedVer, "fixin": v.FixedVer,
-					"app": app.AppName, "version": app.Version,
-				}).Info("DEBUG")
+					"app": app.AppName, "file": app.FileName, "module": app.ModuleName, "version": app.Version,
+				}).Info("DEBUG: check")
 			}
 		}
 
@@ -77,7 +82,7 @@ func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detecto
 				if common.Debugs.Enabled {
 					if common.Debugs.CVEs.Contains(v.VulName) {
 						log.WithFields(log.Fields{
-							"name": v.VulName, "app": app.AppName, "version": app.Version,
+							"name": v.VulName, "app": app.AppName, "version": app.Version, "file": app.FileName, "module": app.ModuleName,
 						}).Info("DEBUG: report")
 					}
 				}
