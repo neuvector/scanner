@@ -177,7 +177,7 @@ func main() {
 	output := flag.String("o", "", "Output CVEDB in json format, specify the output file")
 	show := flag.String("show", "", "Standalone Mode: Stdout print options, cmd,module")
 	getVer := flag.Bool("v", false, "show cve database version")
-	debug := flag.String("debug", "", "debug filters")
+	debug := flag.String("debug", "", "debug filters. (v=CVE-2024-0001,f=jar)")
 	maxCacherRecordSize := flag.Int64("maxrec", 0, "maximum record cacher size in MB") // common.MaxRecordCacherSizeMB
 	flag.Usage = usage
 	flag.Parse()
@@ -295,7 +295,7 @@ func main() {
 				Tag:         tag,
 				Username:    *regUser,
 				Password:    *regPass,
-				ScanLayers:  true,
+				ScanLayers:  *scanLayers,
 				ScanSecrets: false,
 				BaseImage:   *baseImage,
 			}

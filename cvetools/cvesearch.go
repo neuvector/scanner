@@ -249,7 +249,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 
 	var info *scan.ImageInfo
 	var baseLayers utils.Set = utils.NewSet()
-	var secret *share.ScanSecretResult = &share.ScanSecretResult {
+	var secret *share.ScanSecretResult = &share.ScanSecretResult{
 		Error: share.ScanErrorCode_ScanErrNone,
 		Logs:  make([]*share.ScanSecretLog, 0),
 	}
@@ -451,7 +451,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 
 			// log.WithFields(log.Fields{"fmap": fmap[layers[i]], "layerID": layers[i]}).Debug()
 			for _, fpath := range fmap[layers[i]] {
-				fileMap[fpath] = layers[i]  // reference
+				fileMap[fpath] = layers[i] // reference
 			}
 		}
 	}
@@ -465,7 +465,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 			logs := make([]share.CLUSSecretLog, 0)
 			perms := make([]share.CLUSSetIdPermLog, 0)
 
-			config := secrets.Config {
+			config := secrets.Config{
 				MiniWeight: 0.1, // Some other texts will dilute the weight, so it is better to stay at a smaller weight
 			}
 			// Include env variables into the search
@@ -1342,12 +1342,14 @@ func getVulItemList(vuls []vulFullReport, dbPrefix string) []*share.ScanVulnerab
 		}
 		packVer := featver.Version.String()
 
-		// TODO: Quick fix to remove duplication. It should be done earlier
-		key := fmt.Sprintf("%s-%s-%s", v.Name, featver.Package, packVer)
-		if unique.Contains(key) {
-			continue
+		// There can be several files that list the same dependency on .NET Core, so to dedup them
+		if featver.Package == ".NET:Core" {
+			key := fmt.Sprintf("%s-%s-%s", v.Name, featver.Package, packVer)
+			if unique.Contains(key) {
+				continue
+			}
+			unique.Add(key)
 		}
-		unique.Add(key)
 
 		if severity == common.Critical {
 			severity = common.High
@@ -1443,7 +1445,7 @@ func feature2Module(namespace string, features []detectors.FeatureVersion, apps 
 		if !dedup.Contains(key) {
 			dedup.Add(key)
 
-			m := &share.ScanModule{Name: app.ModuleName, Version: app.Version, Source: app.AppName}
+			m := &share.ScanModule{Name: app.ModuleName, File: app.FileName, Version: app.Version, Source: app.AppName}
 			for _, mv := range app.ModuleVuls {
 				cve := &share.ScanModuleVul{Name: mv.Name, Status: mv.Status}
 				m.Vuls = append(m.Vuls, cve)
