@@ -182,9 +182,7 @@ func main() {
 	flag.Usage = usage
 	flag.Parse()
 
-	if *debug != "" {
-		common.ParseDebugFilters(*debug)
-	}
+	common.InitDebugFilters(*debug)
 
 	// show cve database version
 	if *getVer {
