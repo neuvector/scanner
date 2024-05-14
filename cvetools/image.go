@@ -446,6 +446,9 @@ func getImageLayerIterate(
 			if strings.HasPrefix(path, dockerfile) {
 				return true
 			}
+			if scan.IsRlangPackage(path) {
+				return true
+			}
 			return false
 		})
 
