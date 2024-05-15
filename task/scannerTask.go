@@ -107,6 +107,7 @@ func main() {
 		defer layerCacher.LeaveLayerCacher()
 	}
 	cveTools = cvetools.NewScanTools(*rtSock, system.NewSystemTools(), layerCacher)
+	common.InitDebugFilters("")
 
 	// create an imgPath from the input file
 	var imageWorkingPath string
