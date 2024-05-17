@@ -3,6 +3,7 @@ package cvetools
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -98,13 +99,14 @@ var aliasMap map[string]string = map[string]string{
 	"docker-ce": "docker",
 }
 
-func NewScanTools(rtSock string, sys *system.SystemTools, layerCacher *ImageLayerCacher) *ScanTools {
+func NewScanTools(rtSock string, sys *system.SystemTools, layerCacher *ImageLayerCacher, mFile string) *ScanTools {
 	cveDB := common.NewCveDB()
 	return &ScanTools{
 		CveDB:       *cveDB,
 		RtSock:      rtSock,
 		sys:         sys,
 		LayerCacher: layerCacher,
+		modulesFile: mFile,
 	}
 }
 
@@ -199,6 +201,19 @@ func (cv *ScanTools) ScanAppPackage(req *share.ScanAppRequest, namespace string)
 		Modules:         feature2Module(namespace, nil, apps),
 	}
 	return result, nil
+}
+
+func (cv *ScanTools) writeModuleFile(apps []scan.AppPackage) {
+	if cv.modulesFile != "" {
+		sort.SliceStable(apps, func(i, j int) bool {
+			if apps[i].ModuleName != apps[j].ModuleName {
+				return apps[i].ModuleName < apps[j].ModuleName
+			}
+			return (apps[i].FileName < apps[j].FileName)
+		})
+		data, _ := json.Marshal(apps)
+		ioutil.WriteFile(cv.modulesFile, data, 0644)
+	}
 }
 
 // ScanImage helps the Image scanning
@@ -509,6 +524,8 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 
 	// Merge file data, layer order in schema V1, the first is the latest layer
 	gotFirstCpe := false
+
+	var modules []scan.AppPackage
 	mergedFiles := make(map[string]*detectors.FeatureFile)
 	mergedApps := make(map[string][]detectors.AppFeatureVersion)
 	for _, l := range info.Layers {
@@ -553,20 +570,26 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 
 				if _, ok := mergedApps[filename]; !ok {
 					// convert AppPackage to AppFeatureVersion
-					afvs := make([]detectors.AppFeatureVersion, len(apps))
-					for i, a := range apps {
-						afvs[i] = detectors.AppFeatureVersion{
-							AppPackage: a,
-							ModuleVuls: make([]detectors.ModuleVul, 0),
-							InBase:     isBase,
-						}
+					var afvs []detectors.AppFeatureVersion
+					for _, a := range apps {
+						afvs = append(afvs,
+								detectors.AppFeatureVersion{
+									AppPackage: a,
+									ModuleVuls: make([]detectors.ModuleVul, 0),
+									InBase:     isBase,
+								})
+						modules = append(modules, a)
 					}
 
-					mergedApps[filename] = afvs
+					if len(afvs) > 0 {
+						mergedApps[filename] = afvs
+					}
 				}
 			}
 		}
 	}
+
+	cv.writeModuleFile(modules)
 
 	appFVs := make([]detectors.AppFeatureVersion, 0)
 	for _, afvs := range mergedApps {
@@ -1438,20 +1461,13 @@ func feature2Module(namespace string, features []detectors.FeatureVersion, apps 
 		modules = append(modules, m)
 	}
 
-	dedup := utils.NewSet()
 	for _, app := range apps {
-		// modules in different layer can produce duplicate entry, remove them here.
-		key := fmt.Sprintf("%s-%s-%s", app.AppName, app.ModuleName, app.Version)
-		if !dedup.Contains(key) {
-			dedup.Add(key)
-
-			m := &share.ScanModule{Name: app.ModuleName, File: app.FileName, Version: app.Version, Source: app.AppName}
-			for _, mv := range app.ModuleVuls {
-				cve := &share.ScanModuleVul{Name: mv.Name, Status: mv.Status}
-				m.Vuls = append(m.Vuls, cve)
-			}
-			modules = append(modules, m)
+		m := &share.ScanModule{Name: app.ModuleName, File: app.FileName, Version: app.Version, Source: app.AppName}
+		for _, mv := range app.ModuleVuls {
+			cve := &share.ScanModuleVul{Name: mv.Name, Status: mv.Status}
+			m.Vuls = append(m.Vuls, cve)
 		}
+		modules = append(modules, m)
 	}
 
 	return modules

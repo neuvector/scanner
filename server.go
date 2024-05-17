@@ -91,7 +91,7 @@ func (rs *rpcService) ScanRunning(ctx context.Context, req *share.ScanRunningReq
 		return scanTasker.Run(ctx, *data)
 	}
 
-	cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil)
+	cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
 	return cveTools.ScanImageData(data)
 }
 
@@ -101,7 +101,7 @@ func (rs *rpcService) ScanImageData(ctx context.Context, data *share.ScanData) (
 		return scanTasker.Run(ctx, *data)
 	}
 
-	cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil)
+	cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
 	return cveTools.ScanImageData(data)
 }
 
@@ -114,7 +114,7 @@ func (rs *rpcService) ScanImage(ctx context.Context, req *share.ScanImageRequest
 		return scanTasker.Run(ctx, *req)
 	}
 
-	cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil)
+	cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
 	return cveTools.ScanImage(ctx, req, "")
 }
 
@@ -124,7 +124,7 @@ func (rs *rpcService) ScanAppPackage(ctx context.Context, req *share.ScanAppRequ
 		return scanTasker.Run(ctx, *req)
 	}
 
-	cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil)
+	cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
 	return cveTools.ScanAppPackage(req, "")
 }
 
@@ -134,7 +134,7 @@ func (rs *rpcService) ScanAwsLambda(ctx context.Context, req *share.ScanAwsLambd
 		return scanTasker.Run(ctx, *req)
 	}
 
-	cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil)
+	cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
 	return cveTools.ScanAwsLambda(req, "")
 }
 
