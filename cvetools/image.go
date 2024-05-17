@@ -244,8 +244,8 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	}
 
 	// Use cmds from "docker history" API, add 0-sized layer back in.
-	tarLayers := make([]string, len(histories))
-	layers = make([]string, len(histories))
+	layers = []string{}
+	tarLayers := []string{}
 	cmds := make([]string, len(histories))
 	lenML := len(meta.Layers)
 	ml := 0
@@ -260,16 +260,24 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 			}
 
 			if matched {
-				layers[i] = meta.Layers[ml]
-				tarLayers[i] = tars[ml]
+				layers = append(layers, meta.Layers[ml])
+				tarLayers = append(tarLayers, tars[ml])
 				ml++
 				continue
 			}
 		}
 
 		// empty layer
-		layers[i] = ""
-		tarLayers[i] = ""
+		layers = append(layers, "")
+		tarLayers = append(tarLayers, "")
+	}
+
+	// quay.io/nvlab/business_profile-staging:1.0.200514124656
+	// its histories is wrong and short-ed by 1 entry
+	// ==> need to pacth the reminding layers into the layers
+	for i := ml; i < lenML; i++ {
+		layers = append(layers, meta.Layers[i])
+		tarLayers = append(tarLayers, tars[i])
 	}
 
 	repoInfo := &scan.ImageInfo{
