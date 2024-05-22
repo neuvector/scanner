@@ -439,7 +439,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	fileMap := make(map[string]string)
 	if bFromRawData {
 		// Build a map from raw layer data
-		log.Info("build image map")
+		log.Debug("build image map")
 		for i := len(layers) - 1; i >= 0; i-- {
 			if layers[i] != "" {
 				// log.WithFields(log.Fields{"i": i, "layer": layers[i]}).Debug("layers")
@@ -475,7 +475,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	done := make(chan bool, 1)
 	if req.ScanSecrets {
 		go func() {
-			log.Info("Scanning secrets ....")
+			log.Debug("Scanning secrets ....")
 			var err error
 			logs := make([]share.CLUSSecretLog, 0)
 			perms := make([]share.CLUSSetIdPermLog, 0)
@@ -515,7 +515,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 			}
 			secret = buildSecretResult(logs, err)
 			setidPerm = buildSetIdPermLogs(perms)
-			log.Info("Done secrets ....")
+			log.Debug("Done secrets ....")
 			done <- true
 		}()
 	} else {
@@ -573,11 +573,11 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 					var afvs []detectors.AppFeatureVersion
 					for _, a := range apps {
 						afvs = append(afvs,
-								detectors.AppFeatureVersion{
-									AppPackage: a,
-									ModuleVuls: make([]detectors.ModuleVul, 0),
-									InBase:     isBase,
-								})
+							detectors.AppFeatureVersion{
+								AppPackage: a,
+								ModuleVuls: make([]detectors.ModuleVul, 0),
+								InBase:     isBase,
+							})
 						modules = append(modules, a)
 					}
 
@@ -669,7 +669,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 		}
 	}
 
-	log.Info("Done cve ....")
+	log.Debug("Done cve ....")
 	// parallely scanning: done and collecting data
 	<-done
 	close(done)
