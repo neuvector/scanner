@@ -1,6 +1,7 @@
 package cvetools
 
 import (
+	"fmt"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -28,6 +29,8 @@ func (cv *ScanTools) DetectAppVul(path string, apps []detectors.AppFeatureVersio
 	if err != nil {
 		return nil
 	}
+
+	dedup := utils.NewSet()
 	vuls := make([]vulFullReport, 0)
 	for i, app := range apps {
 		if common.Debugs.CVEs.Cardinality() == 0 && common.Debugs.Features.Contains(app.AppName) {
@@ -36,16 +39,20 @@ func (cv *ScanTools) DetectAppVul(path string, apps []detectors.AppFeatureVersio
 			}).Info("DEBUG")
 		}
 
-		if mv, found := modVuls[app.ModuleName]; found {
-			results := checkForVulns(app, i, apps, mv)
-			vuls = append(vuls, results...)
-		} else if strings.Contains(app.ModuleName, "log4j") {
-			//If the entry doesn't match and module contains log4j, check the exception list for component.
-			if log4jComponents.Contains(app.ModuleName) {
-				//If we find the entry on the exception list check the general log4j entry as well.
-				if mv, found := modVuls[log4jModName]; found {
-					results := checkForVulns(app, i, apps, mv)
-					vuls = append(vuls, results...)
+		key := fmt.Sprintf("%s-%s-%s", app.FileName, app.ModuleName, app.Version)
+		if !dedup.Contains(key) {
+			dedup.Add(key)
+			if mv, found := modVuls[app.ModuleName]; found {
+				results := checkForVulns(app, i, apps, mv)
+				vuls = append(vuls, results...)
+			} else if strings.Contains(app.ModuleName, "log4j") {
+				//If the entry doesn't match and module contains log4j, check the exception list for component.
+				if log4jComponents.Contains(app.ModuleName) {
+					//If we find the entry on the exception list check the general log4j entry as well.
+					if mv, found := modVuls[log4jModName]; found {
+						results := checkForVulns(app, i, apps, mv)
+						vuls = append(vuls, results...)
+					}
 				}
 			}
 		}
