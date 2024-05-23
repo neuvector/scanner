@@ -438,6 +438,18 @@ func LoadFullVulnerabilities(path, osname string) (map[string]VulFull, error) {
 	return fullDb, nil
 }
 
+func uniqueVulDb(vuls []AppModuleVul) ([]AppModuleVul) {
+	var unique []AppModuleVul
+	dedup := utils.NewSet()
+	for _, v := range vuls {
+		if !dedup.Contains(v.VulName) {
+			dedup.Add(v.VulName)
+			unique = append(unique, v)
+		}
+	}
+	return unique
+}
+
 func LoadAppVulsTb(path string) (map[string][]AppModuleVul, error) {
 	var filename string
 	filename = fmt.Sprintf("%s/apps.tb", path)
@@ -478,25 +490,32 @@ func LoadAppVulsTb(path string) (map[string][]AppModuleVul, error) {
 	// for org.apache.logging.log4j:log4j-core, we will also search
 	// org.apache.logging.log4j.log4j-core: for backward compatibility
 	// log4j-core: for jar file without pom.xml. Prefix jar: to avoid collision
-	for mn, vf := range vul {
+	var mns []string
+	for mn, _ := range vul {
 		if colon := strings.LastIndex(mn, ":"); colon > 0 {
-			m := strings.ReplaceAll(mn, ":", ".")
-			if _, ok := vul[m]; ok {
-				vul[m] = append(vul[m], vf...)
-			} else {
-				vul[m] = vf
-			}
-			if m = mn[colon+1:]; len(m) > 0 {
-				key := fmt.Sprintf("jar:%s", m)
-				if _, ok := vul[key]; ok {
-					vul[key] = append(vul[key], vf...)
-				} else {
-					vul[key] = vf
-				}
-			}
+			mns = append(mns, mn)
 		}
 	}
 
+	for _, mn := range mns {
+		colon := strings.LastIndex(mn, ":")
+		m := strings.ReplaceAll(mn, ":", ".")
+		vf, _ := vul[mn]
+
+		if _, ok := vul[m]; ok {
+			vul[m] = uniqueVulDb(append(vul[m], vf...))
+		} else {
+			vul[m] = vf
+		}
+		if m = mn[colon+1:]; len(m) > 0 {
+			key := fmt.Sprintf("jar:%s", m)
+			if _, ok := vul[key]; ok {
+				vul[key] = uniqueVulDb(append(vul[key], vf...))
+			} else {
+				vul[key] = vf
+			}
+		}
+	}
 	return vul, nil
 }
 
