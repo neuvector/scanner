@@ -43,10 +43,11 @@ replace (
 require (
 	github.com/aws/aws-sdk-go v1.42.36 // indirect
 	github.com/docker/docker v20.10.12+incompatible // indirect
+	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/jedib0t/go-pretty/v6 v6.4.6
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/neuvector/neuvector v0.0.0-20240523024804-370033d870db
+	github.com/neuvector/neuvector v0.0.0-20240528235325-bd7cf42d0b92
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.2 // indirect
