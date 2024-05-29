@@ -6,7 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"sort"
@@ -21,6 +21,7 @@ import (
 	"github.com/neuvector/neuvector/share/scan"
 	scanUtils "github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/system"
+	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/cvetools"
 )
 
@@ -117,7 +118,7 @@ func writeResultToFile(req *share.ScanImageRequest, result *share.ScanResult, er
 	}
 
 	output := fmt.Sprintf("%s/%s", scanOutputDir, scanOutputFile)
-	err = ioutil.WriteFile(output, data, 0644)
+	err = os.WriteFile(output, data, 0644)
 	if err == nil {
 		log.WithFields(log.Fields{
 			"registry": req.Registry, "repo": req.Repository, "tag": req.Tag, "output": output,
@@ -287,6 +288,13 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 	}
 	scanUtils.SetScannerDB(newDB)
 
+	var dockerRegistries = utils.NewSet("https://docker.io/", "https://index.docker.io/", "https://registry.hub.docker.com/", "https://registry-1.docker.io/")
+	log.WithFields(log.Fields{"req.Registry": req.Registry, "req.Repository": req.Repository, "dockerRegistries.Contains(req.Registry) ": dockerRegistries.Contains(req.Registry)}).Info("registry")
+	// Add "library" for dockerhub if not exist
+	if dockerRegistries.Contains(req.Registry) && !strings.Contains(req.Repository, "/") {
+		req.Repository = fmt.Sprintf("library/%s", req.Repository)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*20)
 	if scanTasker != nil {
 		result, err = scanTasker.Run(ctx, *req)
@@ -299,9 +307,6 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 	if req.Registry == "" && result != nil &&
 		(result.Error == share.ScanErrorCode_ScanErrImageNotFound || result.Error == share.ScanErrorCode_ScanErrContainerAPI) {
 		req.Registry = defaultDockerhubReg
-		if !strings.Contains(req.Repository, "/") {
-			req.Repository = fmt.Sprintf("library/%s", req.Repository)
-		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute*20)
 		if scanTasker != nil {
@@ -373,7 +378,7 @@ func apiLogin(c *apiClient, myIP string, user, pass string) error {
 		return fmt.Errorf("Login failed with status code %d", resp.StatusCode)
 	}
 
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
