@@ -308,6 +308,10 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 		(result.Error == share.ScanErrorCode_ScanErrImageNotFound || result.Error == share.ScanErrorCode_ScanErrContainerAPI) {
 		req.Registry = defaultDockerhubReg
 
+		if !strings.Contains(req.Repository, "/") {
+			req.Repository = fmt.Sprintf("library/%s", req.Repository)
+		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute*20)
 		if scanTasker != nil {
 			result, err = scanTasker.Run(ctx, *req)
