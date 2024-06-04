@@ -3,12 +3,15 @@
 
 package share
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-
 import (
+	fmt "fmt"
+
+	proto "github.com/golang/protobuf/proto"
+
+	math "math"
+
 	context "context"
+
 	grpc "google.golang.org/grpc"
 )
 
@@ -533,6 +536,9 @@ type CLUSConnection struct {
 	TmpOpen      bool   `protobuf:"varint,31,opt,name=TmpOpen" json:"TmpOpen,omitempty"`
 	UwlIp        bool   `protobuf:"varint,32,opt,name=UwlIp" json:"UwlIp,omitempty"`
 	FQDN         string `protobuf:"bytes,33,opt,name=FQDN" json:"FQDN,omitempty"`
+	EpSessCurIn  uint32 `protobuf:"varint,34,opt,name=EpSessCurIn" json:"EpSessCurIn,omitempty"`
+	EpSessIn60   uint32 `protobuf:"varint,35,opt,name=EpSessIn60" json:"EpSessIn60,omitempty"`
+	EpByteIn60   uint64 `protobuf:"varint,36,opt,name=EpByteIn60" json:"EpByteIn60,omitempty"`
 }
 
 func (m *CLUSConnection) Reset()                    { *m = CLUSConnection{} }
@@ -769,6 +775,27 @@ func (m *CLUSConnection) GetFQDN() string {
 		return m.FQDN
 	}
 	return ""
+}
+
+func (m *CLUSConnection) GetEpSessCurIn() uint32 {
+	if m != nil {
+		return m.EpSessCurIn
+	}
+	return 0
+}
+
+func (m *CLUSConnection) GetEpSessIn60() uint32 {
+	if m != nil {
+		return m.EpSessIn60
+	}
+	return 0
+}
+
+func (m *CLUSConnection) GetEpByteIn60() uint64 {
+	if m != nil {
+		return m.EpByteIn60
+	}
+	return 0
 }
 
 type CLUSConnectionArray struct {
