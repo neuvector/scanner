@@ -1374,9 +1374,6 @@ func getVulItemList(vuls []vulFullReport, dbPrefix string) []*share.ScanVulnerab
 			unique.Add(key)
 		}
 
-		if severity == common.Critical {
-			severity = common.High
-		}
 		var cpes []string
 		if featver.CPEs != nil && featver.CPEs.Cardinality() > 0 {
 			cpes = make([]string, featver.CPEs.Cardinality())

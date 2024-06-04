@@ -44,6 +44,7 @@ var dockerhubRegs utils.Set = utils.NewSet("registry.hub.docker.com", "index.doc
 
 var ntChan chan uint32 = make(chan uint32, 1)
 var cveDB *common.CveDB
+var ctrlCaps share.ControllerCaps
 var scanTasker *Tasker
 var selfID string
 
@@ -179,6 +180,8 @@ func main() {
 	getVer := flag.Bool("v", false, "show cve database version")
 	debug := flag.String("debug", "", "debug filters. (v=CVE-2024-0001,f=jar)")
 	maxCacherRecordSize := flag.Int64("maxrec", 0, "maximum record cacher size in MB") // common.MaxRecordCacherSizeMB
+	capCritical := flag.Bool("cap_critical", false, "support critical level severity") // for backwards compatibility of scan plugins, will remove after a few releases.
+
 	flag.Usage = usage
 	flag.Parse()
 
@@ -272,7 +275,7 @@ func main() {
 		}
 
 		if *pid != 0 {
-			scanRunning(*pid, dbData, *show)
+			scanRunning(*pid, dbData, *show, *capCritical)
 			return
 		}
 
@@ -308,7 +311,7 @@ func main() {
 			}
 		}
 
-		result := scanOnDemand(req, dbData, *show)
+		result := scanOnDemand(req, dbData, *show, *capCritical)
 
 		// submit scan result if join address is given
 		if result != nil && result.Error == share.ScanErrorCode_ScanErrNone &&

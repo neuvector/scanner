@@ -43,7 +43,7 @@ func (rs *rpcService) Ping(ctx context.Context, v *share.RPCVoid) (*share.RPCVoi
 	return &share.RPCVoid{}, nil
 }
 
-func (rs *rpcService) ScanRunning(ctx context.Context, req *share.ScanRunningRequest) (*share.ScanResult, error) {
+func (rs *rpcService) ScanRunning(ctx context.Context, req *share.ScanRunningRequest) (sr *share.ScanResult, err error) {
 	var result *share.ScanResult
 
 	log.WithFields(log.Fields{"id": req.ID, "type": req.Type, "agent": req.AgentRPCEndPoint}).Debug("")
@@ -88,60 +88,91 @@ func (rs *rpcService) ScanRunning(ctx context.Context, req *share.ScanRunningReq
 
 	log.WithFields(log.Fields{"id": req.ID, "type": req.Type}).Debug("File read done")
 	if scanTasker != nil {
-		return scanTasker.Run(ctx, *data)
+		sr, err = scanTasker.Run(ctx, *data)
+	} else {
+		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
+		sr, err = cveTools.ScanImageData(data)
 	}
 
-	cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
-	return cveTools.ScanImageData(data)
+	if err == nil && !ctrlCaps.CriticalVul {
+		resolveCriticalSeverityInResult(sr)
+	}
+
+	return sr, err
 }
 
-func (rs *rpcService) ScanImageData(ctx context.Context, data *share.ScanData) (*share.ScanResult, error) {
+func (rs *rpcService) ScanImageData(ctx context.Context, data *share.ScanData) (sr *share.ScanResult, err error) {
 	log.Debug("")
+
 	if scanTasker != nil {
-		return scanTasker.Run(ctx, *data)
+		sr, err = scanTasker.Run(ctx, *data)
+	} else {
+		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
+		sr, err = cveTools.ScanImageData(data)
 	}
 
-	cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
-	return cveTools.ScanImageData(data)
+	if err == nil && !ctrlCaps.CriticalVul {
+		resolveCriticalSeverityInResult(sr)
+	}
+
+	return sr, err
 }
 
-func (rs *rpcService) ScanImage(ctx context.Context, req *share.ScanImageRequest) (*share.ScanResult, error) {
+func (rs *rpcService) ScanImage(ctx context.Context, req *share.ScanImageRequest) (sr *share.ScanResult, err error) {
 	log.WithFields(log.Fields{
 		"Registry": req.Registry, "image": fmt.Sprintf("%s:%s", req.Repository, req.Tag),
 	}).Debug()
 
 	if scanTasker != nil {
-		return scanTasker.Run(ctx, *req)
+		sr, err = scanTasker.Run(ctx, *req)
+	} else {
+		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
+		sr, err = cveTools.ScanImage(ctx, req, "")
 	}
 
-	cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
-	return cveTools.ScanImage(ctx, req, "")
+	if err == nil && !ctrlCaps.CriticalVul {
+		resolveCriticalSeverityInResult(sr)
+	}
+
+	return sr, err
 }
 
-func (rs *rpcService) ScanAppPackage(ctx context.Context, req *share.ScanAppRequest) (*share.ScanResult, error) {
+func (rs *rpcService) ScanAppPackage(ctx context.Context, req *share.ScanAppRequest) (sr *share.ScanResult, err error) {
 	log.WithFields(log.Fields{"Packages": req.Packages}).Debug("")
 	if scanTasker != nil {
-		return scanTasker.Run(ctx, *req)
+		sr, err = scanTasker.Run(ctx, *req)
+	} else {
+		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
+		sr, err = cveTools.ScanAppPackage(req, "")
 	}
 
-	cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
-	return cveTools.ScanAppPackage(req, "")
+	if err == nil && !ctrlCaps.CriticalVul {
+		resolveCriticalSeverityInResult(sr)
+	}
+
+	return sr, err
 }
 
-func (rs *rpcService) ScanAwsLambda(ctx context.Context, req *share.ScanAwsLambdaRequest) (*share.ScanResult, error) {
+func (rs *rpcService) ScanAwsLambda(ctx context.Context, req *share.ScanAwsLambdaRequest) (sr *share.ScanResult, err error) {
 	log.WithFields(log.Fields{"LambdaFunc": req.FuncName}).Debug("")
 	if scanTasker != nil {
-		return scanTasker.Run(ctx, *req)
+		sr, err = scanTasker.Run(ctx, *req)
+	} else {
+		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
+		sr, err = cveTools.ScanAwsLambda(req, "")
 	}
 
-	cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
-	return cveTools.ScanAwsLambda(req, "")
+	if err == nil && !ctrlCaps.CriticalVul {
+		resolveCriticalSeverityInResult(sr)
+	}
+
+	return sr, err
 }
 
 func (rs *rpcService) ScanCacheGetStat(ctx context.Context, v *share.RPCVoid) (*share.ScanCacheStatRes, error) {
 	log.Debug()
-	res := &share.ScanCacheStatRes {}
-	if layerCacher, _ :=  cvetools.InitImageLayerCacher(common.ImageLayerCacherFile, common.ImageLayerLockFile, common.ImageLayersCachePath, 1); layerCacher != nil {
+	res := &share.ScanCacheStatRes{}
+	if layerCacher, _ := cvetools.InitImageLayerCacher(common.ImageLayerCacherFile, common.ImageLayerLockFile, common.ImageLayersCachePath, 1); layerCacher != nil {
 		defer layerCacher.LeaveLayerCacher()
 		res = layerCacher.GetStat()
 	}
@@ -150,8 +181,8 @@ func (rs *rpcService) ScanCacheGetStat(ctx context.Context, v *share.RPCVoid) (*
 
 func (rs *rpcService) ScanCacheGetData(ctx context.Context, v *share.RPCVoid) (*share.ScanCacheDataRes, error) {
 	log.Debug()
-	res := share.ScanCacheDataRes {  DataZb: make([]byte, 0) }
-	if layerCacher, _ :=  cvetools.InitImageLayerCacher(common.ImageLayerCacherFile, common.ImageLayerLockFile, common.ImageLayersCachePath, 1); layerCacher != nil {
+	res := share.ScanCacheDataRes{DataZb: make([]byte, 0)}
+	if layerCacher, _ := cvetools.InitImageLayerCacher(common.ImageLayerCacherFile, common.ImageLayerLockFile, common.ImageLayersCachePath, 1); layerCacher != nil {
 		defer layerCacher.LeaveLayerCacher()
 		res.DataZb = layerCacher.GetIndexFile()
 	}
@@ -293,6 +324,31 @@ func scannerRegisterStream(ctx context.Context, client share.ControllerScanServi
 	return nil
 }
 
+func resolveCriticalSeverityInResult(sr *share.ScanResult) {
+	for _, v := range sr.Vuls {
+		if v.Severity == string(common.Critical) {
+			v.Severity = string(common.High)
+		}
+	}
+	for _, l := range sr.Layers {
+		for _, v := range l.Vuls {
+			if v.Severity == string(common.Critical) {
+				v.Severity = string(common.High)
+			}
+		}
+	}
+}
+
+func resolveCriticalSeverityInCVEDB(data *share.ScannerRegisterData) {
+	for _, v := range data.CVEDB {
+		if v.Severity == string(common.Critical) {
+			v.Severity = string(common.High)
+		}
+	}
+
+	return
+}
+
 func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegisterData, cb cluster.GRPCCallback) error {
 	log.WithFields(log.Fields{
 		"join": fmt.Sprintf("%s:%d", joinIP, joinPort), "version": data.CVEDBVersion, "entries": len(data.CVEDB),
@@ -306,6 +362,16 @@ func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegister
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
+
+	caps, err := client.GetCaps(ctx, &share.RPCVoid{})
+	if err != nil {
+		resolveCriticalSeverityInCVEDB(data)
+	} else {
+		ctrlCaps = *caps
+		if !caps.CriticalVul {
+			resolveCriticalSeverityInCVEDB(data)
+		}
+	}
 
 	if err = scannerRegisterStream(ctx, client, data); err == nil {
 		return nil
