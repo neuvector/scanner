@@ -26,13 +26,13 @@ const resTemplate = "/tmp/%s_o.json"
 
 /////
 type Tasker struct {
-	bEnable    bool
-	bShowDebug bool
-	mutex      sync.Mutex
-	taskPath   string
-	rtSock     string // Container socket URL
-	sys        *system.SystemTools
-	maxCacherRecordSize  int64
+	bEnable             bool
+	bShowDebug          bool
+	mutex               sync.Mutex
+	taskPath            string
+	rtSock              string // Container socket URL
+	sys                 *system.SystemTools
+	maxCacherRecordSize int64
 }
 
 /////
@@ -40,11 +40,11 @@ func newTasker(taskPath, rtSock string, showDebug bool, sys *system.SystemTools,
 	log.WithFields(log.Fields{"showDebug": showDebug}).Debug()
 
 	return &Tasker{
-		bEnable:    true,
-		taskPath:   taskPath, // sannnerTask path
-		rtSock:     rtSock,   // Container socket URL
-		bShowDebug: showDebug,
-		sys:        sys,
+		bEnable:             true,
+		taskPath:            taskPath, // sannnerTask path
+		rtSock:              rtSock,   // Container socket URL
+		bShowDebug:          showDebug,
+		sys:                 sys,
 		maxCacherRecordSize: maxCacherRecordSize, // MB
 	}
 }
@@ -76,6 +76,10 @@ func (ts *Tasker) putInputFile(request interface{}) (string, []string, error) {
 		args = append(args, "-t", "awl")
 	default:
 		return "", args, errors.New("Invalid type")
+	}
+
+	if ts.bShowDebug {
+		args = append(args, "-x")
 	}
 
 	/// lock the allocation

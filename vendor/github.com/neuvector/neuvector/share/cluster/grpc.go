@@ -6,8 +6,8 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
+	"os"
 	"path"
 	"strings"
 	"sync"
@@ -111,8 +111,6 @@ func NewGRPCServerTCP(endpoint string) (*GRPCServer, error) {
 		return nil, err
 	}
 
-	fmt.Println(options)
-
 	s := GRPCServer{
 		stopped: true,
 		listen:  listen,
@@ -139,7 +137,7 @@ func ReloadInternalCert() error {
 	certCacheLock.Lock()
 	defer certCacheLock.Unlock()
 	var err error
-	caCert, err := ioutil.ReadFile(path.Join(InternalCertDir, InternalCACert))
+	caCert, err := os.ReadFile(path.Join(InternalCertDir, InternalCACert))
 	if err != nil {
 		return err
 	}
@@ -531,7 +529,7 @@ func newClient(s *grpcClient, cb GRPCCallback, compress bool) error {
 	var err error
 	var c *GRPCClient
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+
 	if s.unix {
 		c, err = newGRPCClientUnix(ctx, s.key, s.endpoint, cb, compress)
 	} else {
@@ -541,6 +539,7 @@ func newClient(s *grpcClient, cb GRPCCallback, compress bool) error {
 		log.WithFields(log.Fields{
 			"error": err, "ep": s.endpoint,
 		}).Error("Failed to dial to grpc server")
+		cancel()
 		return err
 	}
 	s.client = c

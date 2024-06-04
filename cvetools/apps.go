@@ -1,6 +1,7 @@
 package cvetools
 
 import (
+	"fmt"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -28,19 +29,30 @@ func (cv *ScanTools) DetectAppVul(path string, apps []detectors.AppFeatureVersio
 	if err != nil {
 		return nil
 	}
+
+	dedup := utils.NewSet()
 	vuls := make([]vulFullReport, 0)
 	for i, app := range apps {
-		//If the entry exists, find vulnerabilities.
-		if mv, found := modVuls[app.ModuleName]; found {
-			results := checkForVulns(app, i, apps, mv)
-			vuls = append(vuls, results...)
-		} else if strings.Contains(app.ModuleName, "log4j") {
-			//If the entry doesn't match and module contains log4j, check the exception list for component.
-			if log4jComponents.Contains(app.ModuleName) {
-				//If we find the entry on the exception list check the general log4j entry as well.
-				if mv, found := modVuls[log4jModName]; found {
-					results := checkForVulns(app, i, apps, mv)
-					vuls = append(vuls, results...)
+		if common.Debugs.CVEs.Cardinality() == 0 && common.Debugs.Features.Contains(app.AppName) {
+			log.WithFields(log.Fields{
+				"app": app.AppName, "file": app.FileName, "module": app.ModuleName, "version": app.Version,
+			}).Info("DEBUG")
+		}
+
+		key := fmt.Sprintf("%s-%s-%s", app.FileName, app.ModuleName, app.Version)
+		if !dedup.Contains(key) {
+			dedup.Add(key)
+			if mv, found := modVuls[app.ModuleName]; found {
+				results := checkForVulns(app, i, apps, mv)
+				vuls = append(vuls, results...)
+			} else if strings.Contains(app.ModuleName, "log4j") {
+				//If the entry doesn't match and module contains log4j, check the exception list for component.
+				if log4jComponents.Contains(app.ModuleName) {
+					//If we find the entry on the exception list check the general log4j entry as well.
+					if mv, found := modVuls[log4jModName]; found {
+						results := checkForVulns(app, i, apps, mv)
+						vuls = append(vuls, results...)
+					}
 				}
 			}
 		}
@@ -55,8 +67,8 @@ func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detecto
 			if common.Debugs.CVEs.Contains(v.VulName) && common.Debugs.Features.Contains(app.AppName) {
 				log.WithFields(log.Fields{
 					"name": v.VulName, "affected": v.AffectedVer, "fixin": v.FixedVer,
-					"app": app.AppName, "version": app.Version,
-				}).Info("DEBUG")
+					"app": app.AppName, "file": app.FileName, "module": app.ModuleName, "version": app.Version,
+				}).Info("DEBUG: check")
 			}
 		}
 
@@ -66,7 +78,7 @@ func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detecto
 			}
 		}
 		// ruby reports patched version. The affected version is converted from patched version.
-		// The conversion logic is not correct.
+		// The conversion logic has flaws.
 		if strings.HasPrefix(app.ModuleName, "ruby:") && len(v.FixedVer) > 0 {
 			if fixed := compareAppVersion(app.Version, v.FixedVer); !fixed {
 				fv := appVul2FullVul(app, v)
@@ -77,7 +89,7 @@ func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detecto
 				if common.Debugs.Enabled {
 					if common.Debugs.CVEs.Contains(v.VulName) {
 						log.WithFields(log.Fields{
-							"name": v.VulName, "app": app.AppName, "version": app.Version,
+							"name": v.VulName, "app": app.AppName, "version": app.Version, "file": app.FileName, "module": app.ModuleName,
 						}).Info("DEBUG: report")
 					}
 				}

@@ -15,28 +15,31 @@ type DebugFilter struct {
 
 var Debugs DebugFilter
 
-func ParseDebugFilters(s string) {
-	Debugs.Enabled = true
+func InitDebugFilters(s string) {
 	Debugs.CVEs = utils.NewSet()
 	Debugs.Features = utils.NewSet()
 
-	tokens := strings.Split(s, ",")
-	for _, token := range tokens {
-		kvs := strings.Split(token, "=")
-		if len(kvs) >= 2 {
-			switch kvs[0] {
-			case "v":
-				vuls := strings.Split(kvs[1], ",")
-				for _, v := range vuls {
-					Debugs.CVEs.Add(v)
+	if s != "" {
+		Debugs.Enabled = true
+
+		tokens := strings.Split(s, ",")
+		for _, token := range tokens {
+			kvs := strings.Split(token, "=")
+			if len(kvs) >= 2 {
+				switch kvs[0] {
+				case "v":
+					vuls := strings.Split(kvs[1], ",")
+					for _, v := range vuls {
+						Debugs.CVEs.Add(v)
+					}
+					log.WithFields(log.Fields{"vuls": Debugs.CVEs}).Debug("vulnerability filter")
+				case "f":
+					fs := strings.Split(kvs[1], ",")
+					for _, f := range fs {
+						Debugs.Features.Add(f)
+					}
+					log.WithFields(log.Fields{"features": Debugs.Features}).Debug("feature filter")
 				}
-				log.WithFields(log.Fields{"vuls": Debugs.CVEs}).Debug("vulnerability filter")
-			case "f":
-				fs := strings.Split(kvs[1], ",")
-				for _, f := range fs {
-					Debugs.Features.Add(f)
-				}
-				log.WithFields(log.Fields{"features": Debugs.Features}).Debug("feature filter")
 			}
 		}
 	}

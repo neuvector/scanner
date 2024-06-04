@@ -157,6 +157,7 @@ func ScanModule2REST(m *share.ScanModule) *api.RESTScanModule {
 	}
 	return &api.RESTScanModule{
 		Name:    m.Name,
+		File:    m.File,
 		Version: m.Version,
 		Source:  m.Source,
 		CVEs:    mcve,
@@ -190,7 +191,7 @@ func GetSecretBenchMessage(stype, loc, evidence string) string {
 }
 
 func ImageBench2REST(cmds []string, secrets []*share.ScanSecretLog, setids []*share.ScanSetIdPermLog, tagMap map[string][]string) []*api.RESTBenchItem {
-	_, metaMap := GetComplianceMeta()
+	_, metaMap := GetImageBenchMeta()
 	runAsRoot, hasADD, hasHEALTHCHECK := ParseImageCmds(cmds)
 
 	checks := make([]*api.RESTBenchItem, 0)
@@ -257,101 +258,26 @@ func ImageBench2REST(cmds []string, secrets []*share.ScanSecretLog, setids []*sh
 	}
 
 	// add tags to every checks
-	for _, item := range checks {
+	for i := range checks {
+		item := checks[i]
+
 		if tagMap == nil {
-			item.Tags = make([]string, 0)
-		} else if tags, ok := tagMap[item.TestNum]; !ok {
-			item.Tags = make([]string, 0)
+			item.Tags = make([]map[string][]api.TagDetail, 0)
+		} else if tags, ok := tagMap[item.TestNum]; ok {
+			item.Tags = make([]map[string][]api.TagDetail, 0, len(tags))
+
+			for _, tag := range tags {
+				tagMap := map[string][]api.TagDetail{tag: []api.TagDetail{}}
+				item.Tags = append(item.Tags, tagMap)
+			}
+
 		} else {
-			item.Tags = tags
+			item.Tags = make([]map[string][]api.TagDetail, 0)
 		}
 	}
 
 	return checks
 }
-
-/*
-func ImageBench2REST(cmds []string, secrets []*api.RESTScanSecret, setids []*api.RESTScanSetIdPerm, tagMap map[string][]string) []*api.RESTBenchItem {
-	_, metaMap := GetComplianceMeta()
-	runAsRoot, hasADD, hasHEALTHCHECK := ParseImageCmds(cmds)
-
-	checks := make([]*api.RESTBenchItem, 0)
-	if runAsRoot {
-		if c, ok := metaMap["I.4.1"]; ok {
-			item := &api.RESTBenchItem{
-				RESTBenchCheck: c.RESTBenchCheck,
-				Level:          "WARN",
-				Message:        []string{},
-			}
-			checks = append(checks, item)
-		}
-	}
-	if hasADD {
-		if c, ok := metaMap["I.4.9"]; ok {
-			item := &api.RESTBenchItem{
-				RESTBenchCheck: c.RESTBenchCheck,
-				Level:          "WARN",
-				Message:        []string{},
-			}
-			checks = append(checks, item)
-		}
-	}
-	if !hasHEALTHCHECK {
-		if c, ok := metaMap["I.4.6"]; ok {
-			item := &api.RESTBenchItem{
-				RESTBenchCheck: c.RESTBenchCheck,
-				Level:          "WARN",
-				Message:        []string{},
-			}
-			checks = append(checks, item)
-		}
-	}
-	if len(secrets) > 0 {
-		if c, ok := metaMap["I.4.10"]; ok {
-			for _, s := range secrets {
-				item := &api.RESTBenchItem{
-					RESTBenchCheck: c.RESTBenchCheck,
-					Level:          "WARN",
-					Location:       s.File,
-					Evidence:       s.Evidence,
-					Message:        []string{GetSecretBenchMessage(s.Type, s.File, s.Evidence)},
-				}
-				item.Remediation = s.Suggestion
-				item.Description = fmt.Sprintf("%s - %s", item.Description, item.Message[0])
-				checks = append(checks, item)
-			}
-		}
-	}
-	if len(setids) > 0 {
-		if c, ok := metaMap["I.4.8"]; ok {
-			for _, s := range setids {
-				item := &api.RESTBenchItem{
-					RESTBenchCheck: c.RESTBenchCheck,
-					Level:          "WARN",
-					Location:       s.File,
-					Evidence:       s.Evidence,
-					Message:        []string{GetSetIDBenchMessage(s.Type, s.File, s.Evidence)},
-				}
-				item.Description = fmt.Sprintf("%s - %s", item.Description, item.Message[0])
-				checks = append(checks, item)
-			}
-		}
-	}
-
-	// add tags to every checks
-	for _, item := range checks {
-		if tagMap == nil {
-			item.Tags = make([]string, 0)
-		} else if tags, ok := tagMap[item.TestNum]; !ok {
-			item.Tags = make([]string, 0)
-		} else {
-			item.Tags = tags
-		}
-	}
-
-	return checks
-}
-*/
 
 // This is use when grpc structure is returned
 func FillVul(vul *share.ScanVulnerability) {
@@ -990,6 +916,7 @@ func (vpf vpFilter) FilterVuls(vuls []*share.ScanVulnerability, idns []api.RESTI
 			skip = vpf.filterOneVul(v, nil, "")
 		} else {
 			for _, s := range idns {
+				// DisplayName is image name
 				if vpf.filterOneVul(v, s.Domains, s.DisplayName) {
 					skip = true
 					break
