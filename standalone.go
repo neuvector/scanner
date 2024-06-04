@@ -272,7 +272,7 @@ func scanRunning(pid int, cvedb map[string]*share.ScanVulnerability, showOptions
 	}
 
 	if !capCritical {
-		resolveCriticalSeverityInResult(result)
+		downgradeCriticalSeverityInResult(result)
 	}
 
 	fmt.Printf("PID: %d\n", pid)
@@ -309,7 +309,7 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 	cancel()
 
 	if !capCritical {
-		resolveCriticalSeverityInResult(result)
+		downgradeCriticalSeverityInResult(result)
 	}
 
 	if req.Registry == "" && result != nil &&

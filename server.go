@@ -95,7 +95,7 @@ func (rs *rpcService) ScanRunning(ctx context.Context, req *share.ScanRunningReq
 	}
 
 	if err == nil && !ctrlCaps.CriticalVul {
-		resolveCriticalSeverityInResult(sr)
+		downgradeCriticalSeverityInResult(sr)
 	}
 
 	return sr, err
@@ -112,7 +112,7 @@ func (rs *rpcService) ScanImageData(ctx context.Context, data *share.ScanData) (
 	}
 
 	if err == nil && !ctrlCaps.CriticalVul {
-		resolveCriticalSeverityInResult(sr)
+		downgradeCriticalSeverityInResult(sr)
 	}
 
 	return sr, err
@@ -131,7 +131,7 @@ func (rs *rpcService) ScanImage(ctx context.Context, req *share.ScanImageRequest
 	}
 
 	if err == nil && !ctrlCaps.CriticalVul {
-		resolveCriticalSeverityInResult(sr)
+		downgradeCriticalSeverityInResult(sr)
 	}
 
 	return sr, err
@@ -147,7 +147,7 @@ func (rs *rpcService) ScanAppPackage(ctx context.Context, req *share.ScanAppRequ
 	}
 
 	if err == nil && !ctrlCaps.CriticalVul {
-		resolveCriticalSeverityInResult(sr)
+		downgradeCriticalSeverityInResult(sr)
 	}
 
 	return sr, err
@@ -163,7 +163,7 @@ func (rs *rpcService) ScanAwsLambda(ctx context.Context, req *share.ScanAwsLambd
 	}
 
 	if err == nil && !ctrlCaps.CriticalVul {
-		resolveCriticalSeverityInResult(sr)
+		downgradeCriticalSeverityInResult(sr)
 	}
 
 	return sr, err
@@ -324,7 +324,7 @@ func scannerRegisterStream(ctx context.Context, client share.ControllerScanServi
 	return nil
 }
 
-func resolveCriticalSeverityInResult(sr *share.ScanResult) {
+func downgradeCriticalSeverityInResult(sr *share.ScanResult) {
 	for _, v := range sr.Vuls {
 		if v.Severity == string(common.Critical) {
 			v.Severity = string(common.High)
@@ -339,7 +339,7 @@ func resolveCriticalSeverityInResult(sr *share.ScanResult) {
 	}
 }
 
-func resolveCriticalSeverityInCVEDB(data *share.ScannerRegisterData) {
+func downgradeCriticalSeverityInCVEDB(data *share.ScannerRegisterData) {
 	for _, v := range data.CVEDB {
 		if v.Severity == string(common.Critical) {
 			v.Severity = string(common.High)
@@ -365,11 +365,11 @@ func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegister
 
 	caps, err := client.GetCaps(ctx, &share.RPCVoid{})
 	if err != nil {
-		resolveCriticalSeverityInCVEDB(data)
+		downgradeCriticalSeverityInCVEDB(data)
 	} else {
 		ctrlCaps = *caps
 		if !caps.CriticalVul {
-			resolveCriticalSeverityInCVEDB(data)
+			downgradeCriticalSeverityInCVEDB(data)
 		}
 	}
 
