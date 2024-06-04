@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -17,6 +18,8 @@ import (
 	"github.com/neuvector/neuvector/share/cluster"
 	"github.com/neuvector/neuvector/share/container"
 	"github.com/neuvector/neuvector/share/global"
+	"github.com/neuvector/neuvector/share/healthz"
+	"github.com/neuvector/neuvector/share/migration"
 	"github.com/neuvector/neuvector/share/system"
 	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
@@ -212,6 +215,45 @@ func main() {
 		showTaskDebug = true
 	}
 
+	var grpcServer *cluster.GRPCServer
+	var ctx context.Context
+	var internalCertControllerCancel context.CancelFunc
+	var err error
+
+	if os.Getenv("AUTO_INTERNAL_CERT") != "" {
+
+		log.Info("start initializing k8s internal secret controller and wait for internal secret creation if it's not created")
+
+		go func() {
+			if err := healthz.StartHealthzServer(); err != nil {
+				log.WithError(err).Warn("failed to start healthz server")
+			}
+		}()
+
+		ctx, internalCertControllerCancel = context.WithCancel(context.Background())
+		defer internalCertControllerCancel()
+		// Initialize secrets.  Most of services are not running at this moment, so skip their reload functions.
+		err = migration.InitializeInternalSecretController(ctx, []func([]byte, []byte, []byte) error{
+			// Reload grpc server
+			func(cacert []byte, cert []byte, key []byte) error {
+				log.Info("Reloading gRPC servers/clients")
+				if err := cluster.ReloadInternalCert(); err != nil {
+					return fmt.Errorf("failed to reload gRPC's certificate: %w", err)
+				}
+				return nil
+			},
+		})
+		if err != nil {
+			log.WithError(err).Error("failed to initialize internal secret controller")
+			os.Exit(-2)
+		}
+		log.Info("internal certificate is initialized")
+	}
+	err = cluster.ReloadInternalCert()
+	if err != nil {
+		log.WithError(err).Fatal("failed to reload internal certificate")
+	}
+
 	// If license parameter is given, this is an on-demand scanner, no register to the controller,
 	// but if join address is given, the scan result are sent to the controller.
 	if *license != "" {
@@ -229,7 +271,6 @@ func main() {
 	}
 	os.MkdirAll(common.ImageWorkingPath, 0755)
 
-	var err error
 	if sys.IsRunningInContainer() {
 		selfID, _, err = sys.GetSelfContainerID() // it is a POD ID in the k8s cgroup v2; otherwise, a real container ID
 		if selfID == "" {
@@ -339,8 +380,7 @@ func main() {
 	}
 
 	// Block until server is up.
-	grpcServer := startGRPCServer()
-	defer grpcServer.Stop()
+	grpcServer = startGRPCServer()
 
 	if !(*noWait) {
 		// Intentionally introduce some delay so scanner IP can be populated to all enforcers
@@ -378,4 +418,5 @@ func main() {
 
 	log.Info("Exiting ...")
 	scannerDeregister(*join, (uint16)(*joinPort), selfID)
+	grpcServer.Stop()
 }

@@ -96,8 +96,7 @@ func (t *headerFieldTable) evictOldest(n int) {
 // meaning t.ents is reversed for dynamic tables. Hence, when t is a dynamic
 // table, the return value i actually refers to the entry t.ents[t.len()-i].
 //
-// All tables are assumed to be a dynamic tables except for the global
-// staticTable pointer.
+// All tables are assumed to be a dynamic tables except for the global staticTable.
 //
 // See Section 2.3.3.
 func (t *headerFieldTable) search(f HeaderField) (i uint64, nameValueMatch bool) {
@@ -123,80 +122,6 @@ func (t *headerFieldTable) idToIndex(id uint64) uint64 {
 		return uint64(t.len()) - k // dynamic table
 	}
 	return k + 1
-}
-
-func pair(name, value string) HeaderField {
-	return HeaderField{Name: name, Value: value}
-}
-
-// http://tools.ietf.org/html/draft-ietf-httpbis-header-compression-07#appendix-B
-var staticTable = newStaticTable()
-
-func newStaticTable() *headerFieldTable {
-	t := &headerFieldTable{}
-	t.init()
-	t.addEntry(pair(":authority", ""))
-	t.addEntry(pair(":method", "GET"))
-	t.addEntry(pair(":method", "POST"))
-	t.addEntry(pair(":path", "/"))
-	t.addEntry(pair(":path", "/index.html"))
-	t.addEntry(pair(":scheme", "http"))
-	t.addEntry(pair(":scheme", "https"))
-	t.addEntry(pair(":status", "200"))
-	t.addEntry(pair(":status", "204"))
-	t.addEntry(pair(":status", "206"))
-	t.addEntry(pair(":status", "304"))
-	t.addEntry(pair(":status", "400"))
-	t.addEntry(pair(":status", "404"))
-	t.addEntry(pair(":status", "500"))
-	t.addEntry(pair("accept-charset", ""))
-	t.addEntry(pair("accept-encoding", "gzip, deflate"))
-	t.addEntry(pair("accept-language", ""))
-	t.addEntry(pair("accept-ranges", ""))
-	t.addEntry(pair("accept", ""))
-	t.addEntry(pair("access-control-allow-origin", ""))
-	t.addEntry(pair("age", ""))
-	t.addEntry(pair("allow", ""))
-	t.addEntry(pair("authorization", ""))
-	t.addEntry(pair("cache-control", ""))
-	t.addEntry(pair("content-disposition", ""))
-	t.addEntry(pair("content-encoding", ""))
-	t.addEntry(pair("content-language", ""))
-	t.addEntry(pair("content-length", ""))
-	t.addEntry(pair("content-location", ""))
-	t.addEntry(pair("content-range", ""))
-	t.addEntry(pair("content-type", ""))
-	t.addEntry(pair("cookie", ""))
-	t.addEntry(pair("date", ""))
-	t.addEntry(pair("etag", ""))
-	t.addEntry(pair("expect", ""))
-	t.addEntry(pair("expires", ""))
-	t.addEntry(pair("from", ""))
-	t.addEntry(pair("host", ""))
-	t.addEntry(pair("if-match", ""))
-	t.addEntry(pair("if-modified-since", ""))
-	t.addEntry(pair("if-none-match", ""))
-	t.addEntry(pair("if-range", ""))
-	t.addEntry(pair("if-unmodified-since", ""))
-	t.addEntry(pair("last-modified", ""))
-	t.addEntry(pair("link", ""))
-	t.addEntry(pair("location", ""))
-	t.addEntry(pair("max-forwards", ""))
-	t.addEntry(pair("proxy-authenticate", ""))
-	t.addEntry(pair("proxy-authorization", ""))
-	t.addEntry(pair("range", ""))
-	t.addEntry(pair("referer", ""))
-	t.addEntry(pair("refresh", ""))
-	t.addEntry(pair("retry-after", ""))
-	t.addEntry(pair("server", ""))
-	t.addEntry(pair("set-cookie", ""))
-	t.addEntry(pair("strict-transport-security", ""))
-	t.addEntry(pair("transfer-encoding", ""))
-	t.addEntry(pair("user-agent", ""))
-	t.addEntry(pair("vary", ""))
-	t.addEntry(pair("via", ""))
-	t.addEntry(pair("www-authenticate", ""))
-	return t
 }
 
 var huffmanCodes = [256]uint32{
