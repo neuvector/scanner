@@ -3,6 +3,7 @@ package cvetools
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -98,13 +99,14 @@ var aliasMap map[string]string = map[string]string{
 	"docker-ce": "docker",
 }
 
-func NewScanTools(rtSock string, sys *system.SystemTools, layerCacher *ImageLayerCacher) *ScanTools {
+func NewScanTools(rtSock string, sys *system.SystemTools, layerCacher *ImageLayerCacher, mFile string) *ScanTools {
 	cveDB := common.NewCveDB()
 	return &ScanTools{
-		CveDB:  *cveDB,
-		RtSock: rtSock,
-		sys:    sys,
+		CveDB:       *cveDB,
+		RtSock:      rtSock,
+		sys:         sys,
 		LayerCacher: layerCacher,
+		modulesFile: mFile,
 	}
 }
 
@@ -164,6 +166,8 @@ func (cv *ScanTools) ScanImageData(data *share.ScanData) (*share.ScanResult, err
 	if namespace != nil {
 		result.Namespace = namespace.Name
 		result.Modules = feature2Module(namespace.Name, features, apps)
+	} else {
+		result.Modules = feature2Module("", nil, apps)
 	}
 
 	return result, nil
@@ -197,6 +201,19 @@ func (cv *ScanTools) ScanAppPackage(req *share.ScanAppRequest, namespace string)
 		Modules:         feature2Module(namespace, nil, apps),
 	}
 	return result, nil
+}
+
+func (cv *ScanTools) writeModuleFile(apps []scan.AppPackage) {
+	if cv.modulesFile != "" {
+		sort.SliceStable(apps, func(i, j int) bool {
+			if apps[i].ModuleName != apps[j].ModuleName {
+				return apps[i].ModuleName < apps[j].ModuleName
+			}
+			return (apps[i].FileName < apps[j].FileName)
+		})
+		data, _ := json.Marshal(apps)
+		ioutil.WriteFile(cv.modulesFile, data, 0644)
+	}
 }
 
 // ScanImage helps the Image scanning
@@ -247,7 +264,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 
 	var info *scan.ImageInfo
 	var baseLayers utils.Set = utils.NewSet()
-	var secret *share.ScanSecretResult = &share.ScanSecretResult {
+	var secret *share.ScanSecretResult = &share.ScanSecretResult{
 		Error: share.ScanErrorCode_ScanErrNone,
 		Logs:  make([]*share.ScanSecretLog, 0),
 	}
@@ -339,6 +356,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 		log.WithFields(log.Fields{"layers": len(info.Layers), "id": info.ID, "digest": info.Digest, "size": result.Size}).Debug("scan remote image")
 	} else {
 		var errCode share.ScanErrorCode
+		var tarLayers []string
 
 		if baseRepo != "" {
 			if baseReg != "" {
@@ -362,22 +380,13 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 			log.WithFields(log.Fields{"baseImage": req.BaseImage, "base": baseLayers, "layers": len(meta.Layers)}).Debug()
 		}
 
-		layerRecords, info, errCode = cv.LoadLocalImage(ctx, req.Repository, req.Tag, imgPath, cv.LayerCacher)
+		layerRecords, info, tarLayers, errCode = cv.LoadLocalImage(ctx, req.Repository, req.Tag, imgPath, cv.LayerCacher)
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
 			return result, nil
 		}
 
 		layers = info.Layers
-		if !bFromRawData {
-			// reverse layers to v2 sequence
-			var rlayers []string
-			for i := len(layers) - 1; i >= 0; i-- {
-				rlayers = append(rlayers, layers[i])
-			}
-			layers = rlayers
-		}
-
 		// log.WithFields(log.Fields{"layers": layers}).Debug()
 		for id, lr := range layerRecords {
 			layerFiles[id] = lr.Modules
@@ -394,6 +403,10 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 					removed[id] = lr.Removed
 				}
 			}
+		}
+
+		if bFromRawData {
+			layers = tarLayers
 		}
 
 		result.ImageID = info.ID
@@ -425,32 +438,35 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	// Build a map for whole image
 	fileMap := make(map[string]string)
 	if bFromRawData {
-		// Build a map for whole image, v1: top-bottom, reverse order
-		log.Info("build image map")
+		// Build a map from raw layer data
+		log.Debug("build image map")
 		for i := len(layers) - 1; i >= 0; i-- {
-			layerPath := filepath.Join(imgPath, layers[i])
-			if _, _, err := collectImageFileMap(layerPath, fileMap); err != nil {
-				log.WithFields(log.Fields{"error": err, "layer": layerPath}).Error("virtual image map")
-				break
+			if layers[i] != "" {
+				// log.WithFields(log.Fields{"i": i, "layer": layers[i]}).Debug("layers")
+				layerPath := filepath.Join(imgPath, layers[i])
+				if _, _, err := collectImageFileMap(layerPath, fileMap); err != nil {
+					log.WithFields(log.Fields{"error": err, "layer": layerPath}).Error("virtual image map")
+					break
+				}
 			}
 		}
 	} else {
-		// build an absrtact map from records; v2: bottom-top, normal order
+		// build an absrtact map from records
 		log.Info("generate image map")
-		for _, layerID := range layers {
+		for i := len(layers) - 1; i >= 0; i-- {
 			// remove the opaque directories/files from lower layers
-			for _, dir := range removed[layerID] {
+			for _, dir := range removed[layers[i]] {
+				// log.WithFields(log.Fields{"dir": dir, "layerID": layers[i]}).Debug("Remove")
 				for fpath, _ := range fileMap {
 					if strings.HasPrefix(fpath, dir) {
-						// log.WithFields(log.Fields{"fpath": fpath, "dir": dir}).Debug("Remove")
 						delete(fileMap, fpath)
 					}
 				}
 			}
 
-			// log.WithFields(log.Fields{"fmap": fmap[layerID], "layerID": layerID}).Debug()
-			for _, fpath := range fmap[layerID] {
-				fileMap[fpath] = layerID  // reference
+			// log.WithFields(log.Fields{"fmap": fmap[layers[i]], "layerID": layers[i]}).Debug()
+			for _, fpath := range fmap[layers[i]] {
+				fileMap[fpath] = layers[i] // reference
 			}
 		}
 	}
@@ -459,12 +475,12 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	done := make(chan bool, 1)
 	if req.ScanSecrets {
 		go func() {
-			log.Info("Scanning secrets ....")
+			log.Debug("Scanning secrets ....")
 			var err error
 			logs := make([]share.CLUSSecretLog, 0)
 			perms := make([]share.CLUSSetIdPermLog, 0)
 
-			config := secrets.Config {
+			config := secrets.Config{
 				MiniWeight: 0.1, // Some other texts will dilute the weight, so it is better to stay at a smaller weight
 			}
 			// Include env variables into the search
@@ -499,7 +515,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 			}
 			secret = buildSecretResult(logs, err)
 			setidPerm = buildSetIdPermLogs(perms)
-			log.Info("Done secrets ....")
+			log.Debug("Done secrets ....")
 			done <- true
 		}()
 	} else {
@@ -508,6 +524,8 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 
 	// Merge file data, layer order in schema V1, the first is the latest layer
 	gotFirstCpe := false
+
+	var modules []scan.AppPackage
 	mergedFiles := make(map[string]*detectors.FeatureFile)
 	mergedApps := make(map[string][]detectors.AppFeatureVersion)
 	for _, l := range info.Layers {
@@ -552,20 +570,26 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 
 				if _, ok := mergedApps[filename]; !ok {
 					// convert AppPackage to AppFeatureVersion
-					afvs := make([]detectors.AppFeatureVersion, len(apps))
-					for i, a := range apps {
-						afvs[i] = detectors.AppFeatureVersion{
-							AppPackage: a,
-							ModuleVuls: make([]detectors.ModuleVul, 0),
-							InBase:     isBase,
-						}
+					var afvs []detectors.AppFeatureVersion
+					for _, a := range apps {
+						afvs = append(afvs,
+							detectors.AppFeatureVersion{
+								AppPackage: a,
+								ModuleVuls: make([]detectors.ModuleVul, 0),
+								InBase:     isBase,
+							})
+						modules = append(modules, a)
 					}
 
-					mergedApps[filename] = afvs
+					if len(afvs) > 0 {
+						mergedApps[filename] = afvs
+					}
 				}
 			}
 		}
 	}
+
+	cv.writeModuleFile(modules)
 
 	appFVs := make([]detectors.AppFeatureVersion, 0)
 	for _, afvs := range mergedApps {
@@ -576,6 +600,8 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	if namespace != nil {
 		result.Namespace = namespace.Name
 		result.Modules = feature2Module(namespace.Name, features, apps)
+	} else {
+		result.Modules = feature2Module("", nil, apps)
 	}
 	result.Error = serr
 	result.Vuls = vuls
@@ -643,11 +669,11 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 		}
 	}
 
-	log.Info("Done cve ....")
+	log.Debug("Done cve ....")
 	// parallely scanning: done and collecting data
 	<-done
 	close(done)
-	log.WithFields(log.Fields{"id": info.ID, "secrets": len(secret.Logs), "setPerm": len(setidPerm),"vuls": len(vuls)}).Info("scan image done")
+	log.WithFields(log.Fields{"id": info.ID, "secrets": len(secret.Logs), "setPerm": len(setidPerm), "vuls": len(vuls)}).Info("scan image done")
 
 	// Correct CVE in-base flag
 	if req.BaseImage != "" {
@@ -1339,12 +1365,14 @@ func getVulItemList(vuls []vulFullReport, dbPrefix string) []*share.ScanVulnerab
 		}
 		packVer := featver.Version.String()
 
-		// TODO: Quick fix to remove duplication. It should be done earlier
-		key := fmt.Sprintf("%s-%s-%s", v.Name, featver.Package, packVer)
-		if unique.Contains(key) {
-			continue
+		// There can be several files that list the same dependency on .NET Core, so to dedup them
+		if featver.Package == ".NET:Core" {
+			key := fmt.Sprintf("%s-%s-%s", v.Name, featver.Package, packVer)
+			if unique.Contains(key) {
+				continue
+			}
+			unique.Add(key)
 		}
-		unique.Add(key)
 
 		if severity == common.Critical {
 			severity = common.High
@@ -1433,20 +1461,13 @@ func feature2Module(namespace string, features []detectors.FeatureVersion, apps 
 		modules = append(modules, m)
 	}
 
-	dedup := utils.NewSet()
 	for _, app := range apps {
-		// modules in different layer can produce duplicate entry, remove them here.
-		key := fmt.Sprintf("%s-%s-%s", app.AppName, app.ModuleName, app.Version)
-		if !dedup.Contains(key) {
-			dedup.Add(key)
-
-			m := &share.ScanModule{Name: app.ModuleName, Version: app.Version, Source: app.AppName}
-			for _, mv := range app.ModuleVuls {
-				cve := &share.ScanModuleVul{Name: mv.Name, Status: mv.Status}
-				m.Vuls = append(m.Vuls, cve)
-			}
-			modules = append(modules, m)
+		m := &share.ScanModule{Name: app.ModuleName, File: app.FileName, Version: app.Version, Source: app.AppName}
+		for _, mv := range app.ModuleVuls {
+			cve := &share.ScanModuleVul{Name: mv.Name, Status: mv.Status}
+			m.Vuls = append(m.Vuls, cve)
 		}
+		modules = append(modules, m)
 	}
 
 	return modules

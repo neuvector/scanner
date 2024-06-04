@@ -95,8 +95,10 @@ func collectImageFileMap(rootPath string, fmap map[string]string) (int, []string
 
 	// (2) add the new added files
 	for path, ref := range curfmap {
-		fmap[path] = ref
-		// log.WithFields(log.Fields{"path": path}).Info("Add")
+		if path != "" {
+			fmap[path] = ref
+			// log.WithFields(log.Fields{"path": path, "ref": ref}).Info("Add")
+		}
 	}
 	return len(curfmap), opqDirs, err
 }

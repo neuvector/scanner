@@ -152,7 +152,7 @@ func adjustContainerPod(selfID string, containers []*container.ContainerMeta) st
 
 func main() {
 	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	log.SetFormatter(&utils.LogFormatter{Module: "SCN"})
 
 	dbPath := flag.String("d", "./dbgen/", "cve database file directory")
@@ -175,19 +175,17 @@ func main() {
 	ctrlPass := flag.String("ctrl_password", "", "Controller REST API password")
 	noWait := flag.Bool("no_wait", false, "No initial wait")
 	noTask := flag.Bool("no_task", false, "Not using scanner task")
-
 	verbose := flag.Bool("x", false, "more debug")
+
 	output := flag.String("o", "", "Output CVEDB in json format, specify the output file")
 	show := flag.String("show", "", "Standalone Mode: Stdout print options, cmd,module")
 	getVer := flag.Bool("v", false, "show cve database version")
-	debug := flag.String("debug", "", "debug filters")
+	debug := flag.String("debug", "", "debug filters. (v=CVE-2024-0001,f=jar)")
 	maxCacherRecordSize := flag.Int64("maxrec", 0, "maximum record cacher size in MB") // common.MaxRecordCacherSizeMB
 	flag.Usage = usage
 	flag.Parse()
 
-	if *debug != "" {
-		common.ParseDebugFilters(*debug)
-	}
+	common.InitDebugFilters(*debug)
 
 	// show cve database version
 	if *getVer {
@@ -211,7 +209,11 @@ func main() {
 	}
 
 	onDemand := false
-	showTaskDebug := true
+	showTaskDebug := false
+	if *verbose {
+		log.SetLevel(log.DebugLevel)
+		showTaskDebug = true
+	}
 
 	var grpcServer *cluster.GRPCServer
 	var ctx context.Context
@@ -261,12 +263,6 @@ func main() {
 		}
 
 		onDemand = true
-
-		// Less debug in interactive mode
-		if *image != "" && *verbose == false {
-			log.SetLevel(log.InfoLevel)
-			showTaskDebug = false
-		}
 	}
 
 	// recovered, clean up all possible previous image folders
@@ -336,7 +332,7 @@ func main() {
 				Tag:         tag,
 				Username:    *regUser,
 				Password:    *regPass,
-				ScanLayers:  true,
+				ScanLayers:  *scanLayers,
 				ScanSecrets: false,
 				BaseImage:   *baseImage,
 			}

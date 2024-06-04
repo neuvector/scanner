@@ -24,6 +24,7 @@ type ScanTools struct {
 	SupportOs   utils.Set
 	sys         *system.SystemTools
 	LayerCacher *ImageLayerCacher
+	modulesFile string
 }
 
 type vulShortReport struct {

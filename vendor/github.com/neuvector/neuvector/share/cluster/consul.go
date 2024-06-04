@@ -172,6 +172,7 @@ func createConfigFile(cc *ClusterConfig) error {
 	sa = append(sa, fmt.Sprintf("        \"serf_lan\": %d,\n", lanPort))
 	sa = append(sa, fmt.Sprintf("        \"serf_wan\": %d\n", -1))
 	sa = append(sa, fmt.Sprintf("    },\n"))
+	sa = append(sa, fmt.Sprintf("    \"tls_cipher_suites\": \"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384\",\n"))
 	sa = append(sa, fmt.Sprintf("    \"performance\": {\n"))
 	sa = append(sa, fmt.Sprintf("        \"rpc_hold_timeout\": \"%ds\"\n", 300))
 	sa = append(sa, fmt.Sprintf("    }\n"))
@@ -450,7 +451,7 @@ func ConsulGet(url string) (string, bool) {
 	log.Printf("Status of Get %s %d for %s", resp.Status, resp.StatusCode, url)
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		var jsonBody []consulBody
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		err = json.Unmarshal(body, &jsonBody)
 		existingValue, err := b64.StdEncoding.DecodeString(jsonBody[0].Value)
 		if err != nil {
@@ -494,7 +495,7 @@ func GetAll(store string) ([][]byte, []int, bool) {
 		var jsonBody []consulBody
 		valueArr := make([][]byte, 0)
 		indexArr := make([]int, 0)
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		err = json.Unmarshal(body, &jsonBody)
 		for _, body := range jsonBody {
 			existingValue, _ := b64.StdEncoding.DecodeString(body.Value)
