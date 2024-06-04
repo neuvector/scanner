@@ -25,7 +25,6 @@
 #define ENV_CLUSTER_ADVERTISE  "CLUSTER_ADVERTISED_ADDR"
 #define ENV_CLUSTER_ADV_PORT   "CLUSTER_ADVERTISED_PORT"
 #define ENV_CLUSTER_BIND       "CLUSTER_BIND_ADDR"
-#define ENV_DOCKER_URL         "DOCKER_URL"
 
 #define ENV_SCANNER_DOCKER_URL  "SCANNER_DOCKER_URL"
 #define ENV_SCANNER_LICENSE     "SCANNER_LICENSE"
@@ -40,7 +39,9 @@
 #define ENV_SCANNER_CTRL_USER   "SCANNER_CTRL_API_USERNAME"
 #define ENV_SCANNER_CTRL_PASS   "SCANNER_CTRL_API_PASSWORD"
 #define ENV_SCANNER_CTRL_PASS   "SCANNER_CTRL_API_PASSWORD"
+
 #define ENV_SCANNER_CACHE_MAX   "MAX_CACHE_RECORD_MB"
+#define ENV_CAP_CRITICAL        "CAP_CRITICAL"
 
 enum {
     PROC_SCANNER = 0,
@@ -134,7 +135,7 @@ static pid_t fork_exec(int i)
         }
 
         if (g_node) {
-            // automatically set to standalone mode
+            // scan node
             args[a ++] = "--license";
             args[a ++] = "on_demand";
 
@@ -142,6 +143,10 @@ static pid_t fork_exec(int i)
 
             args[a ++] = "--pid";
             args[a ++] = "1";
+
+            if ((url = getenv(ENV_CAP_CRITICAL)) != NULL) {
+                args[a ++] = "--cap_critical";
+            }
         } else if (g_image != NULL) {
             // automatically set to standalone mode
             args[a ++] = "--license";
@@ -155,6 +160,10 @@ static pid_t fork_exec(int i)
             if ((url = getenv(ENV_SCANNER_DOCKER_URL)) != NULL) {
                 args[a ++] = "-u";
                 args[a ++] = url;
+            }
+
+            if ((url = getenv(ENV_CAP_CRITICAL)) != NULL) {
+                args[a ++] = "--cap_critical";
             }
         } else {
             // options for non-standalone mode

@@ -235,7 +235,7 @@ func writeResultToStdout(result *share.ScanResult, showOptions string) {
 	}
 }
 
-func scanRunning(pid int, cvedb map[string]*share.ScanVulnerability, showOptions string) {
+func scanRunning(pid int, cvedb map[string]*share.ScanVulnerability, showOptions string, capCritical bool) {
 	newDB := &share.CLUSScannerDB{
 		CVEDBVersion:    cveDB.CveDBVersion,
 		CVEDBCreateTime: cveDB.CveDBCreateTime,
@@ -271,13 +271,17 @@ func scanRunning(pid int, cvedb map[string]*share.ScanVulnerability, showOptions
 		return
 	}
 
+	if !capCritical {
+		downgradeCriticalSeverityInResult(result)
+	}
+
 	fmt.Printf("PID: %d\n", pid)
 	writeResultToStdout(result, showOptions)
 
 	return
 }
 
-func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulnerability, showOptions string) *share.ScanResult {
+func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulnerability, showOptions string, capCritical bool) *share.ScanResult {
 	var result *share.ScanResult
 	var err error
 
@@ -303,6 +307,10 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 		result, err = cveTools.ScanImage(ctx, req, "")
 	}
 	cancel()
+
+	if !capCritical {
+		downgradeCriticalSeverityInResult(result)
+	}
 
 	if req.Registry == "" && result != nil &&
 		(result.Error == share.ScanErrorCode_ScanErrImageNotFound || result.Error == share.ScanErrorCode_ScanErrContainerAPI) {
