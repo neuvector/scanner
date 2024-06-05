@@ -1,2 +1,2 @@
 all:
-	go build -ldflags='-s -w' -o scannerTask
+	go build -ldflags='-s -w' -buildvcs=false -o scannerTask
