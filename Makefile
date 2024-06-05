@@ -5,7 +5,7 @@ BUILD_IMAGE_TAG = v2
 
 # Keep this as the first
 all:
-	go build -ldflags='-s -w'
+	go build -ldflags='-s -w' -buildvcs=false
 	cd task; make; cd ..
 	cd monitor; make; cd ..
 
