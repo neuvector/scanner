@@ -8,6 +8,7 @@ import (
 
 	dbi "github.com/knqyf263/go-rpmdb/pkg/db"
 	"golang.org/x/xerrors"
+	_ "github.com/glebarez/go-sqlite"
 )
 
 type SQLite3 struct {
