@@ -5,6 +5,7 @@ COPY stage /
 
 LABEL neuvector.image="neuvector/scanner" \
       neuvector.role="scanner" \
+      neuvector.rev="git.xxxx" \
       neuvector.vuln_db="vuln.xxxx"
 
 ENTRYPOINT ["/usr/local/bin/monitor"]
