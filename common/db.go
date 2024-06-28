@@ -120,6 +120,8 @@ func ns2String(ns string) (string, string) {
 		return "Oracle Linux", ns[7:]
 	} else if strings.HasPrefix(ns, "sles:l") {
 		return "openSUSE Leap", ns[6:]
+	} else if strings.HasPrefix(ns, "sles:tw") {
+		return "openSUSE Tumbleweed", ns[6:]
 	} else if strings.HasPrefix(ns, "sles:") {
 		return "SUSE Linux", ns[5:]
 	} else if strings.HasPrefix(ns, "ubuntu:") {
@@ -438,7 +440,7 @@ func LoadFullVulnerabilities(path, osname string) (map[string]VulFull, error) {
 	return fullDb, nil
 }
 
-func uniqueVulDb(vuls []AppModuleVul) ([]AppModuleVul) {
+func uniqueVulDb(vuls []AppModuleVul) []AppModuleVul {
 	var unique []AppModuleVul
 	dedup := utils.NewSet()
 	for _, v := range vuls {
