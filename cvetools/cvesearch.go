@@ -64,6 +64,7 @@ type featureVulnWindow struct {
 }
 
 ///////
+
 var cveTools *ScanTools
 var overrideMap map[string][]featureVulnWindow = map[string][]featureVulnWindow{
 	"CVE-2019-13509": {
@@ -864,6 +865,9 @@ func os2DB(ns *detectors.Namespace) (string, int) {
 		case "opensuse-leap":
 			nsName = "sles:l" + r[2]
 			db = common.DBSuse
+		case "opensuse-tumbleweed":
+			nsName = "sles:tw"
+			db = common.DBSuse
 		}
 	}
 	return nsName, db
@@ -1432,7 +1436,7 @@ func removeSubVersion(name string) string {
 	return name
 }
 
-//majorVersion returns only the most significant version, ex: 7.8.112 -> 7
+// majorVersion returns only the most significant version, ex: 7.8.112 -> 7
 func majorVersion(name string) string {
 	substrings := strings.Split(name, ".")
 	return substrings[0]
