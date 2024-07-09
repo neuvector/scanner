@@ -243,6 +243,8 @@ func CLUSFqdnIpKey(hostID string, fqdname string) string {
 
 const InternalIPNetDefaultName string = "InternalIPNet"
 const SpecialIPNetDefaultName string = "SpecialIPNet"
+const NsBoundaryKey string = "NeuvectorNamespaceBoundary"
+const NsBoundaryValEnable string = "enabled"
 
 func CLUSInternalIPNetsKey(name string) string {
 	return fmt.Sprintf("%s%s", CLUSNetworkStore, name)
@@ -957,7 +959,8 @@ type CLUSHost struct {
 	Name           string                  `json:"name"`
 	Runtime        string                  `json:"runtime"`
 	Platform       string                  `json:"platform"`
-	Flavor         string                  `json:"flavor"` // platform flavor
+	Flavor         string                  `json:"flavor"`         // platform flavor
+	CloudPlatform  string                  `json:"cloud_platform"` // cloud_platform
 	Network        string                  `json:"network"`
 	RuntimeVer     string                  `json:"runtime_version"`
 	RuntimeAPIVer  string                  `json:"runtime_api_version"`
@@ -1044,16 +1047,16 @@ type CLUSNetworkEP struct {
 type CLUSGroupMetric struct {
 	GroupName      string                   `json:"group_name"`
 	GroupSessCurIn uint32                   `json:"group_sess_cur_in"`
-	GroupSessIn60  uint32                   `json:"group_sess_in60"`
-	GroupByteIn60  uint64                   `json:"group_byte_in60"`
+	GroupSessIn12  uint32                   `json:"group_sess_in12"`
+	GroupByteIn12  uint64                   `json:"group_byte_in12"`
 	WlMetric       map[string]*CLUSWlMetric `json:"wl_metric"`
 }
 
 type CLUSWlMetric struct {
 	WlID        string `json:"wlid"`
 	WlSessCurIn uint32 `json:"wl_sess_cur_in"`
-	WlSessIn60  uint32 `json:"wl_sess_in60"`
-	WlByteIn60  uint64 `json:"wl_byte_in60"`
+	WlSessIn12  uint32 `json:"wl_sess_in12"`
+	WlByteIn12  uint64 `json:"wl_byte_in12"`
 }
 
 type CLUSWorkload struct {
@@ -1219,6 +1222,7 @@ var CLUSLearnedHostPrefix string = "Host:"
 var CLUSLearnedWorkloadPrefix string = "Workload:"
 var CLUSEndpointIngress string = "ingress"
 var CLUSWLAllContainer string = "nv.allcontainer"
+var CLUSPlatformContainerCore string = "core"
 
 const DefaultGroupRuleID uint32 = 0
 const PolicyLearnedIDBase = 10000
@@ -1246,6 +1250,8 @@ type CLUSPortApp struct {
 type CLUSWorkloadAddr struct {
 	WlID         string        `json:"workload_id"`
 	PolicyMode   string        `json:"mode,omitempty"`
+	Domain       string        `json:"domain,omitempty"`
+	PlatformRole string        `json:"platform_role,omitempty"`
 	LocalIP      []net.IP      `json:"local_ip,omitempty"`
 	GlobalIP     []net.IP      `json:"global_ip,omitempty"`
 	NatIP        []net.IP      `json:"nat_ip,omitempty"`

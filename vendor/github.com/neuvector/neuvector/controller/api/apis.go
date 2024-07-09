@@ -856,6 +856,7 @@ type RESTDomain struct {
 	Services         int               `json:"services"`
 	Tags             []string          `json:"tags"`
 	Labels           map[string]string `json:"labels"`
+	Nbe              bool              `json:"nbe"`
 }
 
 type RESTDomainsData struct {
@@ -1108,6 +1109,7 @@ type RESTConversationReport struct {
 	EventType    []string                       `json:"event_type,omitempty"`
 	XffEntry     bool                           `json:"xff_entry,omitempty"` //has xff entry
 	Entries      []*RESTConversationReportEntry `json:"entries"`
+	Nbe          bool                           `json:"nbe,omitempty"` //cross namespace entry
 }
 
 type RESTConversation struct {
@@ -1139,6 +1141,7 @@ type RESTConversationEntry struct {
 	FQDN         string `json:"fqdn"`
 	Xff          bool   `json:"xff"`
 	ToSidecar    bool   `json:"to_sidecar"`
+	Nbe          bool   `json:"nbe"`
 }
 
 type RESTConversationDetail struct {
@@ -3509,8 +3512,8 @@ type AdmCtlTimeStamps struct {
 	Parsed     time.Time
 	GonnaFetch time.Time
 	Fetched    time.Time
-	Matched    time.Time
-	Image      string // the original image specified in the admission request
+	Evaluated  time.Time
+	Images     string // the original images specified in the admission request
 }
 
 type RESTAdmissionStatsData struct {
@@ -3986,7 +3989,7 @@ type RESTWorkloadAssetView struct {
 }
 
 type RESTHostAssetView struct {
-	ID              string   `json:"id"` //TODO: remove later
+	ID              string   `json:"id"`
 	Name            string   `json:"name"`
 	PolicyMode      string   `json:"policy_mode"`
 	OS              string   `json:"os"`
@@ -4002,7 +4005,7 @@ type RESTHostAssetView struct {
 }
 
 type RESTPlatformAssetView struct {
-	ID              string   `json:"id"` //TODO: remove later
+	ID              string   `json:"id"`
 	Name            string   `json:"name"`
 	Version         string   `json:"version"`
 	BaseOS          string   `json:"base_os"`
@@ -4013,7 +4016,7 @@ type RESTPlatformAssetView struct {
 }
 
 type RESTImageAssetView struct {
-	ID              string   `json:"id"` //TODO: remove later
+	ID              string   `json:"id"`
 	Name            string   `json:"name"`
 	High            int      `json:"high"`
 	Medium          int      `json:"medium"`
