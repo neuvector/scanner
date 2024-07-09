@@ -284,7 +284,7 @@ func main() {
 		log.Debug("Not running in container.")
 	}
 
-	if platform, _, _, containers, err := global.SetGlobalObjects(*rtSock, nil); err == nil {
+	if platform, _, _, _, containers, err := global.SetGlobalObjects(*rtSock, nil); err == nil {
 		if platform == share.PlatformKubernetes {
 			selfID = adjustContainerPod(selfID, containers)
 		}
