@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -403,4 +404,48 @@ func scannerDeregister(joinIP string, joinPort uint16, id string) error {
 		return errors.New("Failed to send deregister request")
 	}
 	return nil
+}
+
+func isConnectionError(err error) bool {
+	if st, ok := status.FromError(err); ok {
+		if st.Code() == codes.Unavailable {
+			if strings.Contains(st.Message(), "connection refused") ||
+				strings.Contains(st.Message(), "transport: Error while dialing") ||
+				strings.Contains(st.Message(), "connection error") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func getControllerHealthCheck(joinIP string, joinPort uint16, cb cluster.GRPCCallback) error {
+	client, err := getControllerServiceClient(joinIP, joinPort, cb)
+	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("Failed to find ctrl client")
+		return errors.New("Failed to connect to controller")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+
+	_, errHealthCheck := client.HealthCheck(ctx, &share.RPCVoid{})
+
+	return errHealthCheck
+}
+
+func periodCheckHealth(joinIP string, joinPort uint16, cb *clientCallback) {
+	period := 30
+	ticker := time.NewTicker(time.Duration(period) * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if isConnectionError(getControllerHealthCheck(joinIP, joinPort, cb)) {
+				log.WithFields(log.Fields{"joinIP": joinIP, "joinPort": joinPort}).Error("Prepare to Reconnect the controller")
+				cb.shutCh <- true
+			}
+		}
+	}
 }

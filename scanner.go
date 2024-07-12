@@ -124,6 +124,8 @@ func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinP
 		scanner.CVEDB = nil
 		dbData = make(map[string]*share.ScanVulnerability) // zero size
 
+		go periodCheckHealth(joinIP, joinPort, cb)
+
 		// start responding shutdown notice
 		cb.ignoreShutdown = false
 		<-cb.shutCh
