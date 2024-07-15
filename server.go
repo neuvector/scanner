@@ -434,6 +434,8 @@ func getControllerHealthCheck(joinIP string, joinPort uint16, cb cluster.GRPCCal
 	return errHealthCheck
 }
 
+// To ensure the controller's availability, periodCheckHealth use GetCaps to periodically check if the controller is alive.
+// Additionally, if the controller is deleted or not responsive, the scanner will re-register.
 func periodCheckHealth(joinIP string, joinPort uint16, cb *clientCallback) {
 	period := 30
 	ticker := time.NewTicker(time.Duration(period) * time.Minute)
