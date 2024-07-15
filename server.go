@@ -429,7 +429,7 @@ func getControllerHealthCheck(joinIP string, joinPort uint16, cb cluster.GRPCCal
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
 
-	_, errHealthCheck := client.HealthCheck(ctx, &share.RPCVoid{})
+	_, errHealthCheck := client.GetCaps(ctx, &share.RPCVoid{})
 
 	return errHealthCheck
 }
