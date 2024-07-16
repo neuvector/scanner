@@ -104,6 +104,8 @@ func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinP
 		ignoreShutdown: true,
 	}
 
+	var healthCheckCh chan struct{}
+
 	for {
 		// forever retry
 		dbData := dbRead(path, 0, "")
@@ -124,7 +126,12 @@ func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinP
 		scanner.CVEDB = nil
 		dbData = make(map[string]*share.ScanVulnerability) // zero size
 
-		go periodCheckHealth(joinIP, joinPort, cb)
+		if healthCheckCh != nil {
+			close(healthCheckCh)
+		}
+
+		healthCheckCh = make(chan struct{})
+		go periodCheckHealth(joinIP, joinPort, cb, healthCheckCh)
 
 		// start responding shutdown notice
 		cb.ignoreShutdown = false
