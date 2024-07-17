@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -406,46 +405,45 @@ func scannerDeregister(joinIP string, joinPort uint16, id string) error {
 	return nil
 }
 
-func isConnectionError(err error) bool {
-	if st, ok := status.FromError(err); ok {
-		if st.Code() == codes.Unavailable {
-			if strings.Contains(st.Message(), "connection refused") ||
-				strings.Contains(st.Message(), "transport: Error while dialing") ||
-				strings.Contains(st.Message(), "connection error") {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func getControllerHealthCheck(joinIP string, joinPort uint16, cb cluster.GRPCCallback) error {
+func getScannerAvailable(joinIP string, joinPort uint16, data *share.ScannerRegisterData, cb cluster.GRPCCallback) (*share.ScannerAvailable, error) {
 	client, err := getControllerServiceClient(joinIP, joinPort, cb)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to find ctrl client")
-		return errors.New("Failed to connect to controller")
+		return &share.ScannerAvailable{Visible: false}, errors.New("Failed to connect to controller")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
 
-	_, errHealthCheck := client.GetCaps(ctx, &share.RPCVoid{})
+	scannerAvailable, errHealthCheck := client.HealthCheck(ctx, data)
 
-	return errHealthCheck
+	return scannerAvailable, errHealthCheck
 }
 
-// To ensure the controller's availability, periodCheckHealth use GetCaps to periodically check if the controller is alive.
+// To ensure the controller's availability, periodCheckHealth use HealthCheck to periodically check if the controller is alive.
 // Additionally, if the controller is deleted or not responsive, the scanner will re-register.
-func periodCheckHealth(joinIP string, joinPort uint16, cb *clientCallback, healthCheckCh chan struct{}) {
-	period := 20
+func periodCheckHealth(joinIP string, joinPort uint16, data *share.ScannerRegisterData, cb *clientCallback, healthCheckCh chan struct{}, done chan bool, period, retryMax int) {
 	ticker := time.NewTicker(time.Duration(period) * time.Minute)
 	defer ticker.Stop()
-
 	for {
 		select {
 		case <-ticker.C:
-			if isConnectionError(getControllerHealthCheck(joinIP, joinPort, cb)) {
-				log.WithFields(log.Fields{"joinIP": joinIP, "joinPort": joinPort}).Error("Prepare to Reconnect the controller")
+			retryCnt := 0
+			for retryCnt < retryMax {
+				scannerAvailable, errHealthCheck := getScannerAvailable(joinIP, joinPort, data, cb)
+				if errHealthCheck == nil {
+					if scannerAvailable.Visible {
+						break
+					}
+				} else {
+					log.WithFields(log.Fields{"joinIP": joinIP, "joinPort": joinPort, "errHealthCheck": errHealthCheck}).Error("periodCheckHealth has error")
+				}
+				retryCnt++
+				time.Sleep(time.Duration(period) * time.Second) // Add a delay before retrying
+			}
+			if retryCnt >= retryMax {
+				log.WithFields(log.Fields{"joinIP": joinIP, "joinPort": joinPort, "retryMax": retryMax}).Error("The scanner is not in the controller, restart the scanner pod.")
+				done <- true
 			}
 		case <-healthCheckCh:
 			return

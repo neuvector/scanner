@@ -98,7 +98,7 @@ func dbRead(path string, maxRetry int, output string) map[string]*share.ScanVuln
 	}
 }
 
-func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinPort uint16) {
+func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinPort uint16, period, retryMax int, doneCh chan bool) {
 	cb := &clientCallback{
 		shutCh:         make(chan interface{}, 1),
 		ignoreShutdown: true,
@@ -131,7 +131,7 @@ func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinP
 		}
 
 		healthCheckCh = make(chan struct{})
-		go periodCheckHealth(joinIP, joinPort, cb, healthCheckCh)
+		go periodCheckHealth(joinIP, joinPort, &scanner, cb, healthCheckCh, doneCh, period, retryMax)
 
 		// start responding shutdown notice
 		cb.ignoreShutdown = false
@@ -186,6 +186,8 @@ func main() {
 	noWait := flag.Bool("no_wait", false, "No initial wait")
 	noTask := flag.Bool("no_task", false, "Not using scanner task")
 	verbose := flag.Bool("x", false, "more debug")
+	period := flag.Int("period", 20, "Minutes to check if the scanner is in the controller and controller is alive")
+	retryMax := flag.Int("retry_max", 3, "Number of retry")
 
 	output := flag.String("o", "", "Output CVEDB in json format, specify the output file")
 	show := flag.String("show", "", "Standalone Mode: Stdout print options, cmd,module")
@@ -425,7 +427,7 @@ func main() {
 
 	// Use the original address, which is the service name, so when controller changes,
 	// new IP can be resolved
-	go connectController(*dbPath, *adv, *join, selfID, (uint32)(*advPort), (uint16)(*joinPort))
+	go connectController(*dbPath, *adv, *join, selfID, (uint32)(*advPort), (uint16)(*joinPort), *period, *retryMax, done)
 	<-done
 
 	log.Info("Exiting ...")
