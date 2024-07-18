@@ -98,7 +98,7 @@ func dbRead(path string, maxRetry int, output string) map[string]*share.ScanVuln
 	}
 }
 
-func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinPort uint16, period, retryMax int, doneCh chan bool) {
+func connectController(path, advIP, joinHost, selfID string, advPort uint32, joinPort uint16, period, retryMax int, doneCh chan bool) {
 	cb := &clientCallback{
 		shutCh:         make(chan interface{}, 1),
 		ignoreShutdown: true,
@@ -118,7 +118,7 @@ func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinP
 			ID:              selfID,
 		}
 
-		for scannerRegister(joinIP, joinPort, &scanner, cb) != nil {
+		for scannerRegister(joinHost, joinPort, &scanner, cb) != nil {
 			time.Sleep(registerWaitTime)
 		}
 
@@ -131,7 +131,7 @@ func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinP
 		}
 
 		healthCheckCh = make(chan struct{})
-		go periodCheckHealth(joinIP, joinPort, &scanner, cb, healthCheckCh, doneCh, period, retryMax)
+		go periodCheckHealth(joinHost, joinPort, &scanner, cb, healthCheckCh, doneCh, period, retryMax)
 
 		// start responding shutdown notice
 		cb.ignoreShutdown = false
