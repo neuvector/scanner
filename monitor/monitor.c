@@ -42,8 +42,6 @@
 
 #define ENV_SCANNER_CACHE_MAX   "MAX_CACHE_RECORD_MB"
 #define ENV_CAP_CRITICAL        "CAP_CRITICAL"
-#define ENV_HEALTH_CHECK_PERIOD "HEALTH_CHECK_PERIOD"
-#define ENV_RETRY               "MAX_RETRY"
 
 enum {
     PROC_SCANNER = 0,
@@ -122,7 +120,7 @@ static pid_t fork_exec(int i)
     char *args[PROC_ARGS_MAX], *join, *adv, *url;
     char *join_port, *adv_port;
     char *license, *registry, *repository, *tag, *user, *pass, *base, *api_user, *api_pass, *enable;
-    char *on_demand, *cache_record_max, *period, *retry_max;
+    char *on_demand, *cache_record_max;
     int a;
 
     switch (i) {
@@ -207,14 +205,6 @@ static pid_t fork_exec(int i)
                 args[a ++] = "--tag";
                 args[a ++] = tag;
             }
-            if ((period = getenv(ENV_HEALTH_CHECK_PERIOD)) != NULL) {
-                args[a ++] = "--period";
-                args[a ++] = period;
-            } 
-            if ((retry_max = getenv(ENV_RETRY)) != NULL) {
-                args[a ++] = "--retry_max";
-                args[a ++] = retry_max;
-            }            
         }
 
         // The following options apply to both standalone or non-standalone mode

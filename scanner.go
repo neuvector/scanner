@@ -50,6 +50,7 @@ var cveDB *common.CveDB
 var ctrlCaps share.ControllerCaps
 var scanTasker *Tasker
 var selfID string
+var isGetCapsActivate bool
 
 func dbRead(path string, maxRetry int, output string) map[string]*share.ScanVulnerability {
 	dbFile := path + share.DefaultCVEDBName
@@ -98,7 +99,7 @@ func dbRead(path string, maxRetry int, output string) map[string]*share.ScanVuln
 	}
 }
 
-func connectController(path, advIP, joinHost, selfID string, advPort uint32, joinPort uint16, period, retryMax int, doneCh chan bool) {
+func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinPort uint16, doneCh chan bool) {
 	cb := &clientCallback{
 		shutCh:         make(chan interface{}, 1),
 		ignoreShutdown: true,
@@ -118,7 +119,7 @@ func connectController(path, advIP, joinHost, selfID string, advPort uint32, joi
 			ID:              selfID,
 		}
 
-		for scannerRegister(joinHost, joinPort, &scanner, cb) != nil {
+		for scannerRegister(joinIP, joinPort, &scanner, cb) != nil {
 			time.Sleep(registerWaitTime)
 		}
 
@@ -131,7 +132,11 @@ func connectController(path, advIP, joinHost, selfID string, advPort uint32, joi
 		}
 
 		healthCheckCh = make(chan struct{})
-		go periodCheckHealth(joinHost, joinPort, &scanner, cb, healthCheckCh, doneCh, period, retryMax)
+		// Check if the gRPC HealthCheck API is active (indicated by isGetCapsActivate being true).
+		// If active, initiate periodic health checks by launching a goroutine to monitor the health status of the specified service.
+		if isGetCapsActivate {
+			go periodCheckHealth(joinIP, joinPort, &scanner, cb, healthCheckCh, doneCh)
+		}
 
 		// start responding shutdown notice
 		cb.ignoreShutdown = false
@@ -186,8 +191,6 @@ func main() {
 	noWait := flag.Bool("no_wait", false, "No initial wait")
 	noTask := flag.Bool("no_task", false, "Not using scanner task")
 	verbose := flag.Bool("x", false, "more debug")
-	period := flag.Int("period", 20, "Minutes to check if the scanner is in the controller and controller is alive")
-	retryMax := flag.Int("retry_max", 3, "Number of retry")
 
 	output := flag.String("o", "", "Output CVEDB in json format, specify the output file")
 	show := flag.String("show", "", "Standalone Mode: Stdout print options, cmd,module")
@@ -427,7 +430,7 @@ func main() {
 
 	// Use the original address, which is the service name, so when controller changes,
 	// new IP can be resolved
-	go connectController(*dbPath, *adv, *join, selfID, (uint32)(*advPort), (uint16)(*joinPort), *period, *retryMax, done)
+	go connectController(*dbPath, *adv, *join, selfID, (uint32)(*advPort), (uint16)(*joinPort), done)
 	<-done
 
 	log.Info("Exiting ...")

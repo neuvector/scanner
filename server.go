@@ -19,6 +19,11 @@ import (
 	"github.com/neuvector/scanner/cvetools"
 )
 
+const (
+	period   = 20 // Minutes to check if the scanner is in the controller and controller is alive
+	retryMax = 3  // Number of retry
+)
+
 func createEnforcerScanServiceWrapper(conn *grpc.ClientConn) cluster.Service {
 	return share.NewEnforcerScanServiceClient(conn)
 }
@@ -220,9 +225,9 @@ func createControllerScanServiceWrapper(conn *grpc.ClientConn) cluster.Service {
 	return share.NewControllerScanServiceClient(conn)
 }
 
-func getControllerServiceClient(joinHost string, joinPort uint16, cb cluster.GRPCCallback) (share.ControllerScanServiceClient, error) {
+func getControllerServiceClient(joinIP string, joinPort uint16, cb cluster.GRPCCallback) (share.ControllerScanServiceClient, error) {
 	if cluster.GetGRPCClientEndpoint(controller) == "" {
-		ep := fmt.Sprintf("%s:%v", joinHost, joinPort)
+		ep := fmt.Sprintf("%s:%v", joinIP, joinPort)
 		cluster.CreateGRPCClient(controller, ep, true, createControllerScanServiceWrapper)
 	}
 	c, err := cluster.GetGRPCClient(controller, nil, cb)
@@ -349,12 +354,12 @@ func downgradeCriticalSeverityInCVEDB(data *share.ScannerRegisterData) {
 	return
 }
 
-func scannerRegister(joinHost string, joinPort uint16, data *share.ScannerRegisterData, cb cluster.GRPCCallback) error {
+func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegisterData, cb cluster.GRPCCallback) error {
 	log.WithFields(log.Fields{
-		"join": fmt.Sprintf("%s:%d", joinHost, joinPort), "version": data.CVEDBVersion, "entries": len(data.CVEDB),
+		"join": fmt.Sprintf("%s:%d", joinIP, joinPort), "version": data.CVEDBVersion, "entries": len(data.CVEDB),
 	}).Debug()
 
-	client, err := getControllerServiceClient(joinHost, joinPort, cb)
+	client, err := getControllerServiceClient(joinIP, joinPort, cb)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to find ctrl client")
 		return errors.New("Failed to connect to controller")
@@ -365,8 +370,10 @@ func scannerRegister(joinHost string, joinPort uint16, data *share.ScannerRegist
 
 	caps, err := client.GetCaps(ctx, &share.RPCVoid{})
 	if err != nil {
+		isGetCapsActivate = false
 		downgradeCriticalSeverityInCVEDB(data)
 	} else {
+		isGetCapsActivate = true
 		ctrlCaps = *caps
 		if !caps.CriticalVul {
 			downgradeCriticalSeverityInCVEDB(data)
@@ -385,10 +392,10 @@ func scannerRegister(joinHost string, joinPort uint16, data *share.ScannerRegist
 	return nil
 }
 
-func scannerDeregister(joinHost string, joinPort uint16, id string) error {
+func scannerDeregister(joinIP string, joinPort uint16, id string) error {
 	log.Debug()
 
-	client, err := getControllerServiceClient(joinHost, joinPort, nil)
+	client, err := getControllerServiceClient(joinIP, joinPort, nil)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to find ctrl client")
 		return errors.New("Failed to connect to controller")
@@ -405,8 +412,8 @@ func scannerDeregister(joinHost string, joinPort uint16, id string) error {
 	return nil
 }
 
-func getScannerAvailable(joinHost string, joinPort uint16, data *share.ScannerRegisterData, cb cluster.GRPCCallback) (*share.ScannerAvailable, error) {
-	client, err := getControllerServiceClient(joinHost, joinPort, cb)
+func getScannerAvailable(joinIP string, joinPort uint16, data *share.ScannerRegisterData, cb cluster.GRPCCallback) (*share.ScannerAvailable, error) {
+	client, err := getControllerServiceClient(joinIP, joinPort, cb)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to find ctrl client")
 		return &share.ScannerAvailable{Visible: false}, errors.New("Failed to connect to controller")
@@ -422,7 +429,7 @@ func getScannerAvailable(joinHost string, joinPort uint16, data *share.ScannerRe
 
 // To ensure the controller's availability, periodCheckHealth use HealthCheck to periodically check if the controller is alive.
 // Additionally, if the controller is deleted or not responsive, the scanner will re-register.
-func periodCheckHealth(joinHost string, joinPort uint16, data *share.ScannerRegisterData, cb *clientCallback, healthCheckCh chan struct{}, done chan bool, period, retryMax int) {
+func periodCheckHealth(joinIP string, joinPort uint16, data *share.ScannerRegisterData, cb *clientCallback, healthCheckCh chan struct{}, done chan bool) {
 	ticker := time.NewTicker(time.Duration(period) * time.Minute)
 	defer ticker.Stop()
 	for {
@@ -430,19 +437,19 @@ func periodCheckHealth(joinHost string, joinPort uint16, data *share.ScannerRegi
 		case <-ticker.C:
 			retryCnt := 0
 			for retryCnt < retryMax {
-				scannerAvailable, errHealthCheck := getScannerAvailable(joinHost, joinPort, data, cb)
+				scannerAvailable, errHealthCheck := getScannerAvailable(joinIP, joinPort, data, cb)
 				if errHealthCheck == nil {
 					if scannerAvailable.Visible {
 						break
 					}
 				} else {
-					log.WithFields(log.Fields{"joinHost": joinHost, "joinPort": joinPort, "errHealthCheck": errHealthCheck}).Debug("periodCheckHealth has error")
+					log.WithFields(log.Fields{"joinIP": joinIP, "joinPort": joinPort, "errHealthCheck": errHealthCheck}).Debug("periodCheckHealth has error")
 				}
 				retryCnt++
 				time.Sleep(time.Duration(period) * time.Second) // Add a delay before retrying
 			}
 			if retryCnt >= retryMax {
-				log.WithFields(log.Fields{"joinHost": joinHost, "joinPort": joinPort, "retryMax": retryMax}).Error("The scanner is not in the controller, restart the scanner pod.")
+				log.WithFields(log.Fields{"joinIP": joinIP, "joinPort": joinPort, "retryMax": retryMax}).Error("The scanner is not in the controller, restart the scanner pod.")
 				done <- true
 			}
 		case <-healthCheckCh:
