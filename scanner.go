@@ -50,6 +50,7 @@ var cveDB *common.CveDB
 var ctrlCaps share.ControllerCaps
 var scanTasker *Tasker
 var selfID string
+var isGetCapsActivate bool
 
 func dbRead(path string, maxRetry int, output string) map[string]*share.ScanVulnerability {
 	dbFile := path + share.DefaultCVEDBName
@@ -98,11 +99,13 @@ func dbRead(path string, maxRetry int, output string) map[string]*share.ScanVuln
 	}
 }
 
-func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinPort uint16) {
+func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinPort uint16, doneCh chan bool) {
 	cb := &clientCallback{
 		shutCh:         make(chan interface{}, 1),
 		ignoreShutdown: true,
 	}
+
+	var healthCheckCh chan struct{}
 
 	for {
 		// forever retry
@@ -123,6 +126,17 @@ func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinP
 		// tagging it as a released-memory
 		scanner.CVEDB = nil
 		dbData = make(map[string]*share.ScanVulnerability) // zero size
+
+		if healthCheckCh != nil {
+			close(healthCheckCh)
+		}
+
+		healthCheckCh = make(chan struct{})
+		// Check if the gRPC HealthCheck API is active (indicated by isGetCapsActivate being true).
+		// If active, initiate periodic health checks by launching a goroutine to monitor the health status of the specified service.
+		if isGetCapsActivate {
+			go periodCheckHealth(joinIP, joinPort, &scanner, cb, healthCheckCh, doneCh)
+		}
 
 		// start responding shutdown notice
 		cb.ignoreShutdown = false
@@ -416,7 +430,7 @@ func main() {
 
 	// Use the original address, which is the service name, so when controller changes,
 	// new IP can be resolved
-	go connectController(*dbPath, *adv, *join, selfID, (uint32)(*advPort), (uint16)(*joinPort))
+	go connectController(*dbPath, *adv, *join, selfID, (uint32)(*advPort), (uint16)(*joinPort), done)
 	<-done
 
 	log.Info("Exiting ...")

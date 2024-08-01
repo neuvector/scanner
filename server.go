@@ -19,6 +19,11 @@ import (
 	"github.com/neuvector/scanner/cvetools"
 )
 
+const (
+	period   = 20 // Minutes to check if the scanner is in the controller and controller is alive
+	retryMax = 3  // Number of retry
+)
+
 func createEnforcerScanServiceWrapper(conn *grpc.ClientConn) cluster.Service {
 	return share.NewEnforcerScanServiceClient(conn)
 }
@@ -365,8 +370,10 @@ func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegister
 
 	caps, err := client.GetCaps(ctx, &share.RPCVoid{})
 	if err != nil {
+		isGetCapsActivate = false
 		downgradeCriticalSeverityInCVEDB(data)
 	} else {
+		isGetCapsActivate = true
 		ctrlCaps = *caps
 		if !caps.CriticalVul {
 			downgradeCriticalSeverityInCVEDB(data)
@@ -403,4 +410,50 @@ func scannerDeregister(joinIP string, joinPort uint16, id string) error {
 		return errors.New("Failed to send deregister request")
 	}
 	return nil
+}
+
+func getScannerAvailable(joinIP string, joinPort uint16, data *share.ScannerRegisterData, cb cluster.GRPCCallback) (*share.ScannerAvailable, error) {
+	client, err := getControllerServiceClient(joinIP, joinPort, cb)
+	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("Failed to find ctrl client")
+		return &share.ScannerAvailable{Visible: false}, errors.New("Failed to connect to controller")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+
+	scannerAvailable, errHealthCheck := client.HealthCheck(ctx, data)
+
+	return scannerAvailable, errHealthCheck
+}
+
+// To ensure the controller's availability, periodCheckHealth use HealthCheck to periodically check if the controller is alive.
+// Additionally, if the controller is deleted or not responsive, the scanner will re-register.
+func periodCheckHealth(joinIP string, joinPort uint16, data *share.ScannerRegisterData, cb *clientCallback, healthCheckCh chan struct{}, done chan bool) {
+	ticker := time.NewTicker(time.Duration(period) * time.Minute)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			retryCnt := 0
+			for retryCnt < retryMax {
+				scannerAvailable, errHealthCheck := getScannerAvailable(joinIP, joinPort, data, cb)
+				if errHealthCheck == nil {
+					if scannerAvailable.Visible {
+						break
+					}
+				} else {
+					log.WithFields(log.Fields{"joinIP": joinIP, "joinPort": joinPort, "errHealthCheck": errHealthCheck}).Debug("periodCheckHealth has error")
+				}
+				retryCnt++
+				time.Sleep(time.Duration(period) * time.Second) // Add a delay before retrying
+			}
+			if retryCnt >= retryMax {
+				log.WithFields(log.Fields{"joinIP": joinIP, "joinPort": joinPort, "retryMax": retryMax}).Error("The scanner is not in the controller, restart the scanner pod.")
+				done <- true
+			}
+		case <-healthCheckCh:
+			return
+		}
+	}
 }
