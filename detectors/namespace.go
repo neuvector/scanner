@@ -31,6 +31,7 @@ var (
 	osReleaseVersionRegexp     = regexp.MustCompile(`^VERSION_ID=(.*)`)
 	osReleaseCodenameRegexp    = regexp.MustCompile(`^VERSION_CODENAME=(.*)`)
 	osReleaseRHELVersionRegexp = regexp.MustCompile(`^RHEL_VERSION=(.*)`)
+	osReleaseIsLiberty         = regexp.MustCompile(`SLES Expanded Support`)
 )
 
 func detectOSRelease(data map[string]*FeatureFile) *Namespace {
@@ -64,6 +65,13 @@ func detectOSRelease(data map[string]*FeatureFile) *Namespace {
 			r = osReleaseRHELVersionRegexp.FindStringSubmatch(line)
 			if len(r) == 2 {
 				rhelVer = strings.Replace(strings.ToLower(r[1]), "\"", "", -1)
+			}
+
+			if OS == "rhel" {
+				r = osReleaseIsLiberty.FindStringSubmatch(line)
+				if len(r) == 1 {
+					OS = "suse-liberty"
+				}
 			}
 		}
 	}

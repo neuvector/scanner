@@ -868,6 +868,10 @@ func os2DB(ns *detectors.Namespace) (string, int) {
 		case "opensuse-tumbleweed":
 			nsName = "sles:tw"
 			db = common.DBSuse
+		case "suse-liberty":
+			majorVersion := majorVersion(r[2])
+			nsName = "sles:lib" + majorVersion
+			db = common.DBSuse
 		}
 	}
 	return nsName, db
