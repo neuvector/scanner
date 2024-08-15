@@ -250,7 +250,7 @@ func main() {
 		ctx, internalCertControllerCancel = context.WithCancel(context.Background())
 		defer internalCertControllerCancel()
 		// Initialize secrets.  Most of services are not running at this moment, so skip their reload functions.
-		err = migration.InitializeInternalSecretController(ctx, []func([]byte, []byte, []byte) error{
+		capable, err := migration.InitializeInternalSecretController(ctx, []func([]byte, []byte, []byte) error{
 			// Reload grpc server
 			func(cacert []byte, cert []byte, key []byte) error {
 				log.Info("Reloading gRPC servers/clients")
@@ -264,7 +264,17 @@ func main() {
 			log.WithError(err).Error("failed to initialize internal secret controller")
 			os.Exit(-2)
 		}
-		log.Info("internal certificate is initialized")
+
+		if capable {
+			log.Info("internal certificate is initialized")
+		} else {
+			if os.Getenv("NO_FALLBACK") == "" {
+				log.Warn("required permission is missing...fallback to the built-in certificate if it exists")
+			} else {
+				log.Error("required permission is missing...ending now")
+				os.Exit(-2)
+			}
+		}
 	}
 	err = cluster.ReloadInternalCert()
 	if err != nil {
