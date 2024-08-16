@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -19,6 +20,7 @@ import (
 	"github.com/neuvector/neuvector/share/container"
 	"github.com/neuvector/neuvector/share/global"
 	"github.com/neuvector/neuvector/share/healthz"
+	"github.com/neuvector/neuvector/share/httpclient"
 	"github.com/neuvector/neuvector/share/migration"
 	"github.com/neuvector/neuvector/share/system"
 	"github.com/neuvector/neuvector/share/utils"
@@ -288,6 +290,13 @@ func main() {
 			log.Error("Missing the repository name and tag of the image to be scanned")
 			os.Exit(-2)
 		}
+
+		// Default TLS config
+		httpclient.SetDefaultTLSClientConfig(&httpclient.TLSClientSettings{
+			TLSconfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}, "", "", "")
 
 		onDemand = true
 	}
