@@ -193,6 +193,7 @@ func main() {
 	noWait := flag.Bool("no_wait", false, "No initial wait")
 	noTask := flag.Bool("no_task", false, "Not using scanner task")
 	verbose := flag.Bool("x", false, "more debug")
+	tlsVerification := flag.Bool("enable-tls-verification", false, "enable tls verification")
 
 	output := flag.String("o", "", "Output CVEDB in json format, specify the output file")
 	show := flag.String("show", "", "Standalone Mode: Stdout print options, cmd,module")
@@ -294,7 +295,7 @@ func main() {
 		// Default TLS config
 		httpclient.SetDefaultTLSClientConfig(&httpclient.TLSClientSettings{
 			TLSconfig: &tls.Config{
-				InsecureSkipVerify: true,
+				InsecureSkipVerify: !*tlsVerification,
 			},
 		}, "", "", "")
 

@@ -416,7 +416,7 @@ func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegister
 		}
 	}
 
-	if caps.ScannerSettings {
+	if caps != nil && caps.ScannerSettings {
 		settings, err := client.GetScannerSettings(ctx, &share.RPCVoid{})
 		if err != nil {
 			log.WithError(err).Warn("failed to get scanner settings from controller")
