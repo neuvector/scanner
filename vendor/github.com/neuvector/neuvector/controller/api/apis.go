@@ -1472,6 +1472,7 @@ type RESTAgentConfig struct {
 	Debug            *[]string `json:"debug,omitempty"`
 	DisableNvProtect *bool     `json:"disable_nvprotect,omitempty"`
 	DisableKvCCtl    *bool     `json:"disable_kvcctl,omitempty"`
+	SyslogLevel      *string   `json:"syslog_level,omitempty"`
 }
 
 type RESTAgentConfigData struct {
@@ -4016,6 +4017,7 @@ type RESTWorkloadAssetView struct {
 	ID              string   `json:"id"`
 	Name            string   `json:"name"`
 	Domain          string   `json:"domain"`
+	Image           string   `json:"image"`
 	Applications    []string `json:"applications"`
 	PolicyMode      string   `json:"policy_mode"`
 	ServiceGroup    string   `json:"service_group"`
@@ -4122,4 +4124,8 @@ type AssetCVECount struct {
 	High        int    `json:"high"`
 	Medium      int    `json:"medium"`
 	Low         int    `json:"low"`
+}
+
+type RESTAssetIDList struct {
+	IDs []string `json:"ids"`
 }
