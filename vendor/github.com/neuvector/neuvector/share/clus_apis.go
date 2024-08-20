@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/containerd/log"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 )
 
@@ -28,6 +29,7 @@ const CLUSLockUserKey string = CLUSLockStore + "user"
 const CLUSLockPolicyKey string = CLUSLockStore + "policy"
 const CLUSLockServerKey string = CLUSLockStore + "server"
 const CLUSLockUpgradeKey string = CLUSLockStore + "upgrade"
+const CLUSLockRestoreKey string = CLUSLockStore + "restore"
 const CLUSLockAdmCtrlKey string = CLUSLockStore + "adm_ctrl"
 const CLUSLockFedKey string = CLUSLockStore + "federation"
 const CLUSLockScannerKey string = CLUSLockStore + "scanner"
@@ -167,6 +169,7 @@ const CLUSCtrlConfigLoadedKey string = CLUSStateStore + "ctrl_cfg_load"
 const CLUSCtrlDistLockStore string = CLUSStateStore + "dist_lock/"
 const CLUSCtrlUsageReportStore string = CLUSStateStore + "usage_report/"
 const CLUSCtrlVerKey string = CLUSStateStore + "ctrl_ver"
+const CLUSKvRestoreKey string = CLUSStateStore + "kv_restore"
 const CLUSExpiredTokenStore string = CLUSStateStore + "expired_token/"
 const CLUSImportStore string = CLUSStateStore + "import/"
 
@@ -701,6 +704,11 @@ type CLUSScanConfig struct {
 type CLUSCtrlVersion struct {
 	CtrlVersion string `json:"version"`
 	KVVersion   string `json:"kv_version"`
+}
+
+type CLUSKvRestore struct {
+	StartAt  time.Time `json:"start_at"`
+	CtrlerID string    `json:"controller_id"`
 }
 
 type CLUSSyslogConfig struct {
@@ -1254,6 +1262,7 @@ type CLUSAgentConfig struct {
 	Debug                []string `json:"debug,omitempty"`
 	DisableNvProtectMode bool     `json:"disable_nvprotect"`
 	DisableKvCongestCtl  bool     `json:"disable_kvcctl"`
+	SyslogLevel          string   `json:"syslog_level,omitempty"`
 }
 
 type CLUSControllerConfig struct {
@@ -1702,6 +1711,37 @@ const (
 	CustomCheckControl_Strict  = "strict"
 	CustomCheckControl_Loose   = "loose"
 )
+
+const (
+	SyslogLevel_Panic = "panic"
+	SyslogLevel_Fatal = "fatal"
+	SyslogLevel_Error = "error"
+	SyslogLevel_Warn  = "warn"
+	SyslogLevel_Info  = "info"
+	SyslogLevel_Debug = "debug"
+	SyslogLevel_Trace = "trace"
+)
+
+func CLUSGetSyslogLevel(syslogLevel string) log.Level {
+	switch syslogLevel {
+	case SyslogLevel_Panic:
+		return log.PanicLevel
+	case SyslogLevel_Fatal:
+		return log.FatalLevel
+	case SyslogLevel_Error:
+		return log.ErrorLevel
+	case SyslogLevel_Warn:
+		return log.WarnLevel
+	case SyslogLevel_Debug:
+		return log.DebugLevel
+	case SyslogLevel_Trace:
+		return log.TraceLevel
+	case SyslogLevel_Info:
+	default:
+		return log.InfoLevel
+	}
+	return log.InfoLevel
+}
 
 type CLUSCustomCheck struct {
 	Name   string `json:"name"`
