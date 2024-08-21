@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -19,6 +20,7 @@ import (
 	"github.com/neuvector/neuvector/share/container"
 	"github.com/neuvector/neuvector/share/global"
 	"github.com/neuvector/neuvector/share/healthz"
+	"github.com/neuvector/neuvector/share/httpclient"
 	"github.com/neuvector/neuvector/share/migration"
 	"github.com/neuvector/neuvector/share/system"
 	"github.com/neuvector/neuvector/share/utils"
@@ -191,6 +193,7 @@ func main() {
 	noWait := flag.Bool("no_wait", false, "No initial wait")
 	noTask := flag.Bool("no_task", false, "Not using scanner task")
 	verbose := flag.Bool("x", false, "more debug")
+	tlsVerification := flag.Bool("enable-tls-verification", false, "enable tls verification")
 
 	output := flag.String("o", "", "Output CVEDB in json format, specify the output file")
 	show := flag.String("show", "", "Standalone Mode: Stdout print options, cmd,module")
@@ -288,6 +291,13 @@ func main() {
 			log.Error("Missing the repository name and tag of the image to be scanned")
 			os.Exit(-2)
 		}
+
+		// Default TLS config
+		httpclient.SetDefaultTLSClientConfig(&httpclient.TLSClientSettings{
+			TLSconfig: &tls.Config{
+				InsecureSkipVerify: !*tlsVerification,
+			},
+		}, "", "", "")
 
 		onDemand = true
 	}
