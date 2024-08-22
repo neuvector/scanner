@@ -319,7 +319,18 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 		}
 
 		if req.ScanTypesRequested.Signature {
-			result.SignatureInfo, _, _ = getSatisfiedSignatureVerifiersForImage(rc, req, info, ctx)
+			var signatureScanErrorCode share.ScanErrorCode
+			var signatureScanError error
+			result.SignatureInfo, signatureScanErrorCode, signatureScanError = getSatisfiedSignatureVerifiersForImage(rc, req, info, ctx)
+			if signatureScanErrorCode != share.ScanErrorCode_ScanErrNone || signatureScanError != nil {
+				fields := log.Fields{"error_code": signatureScanErrorCode}
+				if signatureScanError != nil {
+					fields["error"] = signatureScanError.Error()
+				}
+				log.WithFields(fields).Error("could not complete signature verification")
+			} else {
+				log.WithFields(log.Fields{"satisfied_verifiers": result.SignatureInfo}).Debug("signature scan and verification complete")
+			}
 		}
 
 		if !req.ScanTypesRequested.Vulnerability {
