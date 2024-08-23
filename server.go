@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
@@ -16,7 +14,6 @@ import (
 
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/cluster"
-	"github.com/neuvector/neuvector/share/httpclient"
 	"github.com/neuvector/neuvector/share/system"
 	"github.com/neuvector/scanner/common"
 	"github.com/neuvector/scanner/cvetools"
@@ -197,15 +194,6 @@ func (rs *rpcService) ScanCacheGetData(ctx context.Context, v *share.RPCVoid) (*
 	return &res, nil
 }
 
-func (rs *rpcService) SetScannerSettings(ctx context.Context, req *share.ScannerSettings) (*share.RPCVoid, error) {
-	log.Debug()
-	if err := ScannerSettingUpdate(req); err != nil {
-		log.WithError(err).Warn("failed to update scanner settings")
-	}
-
-	return &share.RPCVoid{}, nil
-}
-
 func startGRPCServer() *cluster.GRPCServer {
 	var grpc *cluster.GRPCServer
 	var err error
@@ -366,29 +354,6 @@ func downgradeCriticalSeverityInCVEDB(data *share.ScannerRegisterData) {
 	return
 }
 
-func ScannerSettingUpdate(settings *share.ScannerSettings) error {
-
-	var pool *x509.CertPool
-
-	if settings.CACerts != "" {
-		pool = x509.NewCertPool()
-		pool.AppendCertsFromPEM([]byte(settings.CACerts))
-	}
-	httpclient.SetDefaultTLSClientConfig(&httpclient.TLSClientSettings{
-		TLSconfig: &tls.Config{
-			InsecureSkipVerify: !settings.EnableTLSVerification,
-			RootCAs:            pool,
-		},
-	}, settings.HttpProxy, settings.HttpsProxy, settings.NoProxy)
-
-	log.WithFields(log.Fields{
-		"tls_verification": settings.EnableTLSVerification,
-		"ca_len":           len(settings.CACerts),
-	}).Info("scanner setting is updated")
-
-	return nil
-}
-
 func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegisterData, cb cluster.GRPCCallback) error {
 	log.WithFields(log.Fields{
 		"join": fmt.Sprintf("%s:%d", joinIP, joinPort), "version": data.CVEDBVersion, "entries": len(data.CVEDB),
@@ -409,22 +374,9 @@ func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegister
 		downgradeCriticalSeverityInCVEDB(data)
 	} else {
 		isGetCapsActivate = true
-		log.WithField("cap", caps).Info("controller capabilities")
 		ctrlCaps = *caps
 		if !caps.CriticalVul {
 			downgradeCriticalSeverityInCVEDB(data)
-		}
-	}
-
-	if caps != nil && caps.ScannerSettings {
-		settings, err := client.GetScannerSettings(ctx, &share.RPCVoid{})
-		if err != nil {
-			log.WithError(err).Warn("failed to get scanner settings from controller")
-		} else {
-			log.WithField("config", settings).Info("scanner settings")
-			if err := ScannerSettingUpdate(settings); err != nil {
-				log.WithError(err).Warn("failed to update scanner settings")
-			}
 		}
 	}
 
