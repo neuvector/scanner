@@ -10,7 +10,7 @@ replace (
 require (
 	github.com/google/uuid v1.6.0
 	github.com/jedib0t/go-pretty/v6 v6.4.6
-	github.com/neuvector/neuvector v0.0.0-20240821220607-caed3e3dbbb0
+	github.com/neuvector/neuvector v0.0.0-20240823214803-99af3507ccc7
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/sirupsen/logrus v1.9.3
 	google.golang.org/grpc v1.62.1
