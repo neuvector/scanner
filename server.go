@@ -374,12 +374,21 @@ func ScannerSettingUpdate(settings *share.ScannerSettings) error {
 		pool = x509.NewCertPool()
 		pool.AppendCertsFromPEM([]byte(settings.CACerts))
 	}
-	httpclient.SetDefaultTLSClientConfig(&httpclient.TLSClientSettings{
+
+	setGlobalConfig(globalConfig{
+		tlsVerification: settings.EnableTLSVerification,
+		caCerts:         settings.CACerts,
+	})
+
+	err := httpclient.SetDefaultTLSClientConfig(&httpclient.TLSClientSettings{
 		TLSconfig: &tls.Config{
-			InsecureSkipVerify: !settings.EnableTLSVerification,
+			InsecureSkipVerify: !settings.EnableTLSVerification, // #nosec G402
 			RootCAs:            pool,
 		},
 	}, settings.HttpProxy, settings.HttpsProxy, settings.NoProxy)
+	if err != nil {
+		log.WithError(err).Warn("failed to set default TLS config")
+	}
 
 	log.WithFields(log.Fields{
 		"tls_verification": settings.EnableTLSVerification,
@@ -416,6 +425,7 @@ func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegister
 		}
 	}
 
+	haveControllerSetting := false
 	if caps != nil && caps.ScannerSettings {
 		settings, err := client.GetScannerSettings(ctx, &share.RPCVoid{})
 		if err != nil {
@@ -424,7 +434,26 @@ func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegister
 			log.WithField("config", settings).Info("scanner settings")
 			if err := ScannerSettingUpdate(settings); err != nil {
 				log.WithError(err).Warn("failed to update scanner settings")
+			} else {
+				haveControllerSetting = true
 			}
+		}
+	}
+
+	if !haveControllerSetting {
+		// Provide a default TLS config and proxy settings for backward compatibility.
+		setGlobalConfig(globalConfig{
+			tlsVerification: false,
+			caCerts:         "",
+		})
+
+		err := httpclient.SetDefaultTLSClientConfig(&httpclient.TLSClientSettings{
+			TLSconfig: &tls.Config{
+				InsecureSkipVerify: true, // #nosec G402
+			},
+		}, "", "", "")
+		if err != nil {
+			log.WithError(err).Warn("failed to set default TLS config")
 		}
 	}
 

@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -31,6 +32,28 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "usage: scan [OPTIONS]\n")
 	flag.PrintDefaults()
 	os.Exit(2)
+}
+
+type globalConfig struct {
+	tlsVerification bool
+	caCerts         string
+}
+
+var (
+	globalCfgLock sync.RWMutex
+	globalCfg     globalConfig
+)
+
+func getGlobalConfig() globalConfig {
+	globalCfgLock.RLock()
+	defer globalCfgLock.RUnlock()
+	return globalCfg
+}
+
+func setGlobalConfig(input globalConfig) {
+	globalCfgLock.Lock()
+	defer globalCfgLock.Unlock()
+	globalCfg = input
 }
 
 const taskerPath = "/usr/local/bin/scannerTask"
@@ -292,12 +315,19 @@ func main() {
 			os.Exit(-2)
 		}
 
+		setGlobalConfig(globalConfig{
+			tlsVerification: *tlsVerification,
+			caCerts:         "", // In stand alone scanner, we use system default
+		})
 		// Default TLS config
-		httpclient.SetDefaultTLSClientConfig(&httpclient.TLSClientSettings{
+		err := httpclient.SetDefaultTLSClientConfig(&httpclient.TLSClientSettings{
 			TLSconfig: &tls.Config{
-				InsecureSkipVerify: !*tlsVerification,
+				InsecureSkipVerify: !*tlsVerification, // #nosec G402
 			},
 		}, "", "", "")
+		if err != nil {
+			log.WithError(err).Warn("failed to set default TLS config")
+		}
 
 		onDemand = true
 	}
