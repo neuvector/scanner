@@ -65,5 +65,4 @@ service ScannerService {
   rpc ScanAwsLambda(ScanAwsLambdaRequest) returns (ScanResult);
   rpc ScanCacheGetStat(RPCVoid) returns (ScanCacheStatRes);
   rpc ScanCacheGetData(RPCVoid) returns (ScanCacheDataRes);
-  rpc SetScannerSettings(ScannerSettings) returns (RPCVoid);
 }
