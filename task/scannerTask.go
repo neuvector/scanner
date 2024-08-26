@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -15,6 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/neuvector/neuvector/share"
+	"github.com/neuvector/neuvector/share/httpclient"
 	"github.com/neuvector/neuvector/share/system"
 	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
@@ -30,7 +33,7 @@ func usage() {
 var ntChan chan uint32 = make(chan uint32, 1)
 var cveTools *cvetools.ScanTools // available inside package
 
-////
+// //
 func checkDbReady() bool {
 	var dbReady bool
 	for {
@@ -46,7 +49,7 @@ func checkDbReady() bool {
 	return dbReady
 }
 
-////////////////////////
+// //////////////////////
 func processRequest(tm *taskMain, scanType, infile, workingPath string) int {
 	var err error
 	jsonFile, err := os.Open(infile)
@@ -87,7 +90,7 @@ func processRequest(tm *taskMain, scanType, infile, workingPath string) int {
 	return -1
 }
 
-///////////////////////
+// /////////////////////
 func main() {
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.InfoLevel)
@@ -99,6 +102,8 @@ func main() {
 	modulefile := flag.String("m", "", "modules json name")                           // debug: modules for reg type
 	rtSock := flag.String("u", "", "Container socket URL")                            // used for scan local image
 	maxCacherRecordSize := flag.Int64("maxrec", 0, "maximum layer cacher size in MB") // common.MaxRecordCacherSizeMB
+	tlsVerification := flag.Bool("enable-tls-verification", false, "enable tls verification")
+	cacerts := flag.String("cacerts", "", "the path of cacerts file")
 	verbose := flag.Bool("x", false, "more debug")
 
 	flag.Usage = usage
@@ -106,6 +111,29 @@ func main() {
 
 	if *verbose {
 		log.SetLevel(log.DebugLevel)
+	}
+
+	var pool *x509.CertPool
+	if *cacerts != "" {
+		certs, err := os.ReadFile(*cacerts)
+		if err != nil {
+			log.WithError(err).Warn("failed to load ca certs")
+		}
+		pool = x509.NewCertPool()
+		if ok := pool.AppendCertsFromPEM(certs); !ok {
+			log.Warn("failed to parse ca cert")
+		}
+	}
+
+	// Default TLS config
+	err := httpclient.SetDefaultTLSClientConfig(&httpclient.TLSClientSettings{
+		TLSconfig: &tls.Config{
+			InsecureSkipVerify: !*tlsVerification, // #nosec G402
+			RootCAs:            pool,
+		},
+	}, "", "", "")
+	if err != nil {
+		log.WithError(err).Warn("failed to set default TLS config")
 	}
 
 	// acquire tool

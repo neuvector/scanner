@@ -23,8 +23,9 @@ import (
 
 const reqTemplate = "/tmp/%s_i.json"
 const resTemplate = "/tmp/%s_o.json"
+const cacertTemplate = "/tmp/%s_cacert"
 
-/////
+// ///
 type Tasker struct {
 	bEnable             bool
 	bShowDebug          bool
@@ -35,7 +36,7 @@ type Tasker struct {
 	maxCacherRecordSize int64
 }
 
-/////
+// ///
 func newTasker(taskPath, rtSock string, showDebug bool, sys *system.SystemTools, maxCacherRecordSize int64) *Tasker {
 	log.WithFields(log.Fields{"showDebug": showDebug}).Debug()
 
@@ -49,11 +50,54 @@ func newTasker(taskPath, rtSock string, showDebug bool, sys *system.SystemTools,
 	}
 }
 
-//////
+func TryWriteFile(filepath string, data []byte) error {
+	_, err := os.Stat(filepath)
+	if err == nil {
+		return fmt.Errorf("file exists: %s", filepath)
+	}
+	if !os.IsNotExist(err) {
+		return err
+	}
+	if err = os.WriteFile(filepath, data, 0644); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ts *Tasker) writeInputFile(data []byte, cacert []byte) (uid string, err error) {
+	uid = uuid.New().String()
+	input := fmt.Sprintf(reqTemplate, uid)
+	cacertInput := fmt.Sprintf(cacertTemplate, uid)
+
+	defer func() {
+		// clean up
+		if err != nil {
+			os.Remove(input)
+			os.Remove(cacertInput)
+		}
+	}()
+
+	err = TryWriteFile(input, data)
+	if err != nil {
+		return uid, err
+	}
+
+	if len(cacert) != 0 {
+		err = TryWriteFile(cacertInput, cacert)
+		if err != nil {
+			return uid, err
+		}
+	}
+
+	return uid, nil
+}
+
+// ////
 func (ts *Tasker) putInputFile(request interface{}) (string, []string, error) {
 	var args []string
 	var uid string
 	var data []byte
+	var err error
 
 	switch request.(type) {
 	case share.ScanImageRequest:
@@ -75,31 +119,42 @@ func (ts *Tasker) putInputFile(request interface{}) (string, []string, error) {
 		data, _ = json.Marshal(req)
 		args = append(args, "-t", "awl")
 	default:
-		return "", args, errors.New("Invalid type")
+		return "", args, errors.New("invalid type")
 	}
 
 	if ts.bShowDebug {
 		args = append(args, "-x")
 	}
 
+	cfg := getGlobalConfig()
+	cacerts := ""
+
+	if cfg.tlsVerification {
+		args = append(args, "--enable-tls-verification")
+		cacerts = cfg.caCerts
+	}
+
 	/// lock the allocation
 	ts.mutex.Lock()
 	defer ts.mutex.Unlock()
 	for i := 0; i < 256; i++ {
-		uid = uuid.New().String()
-		input := fmt.Sprintf(reqTemplate, uid)
-		if _, err := os.Stat(input); err != nil { // not existed
-			if err = ioutil.WriteFile(input, data, 0644); err == nil {
-				args = append(args, "-i", input)
-				args = append(args, "-o", fmt.Sprintf(resTemplate, uid))
-				return uid, args, nil
-			}
+		uid, err = ts.writeInputFile(data, []byte(cacerts))
+		if err != nil {
+			continue // retry
 		}
+
+		args = append(args, "-i", fmt.Sprintf(reqTemplate, uid))
+		args = append(args, "-o", fmt.Sprintf(resTemplate, uid))
+		if cacerts != "" {
+			args = append(args, "--cacerts", fmt.Sprintf(cacertTemplate, uid))
+		}
+		return uid, args, nil
 	}
-	return uid, args, errors.New("Failed to allocate")
+
+	return uid, args, errors.New("failed to allocate")
 }
 
-/////
+// ///
 func (ts *Tasker) getResultFile(uid string) (*share.ScanResult, error) {
 	jsonFile, err := os.Open(fmt.Sprintf(resTemplate, uid))
 	if err != nil {
@@ -118,7 +173,7 @@ func (ts *Tasker) getResultFile(uid string) (*share.ScanResult, error) {
 	return &res, nil
 }
 
-//////
+// ////
 func (ts *Tasker) Run(ctx context.Context, request interface{}) (*share.ScanResult, error) {
 	if !ts.bEnable {
 		return nil, fmt.Errorf("session ended")
@@ -134,6 +189,7 @@ func (ts *Tasker) Run(ctx context.Context, request interface{}) (*share.ScanResu
 	// remove files
 	defer os.Remove(fmt.Sprintf(reqTemplate, uid))
 	defer os.Remove(fmt.Sprintf(resTemplate, uid))
+	defer os.Remove(fmt.Sprintf(cacertTemplate, uid))
 
 	// image working folder
 	workingFolder := common.CreateImagePath(uid)
@@ -186,7 +242,7 @@ func (ts *Tasker) Run(ctx context.Context, request interface{}) (*share.ScanResu
 	return ts.getResultFile(uid)
 }
 
-/////
+// ///
 func (ts *Tasker) Close() {
 	log.Debug()
 
