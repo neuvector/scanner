@@ -49,6 +49,7 @@ const (
 	DBMariner
 	DBSuse
 	DBPhoton
+	DBRocky
 	DBMax
 )
 
@@ -75,6 +76,7 @@ var DBS dbSpace = dbSpace{
 		DBMariner: dbBuffer{Name: "mariner"},
 		DBPhoton:  dbBuffer{Name: "photon"},
 		DBSuse:    dbBuffer{Name: "suse"},
+		DBRocky:   dbBuffer{Name: "rocky"},
 	},
 }
 
