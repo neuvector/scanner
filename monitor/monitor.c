@@ -105,6 +105,20 @@ static void debug(const char *fmt, ...)
     }
 }
 
+static void print_log(const char *fmt, ...)
+{
+    static FILE *logfp = NULL;
+    va_list args;
+
+    logfp = stdout;
+
+    debug_ts(logfp);
+    va_start(args, fmt);
+    vfprintf(logfp, fmt, args);
+    va_end(args);
+    fflush(logfp);
+}
+
 static int checkImplicitEnableFlag(char *enable)
 {
     if (enable == NULL) return 0;
@@ -272,7 +286,7 @@ static void start_proc(int i)
     if (pid > 0) {
         g_procs[i].pid = pid;
         g_procs[i].running = true;
-        debug("Start %s, pid=%d\n", g_procs[i].name, g_procs[i].pid);
+        print_log("Start %s, pid=%d\n", g_procs[i].name, g_procs[i].pid);
         gettimeofday(&g_procs[i].start, NULL);
     }
 }
