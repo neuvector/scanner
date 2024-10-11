@@ -302,9 +302,14 @@ func main() {
 			}
 		}
 	}
-	err = cluster.ReloadInternalCert()
-	if err != nil {
-		log.WithError(err).Fatal("failed to reload internal certificate")
+
+	if *license == "" {
+		// We don't need the certificate for standalone scanner.
+		// For scan result, it's via RESTful.
+		err = cluster.ReloadInternalCert()
+		if err != nil {
+			log.WithError(err).Fatal("failed to reload internal certificate")
+		}
 	}
 
 	// If license parameter is given, this is an on-demand scanner, no register to the controller,
