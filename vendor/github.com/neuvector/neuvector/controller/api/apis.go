@@ -529,10 +529,16 @@ type RESTListData struct {
 	List *RESTList `json:"list"`
 }
 
+// NV 5.4(-):   process/file profile mode value priority is "policy_mode"
+// NV 5.4.1(+): process/file profile mode value priority is "profile_mode" -> "policy_mode"
+// NV future: 	     process profile mode value priority is "profile_mode" -> "policy_mode"
+// NV future:           file profile mode value priority is "file_profile_mode" -> "profile_mode" -> "policy_mode"
 type RESTGroupExport struct {
 	Groups              []string                 `json:"groups"`
 	PolicyMode          string                   `json:"policy_mode,omitempty"`
+	ProfileMode         string                   `json:"profile_mode,omitempty"` // for both process/file profiles(if specified) since 5.4.1
 	RemoteExportOptions *RESTRemoteExportOptions `json:"remote_export_options,omitempty"`
+	//FileProfileMode   string                   `json:"file_profile_mode,omitempty"`    // for file profile(if specified). not supported yet
 }
 
 type RESTAdmCtrlRulesExport struct {
@@ -1740,6 +1746,7 @@ const (
 
 type RESTSystemConfigConfig struct {
 	NewServicePolicyMode      *string                          `json:"new_service_policy_mode,omitempty"`
+	NewServiceProfileMode     *string                          `json:"new_service_profile_mode,omitempty"`
 	NewServiceProfileBaseline *string                          `json:"new_service_profile_baseline,omitempty"`
 	UnusedGroupAging          *uint8                           `json:"unused_group_aging,omitempty"`
 	SyslogServer              *string                          `json:"syslog_ip,omitempty"`
@@ -1817,6 +1824,7 @@ type RESTSystemConfigConfigData struct {
 
 type RESTSystemConfigSvcCfgV2 struct {
 	NewServicePolicyMode      *string `json:"new_service_policy_mode,omitempty"`
+	NewServiceProfileMode     *string `json:"new_service_profile_mode,omitempty"`
 	NewServiceProfileBaseline *string `json:"new_service_profile_baseline,omitempty"`
 }
 
@@ -1889,6 +1897,7 @@ type RESTUnquarReq struct {
 
 type RESTSystemRequest struct {
 	PolicyMode      *string        `json:"policy_mode,omitempty"`
+	ProfileMode     *string        `json:"profile_mode,omitempty"`
 	BaselineProfile *string        `json:"baseline_profile,omitempty"`
 	Unquar          *RESTUnquarReq `json:"unquarantine,omitempty"`
 }
@@ -1906,6 +1915,7 @@ type RESTProxyConfig struct {
 // If more log servers needed, they can be defined as servers.
 type RESTSystemConfig struct {
 	NewServicePolicyMode      string                    `json:"new_service_policy_mode"`
+	NewServiceProfileMode     string                    `json:"new_service_profile_mode"`
 	NewServiceProfileBaseline string                    `json:"new_service_profile_baseline"`
 	UnusedGroupAging          uint8                     `json:"unused_group_aging"`
 	SyslogServer              string                    `json:"syslog_ip"`
@@ -1959,6 +1969,7 @@ type RESTSystemConfigData struct {
 
 type RESTSystemConfigNewSvcV2 struct {
 	NewServicePolicyMode      string `json:"new_service_policy_mode"`
+	NewServiceProfileMode     string `json:"new_service_profile_mode"`
 	NewServiceProfileBaseline string `json:"new_service_profile_baseline"`
 }
 
@@ -2096,6 +2107,7 @@ type RESTServiceConfig struct {
 	Domain          string  `json:"domain"`
 	Comment         *string `json:"comment"`
 	PolicyMode      *string `json:"policy_mode,omitempty"`
+	ProfileMode     *string `json:"profile_mode,omitempty"`
 	BaselineProfile *string `json:"baseline_profile,omitempty"`
 	NotScored       *bool   `json:"not_scored,omitempty"`
 }
@@ -2133,6 +2145,7 @@ type RESTServiceData struct {
 type RESTServiceBatchConfig struct {
 	Services        []string `json:"services,omitempty"`
 	PolicyMode      *string  `json:"policy_mode,omitempty"`
+	ProfileMode     *string  `json:"profile_mode,omitempty"`
 	BaselineProfile *string  `json:"baseline_profile,omitempty"`
 	NotScored       *bool    `json:"not_scored,omitempty"`
 }
