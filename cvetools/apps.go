@@ -22,7 +22,7 @@ const log4jModName = "org.apache.logging.log4j.log4j"
 var log4jComponents = utils.NewSet("org.apache.logging.log4j:log4j-core")
 
 func (cv *ScanTools) DetectAppVul(path string, apps []detectors.AppFeatureVersion, namespace string) []vulFullReport {
-	if apps == nil || len(apps) == 0 {
+	if len(apps) == 0 {
 		return nil
 	}
 	modVuls, err := common.LoadAppVulsTb(path)

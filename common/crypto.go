@@ -3,11 +3,10 @@ package common
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/rand"
 	"errors"
-	"io"
 )
 
+/* removed by golint
 func encrypt(plaintext []byte, key []byte) ([]byte, error) {
 	c, err := aes.NewCipher(key)
 	if err != nil {
@@ -26,6 +25,7 @@ func encrypt(plaintext []byte, key []byte) ([]byte, error) {
 
 	return gcm.Seal(nonce, nonce, plaintext, nil), nil
 }
+*/
 
 func decrypt(ciphertext []byte, key []byte) ([]byte, error) {
 	c, err := aes.NewCipher(key)

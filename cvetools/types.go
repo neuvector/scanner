@@ -7,6 +7,7 @@ import (
 	"github.com/neuvector/scanner/detectors"
 )
 
+/* removd by golint
 type updateData struct {
 	Redhat  bool
 	Debian  bool
@@ -17,6 +18,7 @@ type updateData struct {
 	Suse    bool
 	Mariner bool
 }
+*/
 
 type ScanTools struct {
 	common.CveDB

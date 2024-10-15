@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"sort"
 	"strconv"
@@ -202,7 +202,7 @@ func readCveDbMeta(path, osname string, fullDb map[string]*share.ScanVulnerabili
 	}
 	defer fvul.Close()
 
-	data, err := ioutil.ReadAll(fvul)
+	data, err := io.ReadAll(fvul)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Read file error")
 		return nil, err
@@ -289,8 +289,7 @@ func readCveDbMeta(path, osname string, fullDb map[string]*share.ScanVulnerabili
 func readAppDbMeta(path string, fullDb map[string]*share.ScanVulnerability, output bool) (map[string]*OutputCVEVul, error) {
 	var outCVEs map[string]*OutputCVEVul
 
-	var filename string
-	filename = fmt.Sprintf("%s/apps.tb", path)
+	filename := fmt.Sprintf("%s/apps.tb", path)
 	fvul, err := os.Open(filename)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("open file error")
@@ -298,7 +297,7 @@ func readAppDbMeta(path string, fullDb map[string]*share.ScanVulnerability, outp
 	}
 	defer fvul.Close()
 
-	data, err := ioutil.ReadAll(fvul)
+	data, err := io.ReadAll(fvul)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Read file error")
 		return nil, err
@@ -376,8 +375,7 @@ func readAppDbMeta(path string, fullDb map[string]*share.ScanVulnerability, outp
 }
 
 func LoadVulnerabilityIndex(path, osname string) ([]VulShort, error) {
-	var filename string
-	filename = fmt.Sprintf("%s/%s_index.tb", path, osname)
+	filename := fmt.Sprintf("%s/%s_index.tb", path, osname)
 	fvul, err := os.Open(filename)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Open file error")
@@ -385,7 +383,7 @@ func LoadVulnerabilityIndex(path, osname string) ([]VulShort, error) {
 	}
 	defer fvul.Close()
 
-	data, err := ioutil.ReadAll(fvul)
+	data, err := io.ReadAll(fvul)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Read file error")
 		return nil, err
@@ -419,7 +417,7 @@ func LoadFullVulnerabilities(path, osname string) (map[string]VulFull, error) {
 	}
 	defer fvul.Close()
 
-	data, err := ioutil.ReadAll(fvul)
+	data, err := io.ReadAll(fvul)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Read file error")
 		return nil, err
@@ -455,8 +453,7 @@ func uniqueVulDb(vuls []AppModuleVul) []AppModuleVul {
 }
 
 func LoadAppVulsTb(path string) (map[string][]AppModuleVul, error) {
-	var filename string
-	filename = fmt.Sprintf("%s/apps.tb", path)
+	filename := fmt.Sprintf("%s/apps.tb", path)
 	fvul, err := os.Open(filename)
 	if err != nil {
 		log.WithFields(log.Fields{"filename": filename, "error": err}).Error("open file error")
@@ -464,7 +461,7 @@ func LoadAppVulsTb(path string) (map[string][]AppModuleVul, error) {
 	}
 	defer fvul.Close()
 
-	data, err := ioutil.ReadAll(fvul)
+	data, err := io.ReadAll(fvul)
 	if err != nil {
 		log.WithFields(log.Fields{"filename": filename, "error": err}).Error("Read file error")
 		return nil, err
@@ -504,7 +501,7 @@ func LoadAppVulsTb(path string) (map[string][]AppModuleVul, error) {
 	for _, mn := range mns {
 		colon := strings.LastIndex(mn, ":")
 		m := strings.ReplaceAll(mn, ":", ".")
-		vf, _ := vul[mn]
+		vf := vul[mn]
 
 		if _, ok := vul[m]; ok {
 			vul[m] = uniqueVulDb(append(vul[m], vf...))
@@ -524,8 +521,7 @@ func LoadAppVulsTb(path string) (map[string][]AppModuleVul, error) {
 }
 
 func LoadRawFile(path, name string) ([]byte, error) {
-	var filename string
-	filename = fmt.Sprintf("%s/%s", path, name)
+	filename := fmt.Sprintf("%s/%s", path, name)
 	fp, err := os.Open(filename)
 	if err != nil {
 		log.WithFields(log.Fields{"filename": filename, "error": err}).Error("open file error")
@@ -533,7 +529,7 @@ func LoadRawFile(path, name string) ([]byte, error) {
 	}
 	defer fp.Close()
 
-	data, err := ioutil.ReadAll(fp)
+	data, err := io.ReadAll(fp)
 	if err != nil {
 		log.WithFields(log.Fields{"filename": filename, "error": err}).Error("Read file error")
 		return nil, err
@@ -590,7 +586,7 @@ func LoadCveDb(path, desPath string, encryptKey []byte) (string, string, error) 
 		log.WithFields(log.Fields{"version": newVer}).Info("Expand new DB")
 
 		// new database is newer then the expanded database, untar the new database
-		tmpDir, err := ioutil.TempDir(os.TempDir(), "cvedb")
+		tmpDir, err := os.MkdirTemp(os.TempDir(), "cvedb")
 		if err != nil {
 			log.Errorf("could not create temporary folder for RPM detection: %s", err)
 			return "", "", err
@@ -675,7 +671,9 @@ func unzipDb(path, desPath string, encryptKey []byte) error {
 	}
 	defer f.Close()
 
-	f.Seek(0, 0)
+	if _, err := f.Seek(0, 0); err != nil {
+		log.WithFields(log.Fields{"error": err}).Error()
+	}
 
 	// read keys len
 	bhead := make([]byte, 4)
@@ -702,14 +700,14 @@ func unzipDb(path, desPath string, encryptKey []byte) error {
 		log.WithFields(log.Fields{"error": err}).Error("Read db file error")
 		return err
 	}
-	err = ioutil.WriteFile(desPath+"keys", bhead, 0400)
+	err = os.WriteFile(desPath+"keys", bhead, 0400)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Write keys file error")
 		return err
 	}
 
 	// Read the rest of DB
-	cipherData, err := ioutil.ReadAll(f)
+	cipherData, err := io.ReadAll(f)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Read db file tar part error")
 		return err
@@ -733,7 +731,7 @@ func unzipDb(path, desPath string, encryptKey []byte) error {
 }
 
 func checkDbHash(filename, hash string) bool {
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		log.WithFields(log.Fields{"file": filename, "error": err}).Info("Read file error")
 		return false
@@ -793,7 +791,7 @@ func moveDb(path, desPath string) error {
 }
 
 func CheckExpandedDb(path string, checkHash bool) (float64, string, error) {
-	data, err := ioutil.ReadFile(path + "keys")
+	data, err := os.ReadFile(path + "keys")
 	if err != nil {
 		return 0, "", err
 	}

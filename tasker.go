@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"strconv"
@@ -99,23 +99,19 @@ func (ts *Tasker) putInputFile(request interface{}) (string, []string, error) {
 	var data []byte
 	var err error
 
-	switch request.(type) {
+	switch req := request.(type) {
 	case share.ScanImageRequest:
-		req := request.(share.ScanImageRequest)
 		data, _ = json.Marshal(req)
 		args = append(args, "-t", "reg")
 		args = append(args, "-u", ts.rtSock)
 		args = append(args, "-maxrec", strconv.FormatInt(ts.maxCacherRecordSize, 10))
 	case share.ScanAppRequest:
-		req := request.(share.ScanAppRequest)
 		data, _ = json.Marshal(req)
 		args = append(args, "-t", "pkg")
 	case share.ScanData:
-		req := request.(share.ScanData)
 		data, _ = json.Marshal(req)
 		args = append(args, "-t", "dat")
 	case share.ScanAwsLambdaRequest:
-		req := request.(share.ScanAwsLambdaRequest)
 		data, _ = json.Marshal(req)
 		args = append(args, "-t", "awl")
 	default:
@@ -161,7 +157,7 @@ func (ts *Tasker) getResultFile(uid string) (*share.ScanResult, error) {
 		log.WithFields(log.Fields{"error": err, "uid": uid}).Error("Failed to open result")
 		return nil, err
 	}
-	byteValue, _ := ioutil.ReadAll(jsonFile)
+	byteValue, _ := io.ReadAll(jsonFile)
 	jsonFile.Close()
 
 	var res share.ScanResult
