@@ -3,7 +3,6 @@ package cvetools
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -18,54 +17,53 @@ import (
 )
 
 type SecretPermLogs struct {
-	SecretLogs  []share.CLUSSecretLog		`json:"secrets,omitempty"`
-	SetidPerm 	[]share.CLUSSetIdPermLog	`json:"set_ids,omitempty"`
+	SecretLogs []share.CLUSSecretLog    `json:"secrets,omitempty"`
+	SetidPerm  []share.CLUSSetIdPermLog `json:"set_ids,omitempty"`
 }
 
 type LayerRecord struct {
-	Modules *LayerFiles 		`json:"modules,omitempty"`
-	Secrets	*SecretPermLogs		`json:"secret_logs,omitempty"`
-	Files   []string			`json:"files,omitempty"`
-	Removed []string			`json:"removed_file,omitempty"`
+	Modules *LayerFiles     `json:"modules,omitempty"`
+	Secrets *SecretPermLogs `json:"secret_logs,omitempty"`
+	Files   []string        `json:"files,omitempty"`
+	Removed []string        `json:"removed_file,omitempty"`
 }
 
 type cacheData struct {
-	Path	string		`json:"path"`
-	Size	int64		`json:"size"`
-	RefCnt	uint32		`json:"ref_cnt"`
-	RefLast	time.Time	`json:"ref_last"`
+	Path    string    `json:"path"`
+	Size    int64     `json:"size"`
+	RefCnt  uint32    `json:"ref_cnt"`
+	RefLast time.Time `json:"ref_last"`
 }
 
 type CacherData struct {
-	CacheRecordMap 	map[string]*cacheData	`json:"cache_records,omitempty"`
-	MissCnt         int64	`json:"cache_misses,omitempty"`
-	HitCnt          int64	`json:"cache_hits,omitempty"`
-	CurRecordSize   int64	`json:"current_record_size"`
+	CacheRecordMap map[string]*cacheData `json:"cache_records,omitempty"`
+	MissCnt        int64                 `json:"cache_misses,omitempty"`
+	HitCnt         int64                 `json:"cache_hits,omitempty"`
+	CurRecordSize  int64                 `json:"current_record_size"`
 }
 
 type CacheVersion struct {
-	Version         int     `json:"version"`
-	Description     string	`json:"description"`
+	Version     int    `json:"version"`
+	Description string `json:"description"`
 }
 
 type ImageLayerCacher struct {
-	flock			int
-	cachePath 		string
-	indexFile		string
-    lockFile		string
-	maxRecordSize	int64	// scanned record: modules
+	flock         int
+	cachePath     string
+	indexFile     string
+	lockFile      string
+	maxRecordSize int64 // scanned record: modules
 }
 
 // TODO
 const curVersion = 0
 const versionDescription = "initial implementation"
 
-//
 const pickVictimCnt = 256
 const versionFile = "version"
 const subRecordFolder = "ref"
 
-////////
+// //////
 func InitImageLayerCacher(cacheFile, lockFile, cachePath string, maxRecordSize int64) (*ImageLayerCacher, error) {
 	log.WithFields(log.Fields{"maxRecordSize": maxRecordSize}).Info()
 	if maxRecordSize == 0 {
@@ -73,14 +71,21 @@ func InitImageLayerCacher(cacheFile, lockFile, cachePath string, maxRecordSize i
 	}
 	log.WithFields(log.Fields{"cacheFile": cacheFile, "lockFile": lockFile, "cachePath": cachePath}).Debug()
 
-	os.MkdirAll(cachePath, 0755)
-	os.MkdirAll(filepath.Join(cachePath, subRecordFolder), 0755)
+	if err := os.MkdirAll(cachePath, 0755); err != nil {
+		log.WithFields(log.Fields{"error": err}).Error()
+		return nil, err
+	}
+
+	if err := os.MkdirAll(filepath.Join(cachePath, subRecordFolder), 0755); err != nil {
+		log.WithFields(log.Fields{"error": err}).Error()
+		return nil, err
+	}
 	cacher := &ImageLayerCacher{
-		flock:			-1,
-		lockFile:       lockFile,
-		indexFile:  	cacheFile,
-		cachePath: 		cachePath,
-		maxRecordSize: 	maxRecordSize*1024*1024,
+		flock:         -1,
+		lockFile:      lockFile,
+		indexFile:     cacheFile,
+		cachePath:     cachePath,
+		maxRecordSize: maxRecordSize * 1024 * 1024,
 	}
 
 	cacher.InvaldateCache()
@@ -94,14 +99,16 @@ func (lc *ImageLayerCacher) LeaveLayerCacher() {
 
 func (lc *ImageLayerCacher) writeVersionFile() {
 	log.Debug()
-	ver := CacheVersion {
+	ver := CacheVersion{
 		Version:     curVersion,
 		Description: versionDescription,
 	}
 
 	log.WithFields(log.Fields{"ver": ver}).Info()
 	data, _ := json.Marshal(&ver)
-	ioutil.WriteFile(filepath.Join(lc.cachePath, versionFile), data, 0644)
+	if err := os.WriteFile(filepath.Join(lc.cachePath, versionFile), data, 0644); err != nil {
+		log.WithFields(log.Fields{"error": err}).Error()
+	}
 }
 
 func (lc *ImageLayerCacher) InvaldateCache() bool {
@@ -110,12 +117,17 @@ func (lc *ImageLayerCacher) InvaldateCache() bool {
 	defer lc.reset_lock()
 
 	bReset := false
-	if file, err := ioutil.ReadFile(filepath.Join(lc.cachePath, versionFile)); err == nil {
+	if file, err := os.ReadFile(filepath.Join(lc.cachePath, versionFile)); err == nil {
 		var ver CacheVersion
-		json.Unmarshal([]byte(file), &ver)
-		if ver.Version != curVersion {
-			log.WithFields(log.Fields{"old ver": ver}).Info("Invalidate old caches")
+
+		if err := json.Unmarshal([]byte(file), &ver); err != nil {
+			log.WithFields(log.Fields{"error": err}).Error()
 			bReset = true
+		} else {
+			if ver.Version != curVersion {
+				log.WithFields(log.Fields{"old ver": ver}).Info("Invalidate old caches")
+				bReset = true
+			}
 		}
 	} else {
 		log.Info("Missing version file: invalidate old caches")
@@ -125,7 +137,9 @@ func (lc *ImageLayerCacher) InvaldateCache() bool {
 	if bReset {
 		os.Remove(lc.indexFile)
 		os.RemoveAll(filepath.Join(lc.cachePath, subRecordFolder))
-		os.MkdirAll(filepath.Join(lc.cachePath, subRecordFolder), 0755)
+		if err := os.MkdirAll(filepath.Join(lc.cachePath, subRecordFolder), 0755); err != nil {
+			log.WithFields(log.Fields{"error": err}).Error()
+		}
 		lc.writeVersionFile()
 		return true
 	}
@@ -144,7 +158,7 @@ func (lc *ImageLayerCacher) lock() {
 	}
 
 	if err := syscall.Flock(lc.flock, syscall.LOCK_EX); err != nil {
-		if err.Error() != "bad file descriptor" {	// PVC cases
+		if err.Error() != "bad file descriptor" { // PVC cases
 			log.WithFields(log.Fields{"error": err, "flock": lc.flock}).Error("Wait")
 		}
 	}
@@ -154,18 +168,24 @@ func (lc *ImageLayerCacher) lock() {
 
 func (lc *ImageLayerCacher) unlock() {
 	// log.WithFields(log.Fields{"fn": utils.GetCaller(3, nil)}).Debug()
-	syscall.Flock(lc.flock, syscall.LOCK_UN)
+	if err := syscall.Flock(lc.flock, syscall.LOCK_UN); err != nil {
+		if err.Error() != "bad file descriptor" { // PVC cases
+			log.WithFields(log.Fields{"error": err, "flock": lc.flock}).Error()
+		}
+	}
 }
 
 func (lc *ImageLayerCacher) reset_lock() {
 	syscall.Close(lc.flock)
-	lc.flock = -1  // reset the file lock because it is thread-depedent
+	lc.flock = -1 // reset the file lock because it is thread-depedent
 }
 
 func (lc *ImageLayerCacher) readCacheFile() *CacherData {
 	var cache CacherData
-	file, _ := ioutil.ReadFile(lc.indexFile)
-	json.Unmarshal([]byte(file), &cache)
+	file, _ := os.ReadFile(lc.indexFile)
+	if err := json.Unmarshal([]byte(file), &cache); err != nil {
+		log.WithFields(log.Fields{"error": err}).Error()
+	}
 	if cache.CacheRecordMap == nil {
 		cache.CacheRecordMap = make(map[string]*cacheData)
 	}
@@ -177,14 +197,16 @@ func (lc *ImageLayerCacher) readCacheFile() *CacherData {
 func (lc *ImageLayerCacher) writeCacheFile(cache *CacherData) {
 	data, _ := json.Marshal(cache)
 	// log.WithFields(log.Fields{"data": string(data)}).Debug()
-	ioutil.WriteFile(lc.indexFile, data, 0644)
+	if err := os.WriteFile(lc.indexFile, data, 0644); err != nil {
+		log.WithFields(log.Fields{"error": err}).Error()
+	}
 }
 
-///////////////// Record caches ////////////////
+// /////////////// Record caches ////////////////
 func (lc *ImageLayerCacher) RecordName(id string, record interface{}) string {
 	switch record.(type) {
-		case *LayerRecord:  // scan package
-			return id + "_" + "layer_file"
+	case *LayerRecord: // scan package
+		return id + "_" + "layer_file"
 	}
 	return ""
 }
@@ -216,9 +238,12 @@ func (lc *ImageLayerCacher) ReadRecordCache(id string, record interface{}) (stri
 		return "", err
 	}
 
-	value, _ := ioutil.ReadFile(cc.Path)
+	value, _ := os.ReadFile(cc.Path)
 	uzb := utils.GunzipBytes(value)
-	json.Unmarshal([]byte(uzb), record)
+	if err := json.Unmarshal([]byte(uzb), record); err != nil {
+		log.WithFields(log.Fields{"error": err}).Error()
+		return "", err
+	}
 	cc.RefCnt++
 	cc.RefLast = time.Now()
 	// log.WithFields(log.Fields{"cc": cc}).Debug()
@@ -241,12 +266,12 @@ func (lc *ImageLayerCacher) WriteRecordCache(id string, record interface{}, keep
 		dest := filepath.Join(lc.cachePath, subRecordFolder, name)
 		data, _ := json.Marshal(record)
 		zb := utils.GzipBytes(data)
-		if err := ioutil.WriteFile(dest, zb, 0644); err != nil {
+		if err := os.WriteFile(dest, zb, 0644); err != nil {
 			log.WithFields(log.Fields{"error": err, "dest": dest}).Error()
 		}
 		size := int64(len(zb))
 		cacher.CurRecordSize += size
-		cacher.CacheRecordMap[name] = &cacheData { Path: dest, Size: size, RefLast: time.Now(),}
+		cacher.CacheRecordMap[name] = &cacheData{Path: dest, Size: size, RefLast: time.Now()}
 		// log.WithFields(log.Fields{"dest": dest, "size": size}).Debug()
 
 		// prune the cacher size
@@ -290,7 +315,7 @@ func (lc *ImageLayerCacher) pruneRecordCache(name string, cacher *CacherData, ke
 			os.RemoveAll(cc.Path)
 			delete(cacher.CacheRecordMap, key)
 		}
-    }
+	}
 	cacher.CurRecordSize -= removedSize
 	log.WithFields(log.Fields{"removed": removedSize}).Debug("done")
 }
@@ -300,11 +325,11 @@ func (lc *ImageLayerCacher) GetStat() *share.ScanCacheStatRes {
 	lc.lock()
 	defer lc.unlock()
 	cacher := lc.readCacheFile()
-	return &share.ScanCacheStatRes {
-		RecordCnt: uint64(len(cacher.CacheRecordMap)),
+	return &share.ScanCacheStatRes{
+		RecordCnt:  uint64(len(cacher.CacheRecordMap)),
 		RecordSize: uint64(cacher.CurRecordSize),
-		MissCnt: uint64(cacher.MissCnt),
-		HitCnt: uint64(cacher.HitCnt),
+		MissCnt:    uint64(cacher.MissCnt),
+		HitCnt:     uint64(cacher.HitCnt),
 	}
 }
 
@@ -314,23 +339,23 @@ func (lc *ImageLayerCacher) GetIndexFile() []byte {
 	defer lc.unlock()
 
 	cacher := lc.readCacheFile()
-	cache_data := scan.CacherData {
-		MissCnt:        uint64(cacher.MissCnt),
-		HitCnt:      	uint64(cacher.HitCnt),
-		CurRecordSize:	uint64(cacher.CurRecordSize),
-		CacheRecords:	make([]scan.CacheRecord, 0),
+	cache_data := scan.CacherData{
+		MissCnt:       uint64(cacher.MissCnt),
+		HitCnt:        uint64(cacher.HitCnt),
+		CurRecordSize: uint64(cacher.CurRecordSize),
+		CacheRecords:  make([]scan.CacheRecord, 0),
 	}
 
 	for id, rec := range cacher.CacheRecordMap {
-		r := scan.CacheRecord {
-			Layer: 		id,
-			Size:  		uint64(rec.Size),
-			RefCnt: 	uint32(rec.RefCnt),
-			RefLast:	rec.RefLast,
+		r := scan.CacheRecord{
+			Layer:   id,
+			Size:    uint64(rec.Size),
+			RefCnt:  uint32(rec.RefCnt),
+			RefLast: rec.RefLast,
 		}
 		cache_data.CacheRecords = append(cache_data.CacheRecords, r)
 	}
 
 	data, _ := json.Marshal(cache_data)
-	return utils.GzipBytes(data)		// zipped
+	return utils.GzipBytes(data) // zipped
 }

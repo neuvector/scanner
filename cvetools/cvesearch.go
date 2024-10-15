@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -32,6 +32,7 @@ const (
 	contentManifest = "root/buildinfo/content_manifests"
 )
 
+/* removed by golint
 var redhat_db []common.VulShort = nil
 var debian_db []common.VulShort = nil
 var ubuntu_db []common.VulShort = nil
@@ -51,6 +52,7 @@ var oracle_fdb map[string]common.VulFull
 var mariner_fdb map[string]common.VulFull
 var photon_fdb map[string]common.VulFull
 var suse_fdb map[string]common.VulFull
+*/
 
 ///////
 
@@ -64,8 +66,8 @@ type featureVulnWindow struct {
 }
 
 ///////
+// var cveTools *ScanTools
 
-var cveTools *ScanTools
 var overrideMap map[string][]featureVulnWindow = map[string][]featureVulnWindow{
 	"CVE-2019-13509": {
 		{
@@ -213,7 +215,9 @@ func (cv *ScanTools) writeModuleFile(apps []scan.AppPackage) {
 			return (apps[i].FileName < apps[j].FileName)
 		})
 		data, _ := json.Marshal(apps)
-		ioutil.WriteFile(cv.modulesFile, data, 0644)
+		if err := os.WriteFile(cv.modulesFile, data, 0644); err != nil {
+			log.WithFields(log.Fields{"error": err}).Error()
+		}
 	}
 }
 
@@ -238,7 +242,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 			Signature:     false,
 		}
 
-		if req.RootsOfTrust != nil && len(req.RootsOfTrust) > 0 {
+		if len(req.RootsOfTrust) > 0 {
 			log.Info("Sigstore root of trust information in request, adding signature scan")
 			req.ScanTypesRequested.Signature = true
 		}
@@ -272,7 +276,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	// var layeredSecret []*share.ScanSecretResult
 	var setidPerm []*share.ScanSetIdPermLog
 	var layerRecords map[string]*LayerRecord
-	layers := make([]string, 0)
+	var layers []string
 	layerFiles := make(map[string]*LayerFiles)
 	secretLogs := make(map[string][]share.CLUSSecretLog)
 	setidPermLogs := make(map[string][]share.CLUSSetIdPermLog)
@@ -430,6 +434,11 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 		// 	echo -e "GET /images/docker.io/nvlab/iperf/json HTTP/1.0\r\n" | nc -U /var/run/docker.sock
 	}
 
+	if len(layers) == 0 {
+		log.Error("no layer data")
+		return nil, nil
+	}
+
 	// For those package manager files, they can exist in multiple layers, the upper layer has the superset (if no deletion).
 	// Scan the file in the upper layer is enough for image scan, but if we want to identify if the package is installed in
 	// the base layer, we will mark all packages as "not in base". This is why we need scan layers again if BaseImage variable
@@ -489,7 +498,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 		go func() {
 			log.Debug("Scanning secrets ....")
 			var err error
-			logs := make([]share.CLUSSecretLog, 0)
+			var logs []share.CLUSSecretLog
 			perms := make([]share.CLUSSetIdPermLog, 0)
 
 			config := secrets.Config{
@@ -501,7 +510,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 				buffers.WriteString(s)
 				buffers.WriteByte('\n')
 			}
-			envVars, _ := ioutil.ReadAll(buffers)
+			envVars, _ := io.ReadAll(buffers)
 
 			if bFromRawData {
 				logs, perms, err = secrets.FindSecretsByFilePathMap(fileMap, envVars, config)
@@ -1086,7 +1095,7 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 		name = val
 	}
 	featName := fmt.Sprintf("%s:%s", namespace, name)
-	vs, _ := mv[featName]
+	vs := mv[featName]
 
 	matchMap := make(map[string]share.ScanVulStatus)
 	moduleVuls := make([]detectors.ModuleVul, 0)
@@ -1284,7 +1293,7 @@ func makeFeatureMap(vss []common.VulShort, namespace string) map[string][]common
 				CPEs: v.CPEs,
 			}
 			s := fmt.Sprintf("%s:%s", vns, ft.Name)
-			vs, _ := mv[s]
+			vs := mv[s]
 			vs = append(vs, short)
 			mv[s] = vs
 		}
@@ -1416,7 +1425,7 @@ func getVulItemList(vuls []vulFullReport, dbPrefix string) []*share.ScanVulnerab
 			Score:                 float32(v.CVSSv2.Score),
 			ScoreV3:               float32(v.CVSSv3.Score),
 			Name:                  v.Name,
-			Severity:              fmt.Sprintf("%s", severity),
+			Severity:              string(severity),
 			PackageNameDeprecated: featver.Package,
 			PackageName:           featver.Package,
 			PackageVersion:        packVer,

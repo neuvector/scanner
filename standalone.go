@@ -277,8 +277,6 @@ func scanRunning(pid int, cvedb map[string]*share.ScanVulnerability, showOptions
 
 	fmt.Printf("PID: %d\n", pid)
 	writeResultToStdout(result, showOptions)
-
-	return
 }
 
 func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulnerability, showOptions string, capCritical bool) *share.ScanResult {

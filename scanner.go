@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"sync"
@@ -58,7 +57,6 @@ func setGlobalConfig(input globalConfig) {
 
 const taskerPath = "/usr/local/bin/scannerTask"
 const registerWaitTime = time.Duration(time.Second * 10)
-const licenseTimeFormat string = "2006-01-02"
 const dockerSocket = "unix:///var/run/docker.sock"
 const defaultDockerhubReg = "https://registry.hub.docker.com"
 
@@ -69,8 +67,6 @@ type outputCVE struct {
 }
 
 var dockerhubRegs utils.Set = utils.NewSet("registry.hub.docker.com", "index.docker.io", "registry-1.docker.io", "docker.io")
-
-var ntChan chan uint32 = make(chan uint32, 1)
 var cveDB *common.CveDB
 var ctrlCaps share.ControllerCaps
 var scanTasker *Tasker
@@ -105,7 +101,9 @@ func dbRead(path string, maxRetry int, output string) map[string]*share.ScanVuln
 							CVEs:       outCVEs,
 						}
 						file, _ := json.MarshalIndent(out, "", "    ")
-						_ = ioutil.WriteFile(output, file, 0644)
+						if err := os.WriteFile(output, file, 0644); err != nil {
+							log.WithFields(log.Fields{"error": err}).Error()
+						}
 					}
 				}
 			}
@@ -131,10 +129,10 @@ func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinP
 	}
 
 	var healthCheckCh chan struct{}
-
+	var dbData map[string]*share.ScanVulnerability
 	for {
 		// forever retry
-		dbData := dbRead(path, 0, "")
+		dbData = dbRead(path, 0, "")
 		scanner := share.ScannerRegisterData{
 			CVEDBVersion:    cveDB.CveDBVersion,
 			CVEDBCreateTime: cveDB.CveDBCreateTime,
@@ -150,7 +148,7 @@ func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinP
 
 		// tagging it as a released-memory
 		scanner.CVEDB = nil
-		dbData = make(map[string]*share.ScanVulnerability) // zero size
+		clear(dbData) // zero size
 
 		if healthCheckCh != nil {
 			close(healthCheckCh)
@@ -341,7 +339,10 @@ func main() {
 	if *maxCacherRecordSize <= 0 {
 		os.RemoveAll(common.ImageWorkingPath)
 	}
-	os.MkdirAll(common.ImageWorkingPath, 0755)
+
+	if err := os.MkdirAll(common.ImageWorkingPath, 0755); err != nil {
+		log.WithFields(log.Fields{"error": err}).Error()
+	}
 
 	if sys.IsRunningInContainer() {
 		selfID, _, err = sys.GetSelfContainerID() // it is a POD ID in the k8s cgroup v2; otherwise, a real container ID
@@ -359,7 +360,7 @@ func main() {
 		}
 	}
 
-	if *noTask == false {
+	if !*noTask {
 		log.WithFields(log.Fields{"record": *maxCacherRecordSize}).Info("Scan cacher maximum sizes")
 		scanTasker = newTasker(taskerPath, *rtSock, showTaskDebug, sys, *maxCacherRecordSize)
 		if scanTasker != nil {
@@ -489,6 +490,8 @@ func main() {
 	<-done
 
 	log.Info("Exiting ...")
-	scannerDeregister(*join, (uint16)(*joinPort), selfID)
+	if err := scannerDeregister(*join, (uint16)(*joinPort), selfID); err != nil {
+		log.WithFields(log.Fields{"error": err}).Error()
+	}
 	grpcServer.Stop()
 }

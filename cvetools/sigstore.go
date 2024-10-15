@@ -132,7 +132,9 @@ func executeVerificationBinary(inputPath string, proxyURL string) (output string
 
 	if username != "" {
 		go func() {
-			io.WriteString(stdin, fmt.Sprintf("%s:%s", username, password))
+			if _, err := io.WriteString(stdin, fmt.Sprintf("%s:%s", username, password)); err != nil {
+				log.WithFields(log.Fields{"error": err}).Error()
+			}
 			closeErr = stdin.Close()
 		}()
 	}

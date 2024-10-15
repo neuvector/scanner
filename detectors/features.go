@@ -240,9 +240,13 @@ func detectDPKG(namespace string, files map[string]*FeatureFile, path string) ([
 
 	for name, file := range files {
 		if name == dpkgPackageFile {
-			parseDPKGFeatureFile(packagesMap, string(file.Data[:]), file.InBase, false)
+			if err := parseDPKGFeatureFile(packagesMap, string(file.Data[:]), file.InBase, false); err != nil {
+				log.WithFields(log.Fields{"error": err}).Error()
+			}
 		} else if strings.HasPrefix(name, dpkgPackageDir) {
-			parseDPKGFeatureFile(packagesMap, string(file.Data[:]), file.InBase, true)
+			if err := parseDPKGFeatureFile(packagesMap, string(file.Data[:]), file.InBase, true); err != nil {
+				log.WithFields(log.Fields{"error": err}).Error()
+			}
 		}
 	}
 
@@ -264,9 +268,11 @@ const (
 	// pyxisUrl        = "https://catalog.redhat.com/api/containers/v1/images/nvr"
 )
 
+/* removed bu golint
 var redhatRegexp = regexp.MustCompile(`com.redhat.component="([a-zA-Z0-9\-_\.]*)"`)
 var archRegexp = regexp.MustCompile(`"architecture"="([a-zA-Z0-9\-_\.]*)"`)
 var versionRegexp = regexp.MustCompile(`root/buildinfo/Dockerfile-([a-zA-Z0-9_]+)-([a-zA-z0-9\-_\.]*)`)
+*/
 
 var rpms rpmsMap
 
@@ -462,7 +468,7 @@ func pyxisGetCpes(arch, component, version string) utils.Set {
 		log.Errorf("could not download mapping json: %s", err)
 		return nil
 	}
-	body, _ := ioutil.ReadAll(r.Body)
+	body, _ := io.ReadAll(r.Body)
 	var v RpmsNvrData
 	err = json.Unmarshal(body, &v)
 	if err != nil {

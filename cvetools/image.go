@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -132,7 +131,10 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 
 	// create an image file and image layered folders
 	repoFolder := filepath.Join(imgPath, "repo")
-	os.MkdirAll(repoFolder, 0755)
+	if err := os.MkdirAll(repoFolder, 0755); err != nil {
+		log.WithFields(log.Fields{"error": err}).Error()
+		return nil, nil, nil, share.ScanErrorCode_ScanErrContainerAPI
+	}
 	defer os.RemoveAll(repoFolder)
 
 	// save the image
@@ -185,7 +187,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 
 	layerModules, errCode := getImageLayerIterate(ctx, downloads, nil, false, imgPath,
 		func(ctx context.Context, layer string) (interface{}, int64, error) {
-			blob, _ := blobs[layer]
+			blob := blobs[layer]
 			file, err := os.Open(filepath.Join(repoFolder, blob))
 			if err != nil {
 				return nil, -1, err
@@ -194,8 +196,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 			if err != nil {
 				return nil, -1, err
 			}
-			var bytes int64
-			bytes = stat.Size()
+			bytes := stat.Size() // int64
 			return file, bytes, nil
 		})
 
@@ -203,10 +204,10 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 		secrets, setIDs, fmap, removed := collectLayerRawRecord(imgPath, downloads)
 		// save downloaded records
 		for layer, mod := range layerModules {
-			slogs, _ := secrets[layer]
-			plogs, _ := setIDs[layer]
-			flogs, _ := fmap[layer]
-			rlogs, _ := removed[layer]
+			slogs := secrets[layer]
+			plogs := setIDs[layer]
+			flogs := fmap[layer]
+			rlogs := removed[layer]
 			layerRec := LayerRecord{
 				Modules: mod,
 				Secrets: &SecretPermLogs{
@@ -293,6 +294,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	return cacheLayers, repoInfo, tarLayers, errCode
 }
 
+/* removed by golint
 type layerMetadata struct {
 	ID              string    `json:"id"`
 	Parent          string    `json:"parent"`
@@ -320,6 +322,7 @@ type layerMetadata struct {
 	Architecture string `json:"architecture"`
 	Os           string `json:"os"`
 }
+*/
 
 func getImageLayers(tmpDir string, imageTar string) ([]string, map[string]string, error) {
 	var image []imageManifest
@@ -331,7 +334,7 @@ func getImageLayers(tmpDir string, imageTar string) ([]string, map[string]string
 	defer reader.Close()
 
 	//get the manifest from the image tar
-	files, err := utils.SelectivelyExtractArchive(bufio.NewReader(reader), func(filename string) bool {
+	files, _ := utils.SelectivelyExtractArchive(bufio.NewReader(reader), func(filename string) bool {
 		if filename == manifestJson || strings.HasSuffix(filename, layerJson) || filename == ociLayout {
 			return true
 		} else {
@@ -356,7 +359,10 @@ func getImageLayers(tmpDir string, imageTar string) ([]string, map[string]string
 	}
 
 	//extract all the layers to tar files
-	reader.Seek(0, 0)
+	if _, err := reader.Seek(0, 0); err != nil {
+		log.WithFields(log.Fields{"error": err}).Error()
+	}
+
 	fileMap, err := utils.SelectivelyExtractToFile(bufio.NewReader(reader), func(filename string) bool {
 		for _, l := range image[0].Layers {
 			if filename == l {
@@ -375,7 +381,7 @@ func getImageLayers(tmpDir string, imageTar string) ([]string, map[string]string
 	blobs := make(map[string]string)
 	for i, ftar := range image[0].Layers {
 		if fpath, ok := fileMap[ftar]; !ok {
-			return layers, blobs, fmt.Errorf("could not find the image layer: " + ftar)
+			return layers, blobs, fmt.Errorf("could not find the image layer: %s", ftar)
 		} else {
 			fpath = filepath.Base(fpath)
 			layer := strings.TrimSuffix(fpath, "_layer.tar") // remove unwanted suffix
@@ -490,7 +496,7 @@ func getImageLayerIterate(
 				continue
 			} else {
 				// Files have been selectively picked above.
-				data, err = ioutil.ReadFile(fullpath)
+				data, _ = os.ReadFile(fullpath)
 			}
 
 			curLayerFiles[filename] = data
@@ -502,7 +508,7 @@ func getImageLayerIterate(
 	return lfs, share.ScanErrorCode_ScanErrNone
 }
 
-////////
+// //////
 type layerSize struct {
 	layer string
 	size  int64
@@ -529,14 +535,16 @@ func sortLayersBySize(layerMap map[string]int64) []layerSize {
 
 // Download layers in parallels
 // Reducing memory by limiting its concurrent downloading tar size near to 400MB,
-//    which size information is provided from the Image Manifest Version 2, Schema 2.
+//
+//	which size information is provided from the Image Manifest Version 2, Schema 2.
+//
 // The download layers are sorted by descending layer's tar sizes
 // (1) if the tar size is greater than 500MB, it will be downloaded alone
 // (2) if concurrent download (accumulate) is greater than 400MB, the next download item will wait until there are sufficient resources
 // (3) the maximum accumulate is less 800MB (for example, 399.99MB + 399.98MB).
 // Note: docker uses the "maxConcurrentDownloads" (3)
-//       containerd uses the download altogether
 //
+//	containerd uses the download altogether
 const downloadThrottlingVolume = 400 * 1024 * 1024 // the average could be around this level, decompressed size could be 4x more
 
 func downloadLayers(ctx context.Context, layers []string, sizes map[string]int64, imgPath string,
@@ -592,7 +600,10 @@ func downloadLayers(ctx context.Context, layers []string, sizes map[string]int64
 			layerPath := filepath.Join(imgPath, ml)
 			if bHasSizeInfo && sl == 0 {
 				//log.WithFields(log.Fields{"layer": ml}).Debug("skip")
-				os.MkdirAll(layerPath, 0755) // empty folder
+				// empty folder
+				if err := os.MkdirAll(layerPath, 0755); err != nil {
+					log.WithFields(log.Fields{"error": err}).Error()
+				}
 				done <- &downloadLayerResult{layer: ml, err: nil, Size: 0, TarSize: 0}
 				return
 			}
@@ -743,10 +754,10 @@ func DownloadRemoteImage(ctx context.Context, rc *scan.RegClient, name, imgPath 
 		secrets, setIDs, fmap, removed := collectLayerRawRecord(imgPath, downloads)
 		// save downloaded records
 		for layer, mod := range layerModules {
-			slogs, _ := secrets[layer]
-			plogs, _ := setIDs[layer]
-			flogs, _ := fmap[layer]
-			rlogs, _ := removed[layer]
+			slogs := secrets[layer]
+			plogs := setIDs[layer]
+			flogs := fmap[layer]
+			rlogs := removed[layer]
 			layerRec := LayerRecord{
 				Modules: mod,
 				Secrets: &SecretPermLogs{
@@ -835,7 +846,7 @@ func getSignatureDataForImage(ctx context.Context, rc *scan.RegClient, repo, dig
 		if err != nil {
 			return SignatureData{}, share.ScanErrorCode_ScanErrRegistryAPI
 		}
-		layerBytes, err := ioutil.ReadAll(rdr)
+		layerBytes, err := io.ReadAll(rdr)
 		if err != nil {
 			return SignatureData{}, share.ScanErrorCode_ScanErrRegistryAPI
 		}

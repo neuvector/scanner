@@ -33,7 +33,10 @@ func createEnforcerScanServiceWrapper(conn *grpc.ClientConn) cluster.Service {
 
 func findEnforcerServiceClient(ep string) (share.EnforcerScanServiceClient, error) {
 	if cluster.GetGRPCClientEndpoint(ep) == "" {
-		cluster.CreateGRPCClient(ep, ep, true, createEnforcerScanServiceWrapper)
+		if err := cluster.CreateGRPCClient(ep, ep, true, createEnforcerScanServiceWrapper); err != nil {
+			log.WithFields(log.Fields{"error": err}).Error()
+			return nil, err
+		}
 	}
 	c, err := cluster.GetGRPCClient(ep, nil, nil)
 	if err == nil {
@@ -240,7 +243,10 @@ func createControllerScanServiceWrapper(conn *grpc.ClientConn) cluster.Service {
 func getControllerServiceClient(joinIP string, joinPort uint16, cb cluster.GRPCCallback) (share.ControllerScanServiceClient, error) {
 	if cluster.GetGRPCClientEndpoint(controller) == "" {
 		ep := fmt.Sprintf("%s:%v", joinIP, joinPort)
-		cluster.CreateGRPCClient(controller, ep, true, createControllerScanServiceWrapper)
+		if err := cluster.CreateGRPCClient(controller, ep, true, createControllerScanServiceWrapper); err != nil {
+			log.WithFields(log.Fields{"error": err}).Error()
+			return nil, err
+		}
 	}
 	c, err := cluster.GetGRPCClient(controller, nil, cb)
 	if err == nil {
@@ -362,8 +368,6 @@ func downgradeCriticalSeverityInCVEDB(data *share.ScannerRegisterData) {
 			v.Severity = string(common.High)
 		}
 	}
-
-	return
 }
 
 func ScannerSettingUpdate(settings *share.ScannerSettings) error {

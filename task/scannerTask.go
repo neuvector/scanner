@@ -7,7 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/signal"
 	"strings"
@@ -30,7 +30,6 @@ func usage() {
 	os.Exit(2)
 }
 
-var ntChan chan uint32 = make(chan uint32, 1)
 var cveTools *cvetools.ScanTools // available inside package
 
 // //
@@ -57,7 +56,7 @@ func processRequest(tm *taskMain, scanType, infile, workingPath string) int {
 		log.WithFields(log.Fields{"error": err, "file": infile}).Error("Failed to open input file")
 		return -1
 	}
-	byteValue, _ := ioutil.ReadAll(jsonFile)
+	byteValue, _ := io.ReadAll(jsonFile)
 	jsonFile.Close()
 
 	// selector
@@ -184,6 +183,6 @@ func main() {
 	}()
 
 	rc := <-done
-	log.WithFields(log.Fields{"imageWorkingPath": imageWorkingPath, "used": time.Now().Sub(start).Seconds()}).Info("Exiting ...")
+	log.WithFields(log.Fields{"imageWorkingPath": imageWorkingPath, "used": time.Since(start).Seconds()}).Info("Exiting ...")
 	os.Exit(rc)
 }

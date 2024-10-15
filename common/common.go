@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/google/uuid"
 )
 
@@ -91,7 +93,7 @@ type AppModuleVul struct {
 	Severity      string             `json:"SE"`
 	AffectedVer   []AppModuleVersion `json:"AV"`
 	FixedVer      []AppModuleVersion `json:"FV"`
-	UnaffectedVer []AppModuleVersion `json:"UV",omitempty`
+	UnaffectedVer []AppModuleVersion `json:"UV,omitempty"`
 	IssuedDate    time.Time          `json:"Issue"`
 	LastModDate   time.Time          `json:"LastMod"`
 	CVEs          []string           `json:"-"`
@@ -181,6 +183,8 @@ func CreateImagePath(uid string) string {
 	}
 
 	///
-	os.MkdirAll(imgPath, 0755)
+	if err := os.MkdirAll(imgPath, 0755); err != nil {
+		log.WithFields(log.Fields{"error": err}).Error()
+	}
 	return imgPath
 }
