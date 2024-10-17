@@ -3,6 +3,7 @@ package cvetools
 import (
 	"testing"
 
+	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
 	"github.com/neuvector/scanner/detectors"
 )
@@ -73,5 +74,69 @@ OSTREE_VERSION="411.86.202212072103-0"
 	ns, db := os2DB(nss)
 	if ns != "centos:8" || db != common.DBCentos {
 		t.Errorf("Incorrect os: ns=%s db=%v\n", ns, db)
+	}
+}
+
+// TestEpochComparison ensures that a namespace in skipEpochNamespaces properly calls alternate version comparison logic and returns the expected result.
+func TestEpochComparison(t *testing.T) {
+	expected1 := 1
+	expected2 := 0
+	nsWithoutEpoch := "amzn:2023"
+	nsWithEpoch := "rhel:8"
+	verString := "0:1.5"
+	shortVulMap := map[string][]common.VulShort{
+		"rhel:8:test": []common.VulShort{common.VulShort{
+			Name:      "CVE-1",
+			Namespace: "rhel:8",
+			Fixin: []common.FeaShort{
+				common.FeaShort{
+					Name:    "test",
+					Version: "1:1.0",
+					MinVer:  "",
+				},
+			},
+			CPEs: []string{},
+		},
+		},
+		"amzn:2023:test": []common.VulShort{common.VulShort{
+			Name:      "CVE-1",
+			Namespace: "amzn:2023",
+			Fixin: []common.FeaShort{
+				common.FeaShort{
+					Name:    "test",
+					Version: "1:1.0",
+					MinVer:  "",
+				},
+			},
+			CPEs: []string{},
+		},
+		},
+	}
+	version, err := utils.NewVersion(verString)
+	if err != nil {
+		t.Errorf("error creating version: %+v\n", err)
+	}
+	feature := detectors.FeatureVersion{
+		Package:    "test",
+		File:       "",
+		Version:    version,
+		MinVer:     utils.Version{},
+		ModuleVuls: []detectors.ModuleVul{},
+		CPEs:       nil,
+		InBase:     false,
+	}
+
+	//Check for epoch behavior, this uses the original Compare()
+	vuls, modvul := searchAffectedFeature(shortVulMap, nsWithEpoch, feature)
+	//should return 1 vuln because epoch comparison is used 0:1.5 < 1:1.0
+	if len(vuls) != expected1 || len(modvul) != expected1 {
+		t.Errorf("error with epoch comparison, expected results: %+v, returned %v\n", expected1, len(modvul))
+	}
+
+	//Check for without epoch behavior, this uses CompareWithoutEpoch() due to the namespace being included in cvesearch.skipEpochNamespaces.
+	vuls, modvul = searchAffectedFeature(shortVulMap, nsWithoutEpoch, feature)
+	//should return 0 vuln because epoch comparison is NOT used 1.5 > 1.0
+	if len(vuls) != expected2 || len(modvul) != expected2 {
+		t.Errorf("error without epoch comparison, expected results: %+v, returned %v\n", expected2, len(modvul))
 	}
 }
