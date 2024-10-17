@@ -1096,6 +1096,10 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 	}
 	featName := fmt.Sprintf("%s:%s", namespace, name)
 	vs := mv[featName]
+	skipEpoch := false
+	if strings.HasPrefix(namespace, "amzn") {
+		skipEpoch = true
+	}
 
 	matchMap := make(map[string]share.ScanVulStatus)
 	moduleVuls := make([]detectors.ModuleVul, 0)
@@ -1222,12 +1226,29 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 			} else {
 				afStatus = share.ScanVulStatus_FixExists
 			}
-			if ftVer.Compare(ver) >= 0 {
+			if skipEpoch {
+				if ftVer.CompareWithoutEpoch(ver) >= 0 {
+					afStatus = share.ScanVulStatus_Unaffected
+					continue
+				}
+			} else if ftVer.Compare(ver) >= 0 {
 				afStatus = share.ScanVulStatus_Unaffected
 				continue
 			}
 
-			if fix.MinVer != "" {
+			if skipEpoch {
+				if fix.MinVer != "" {
+					minVer, err := utils.NewVersion(fix.MinVer)
+					if err != nil {
+						log.WithFields(log.Fields{"error": err, "min-version": fix.MinVer}).Error()
+						continue
+					}
+
+					if ftVer.CompareWithoutEpoch(minVer) < 0 {
+						continue
+					}
+				}
+			} else if fix.MinVer != "" {
 				minVer, err := utils.NewVersion(fix.MinVer)
 				if err != nil {
 					log.WithFields(log.Fields{"error": err, "min-version": fix.MinVer}).Error()
