@@ -82,7 +82,8 @@ jobs:
         password: ${{ env.PRIME_REGISTRY_PASSWORD }}
     - name: Check if we should tag v6 scanner
       run: |
-        if [[ ${{ github.event.ref }} =~ ^v[0-9]+\.[0-9]+$ ]];then
+        if [[ ${{ github.ref_name }} =~ ^v[0-9]+\.[0-9]+$ ]];then
+          echo "We should update v6 scanner"
           echo "UPDATE_MUTABLE_TAG=True" >> $GITHUB_ENV
         fi
     - name: Tag v6 scanner
