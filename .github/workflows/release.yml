@@ -40,6 +40,7 @@ jobs:
       with:
         push-to-public: true
         push-to-prime: false
+        make-target: push-image
         image: scanner
         tag: ${{ env.TAG }}
         platforms: linux/amd64,linux/arm64
@@ -53,6 +54,7 @@ jobs:
       with:
         push-to-public: false
         push-to-prime: true
+        make-target: push-rancher-image
         image: neuvector-scanner
         tag: ${{ env.TAG }}
         platforms: linux/amd64,linux/arm64

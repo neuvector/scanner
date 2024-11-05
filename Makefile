@@ -133,5 +133,11 @@ build-image: buildx-machine ## build (and load) the container image targeting th
 push-image: buildx-machine
 	$(IMAGE_BUILDER) build -f package/Dockerfile \
 		--builder $(MACHINE) $(IMAGE_ARGS) $(IID_FILE_FLAG) $(BUILDX_ARGS) \
-		--build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) --build-arg VULNDBVER=$(VULNDBVER) --platform=$(TARGET_PLATFORMS) -t "$(REPO)/neuvector-scanner:$(TAG)" --push .
+		--build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) --build-arg VULNDBVER=$(VULNDBVER) --platform=$(TARGET_PLATFORMS) -t "$(REPO)/scanner:$(TAG)" --push .
 	@echo "Pushed $(IMAGE)"
+
+push-rancher-image: buildx-machine
+	$(IMAGE_BUILDER) build -f package/Dockerfile \
+		--builder $(MACHINE) $(IMAGE_ARGS) $(IID_FILE_FLAG) $(BUILDX_ARGS) \
+		--build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) --build-arg VULNDBVER=$(VULNDBVER) --platform=$(TARGET_PLATFORMS) -t "$(REPO)/neuvector-scanner:$(TAG)" --push .
+	@echo "Pushed $(REPO)/neuvector-scanner:$(TAG)"
