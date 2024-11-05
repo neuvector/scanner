@@ -86,9 +86,6 @@ BUILD_ACTION = --load
 
 ARCH := $(shell uname -p)
 
-BASE_IMAGE_TAG = latest
-BUILD_IMAGE_TAG = v2
-
 # Keep this as the first
 slsa_all: test build copy_scan_slsa
 
