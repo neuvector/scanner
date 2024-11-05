@@ -29,4 +29,5 @@ _testmain.go
 *.bak
 
 /scanner
+data/cvedb.regular
 /task/scannerTask_test1.go
