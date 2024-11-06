@@ -39,6 +39,7 @@
 #define ENV_SCANNER_CTRL_USER          "SCANNER_CTRL_API_USERNAME"
 #define ENV_SCANNER_CTRL_PASS          "SCANNER_CTRL_API_PASSWORD"
 #define ENV_SCANNER_TLS_VERIFICATION   "SCANNER_STANDALONE_TLS_VERIFICATION"
+#define ENV_SCANNER_DEBUG_MODE         "SCANNER_DEBUG_MODE"
 
 #define ENV_SCANNER_CACHE_MAX   "MAX_CACHE_RECORD_MB"
 #define ENV_CAP_CRITICAL        "CAP_CRITICAL"
@@ -403,6 +404,9 @@ int main (int argc, char **argv)
             help(argv[0]);
             exit(0);
         }
+    }
+    if (getenv(ENV_SCANNER_DEBUG_MODE) != NULL) {
+        g_debug = 1;
     }
 
     signal(SIGTERM, exit_handler);
