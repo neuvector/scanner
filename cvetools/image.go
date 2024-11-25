@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containerd/errdefs"
+	"github.com/docker/docker/errdefs"
 	"github.com/opencontainers/go-digest"
 	goDigest "github.com/opencontainers/go-digest"
 	log "github.com/sirupsen/logrus"
