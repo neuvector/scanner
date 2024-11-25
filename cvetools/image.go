@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/containerd/errdefs"
 	"github.com/opencontainers/go-digest"
 	goDigest "github.com/opencontainers/go-digest"
 	log "github.com/sirupsen/logrus"
@@ -35,8 +35,6 @@ const (
 	ociIndexJson = "index.json"
 	ociLayout    = "oci-layout"
 )
-
-var ErrImageNotFound = errors.New("Image not found")
 
 type imageManifest struct {
 	Config   string   `json:"Config"`
@@ -77,7 +75,7 @@ func (s *ScanTools) GetLocalImageMeta(ctx context.Context, repository, tag strin
 	meta, err := rt.GetImage(fmt.Sprintf("%s:%s", repo, tag))
 	if err != nil {
 		log.WithFields(log.Fields{"repo": repository, "tag": tag, "error": err}).Error("Failed to get local image")
-		if err == ErrImageNotFound {
+		if errdefs.IsNotFound(err) {
 			return nil, share.ScanErrorCode_ScanErrImageNotFound
 		}
 		return nil, share.ScanErrorCode_ScanErrContainerAPI
@@ -105,7 +103,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	meta, err := rt.GetImage(imageName)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to get local image")
-		if err == ErrImageNotFound {
+		if errdefs.IsNotFound(err) {
 			return nil, nil, nil, share.ScanErrorCode_ScanErrImageNotFound
 		}
 		return nil, nil, nil, share.ScanErrorCode_ScanErrContainerAPI
@@ -114,7 +112,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	histories, err := rt.GetImageHistory(imageName)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to get local image history")
-		if err == ErrImageNotFound {
+		if errdefs.IsNotFound(err) {
 			return nil, nil, nil, share.ScanErrorCode_ScanErrImageNotFound
 		}
 		return nil, nil, nil, share.ScanErrorCode_ScanErrContainerAPI
@@ -123,7 +121,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	file, err := rt.GetImageFile(meta.ID)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to get image")
-		if err == ErrImageNotFound {
+		if errdefs.IsNotFound(err) {
 			return nil, nil, nil, share.ScanErrorCode_ScanErrImageNotFound
 		} else if err == container.ErrMethodNotSupported {
 			return nil, nil, nil, share.ScanErrorCode_ScanErrDriverAPINotSupport
