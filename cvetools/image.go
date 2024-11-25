@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,7 +21,6 @@ import (
 
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/container"
-	"github.com/neuvector/neuvector/share/container/dockerclient"
 	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/scan/registry"
 	"github.com/neuvector/neuvector/share/scan/secrets"
@@ -35,6 +35,8 @@ const (
 	ociIndexJson = "index.json"
 	ociLayout    = "oci-layout"
 )
+
+var ErrImageNotFound = errors.New("Image not found")
 
 type imageManifest struct {
 	Config   string   `json:"Config"`
@@ -75,7 +77,7 @@ func (s *ScanTools) GetLocalImageMeta(ctx context.Context, repository, tag strin
 	meta, err := rt.GetImage(fmt.Sprintf("%s:%s", repo, tag))
 	if err != nil {
 		log.WithFields(log.Fields{"repo": repository, "tag": tag, "error": err}).Error("Failed to get local image")
-		if err == dockerclient.ErrImageNotFound {
+		if err == ErrImageNotFound {
 			return nil, share.ScanErrorCode_ScanErrImageNotFound
 		}
 		return nil, share.ScanErrorCode_ScanErrContainerAPI
@@ -103,7 +105,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	meta, err := rt.GetImage(imageName)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to get local image")
-		if err == dockerclient.ErrImageNotFound {
+		if err == ErrImageNotFound {
 			return nil, nil, nil, share.ScanErrorCode_ScanErrImageNotFound
 		}
 		return nil, nil, nil, share.ScanErrorCode_ScanErrContainerAPI
@@ -112,7 +114,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	histories, err := rt.GetImageHistory(imageName)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to get local image history")
-		if err == dockerclient.ErrImageNotFound {
+		if err == ErrImageNotFound {
 			return nil, nil, nil, share.ScanErrorCode_ScanErrImageNotFound
 		}
 		return nil, nil, nil, share.ScanErrorCode_ScanErrContainerAPI
@@ -121,7 +123,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 	file, err := rt.GetImageFile(meta.ID)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to get image")
-		if err == dockerclient.ErrImageNotFound {
+		if err == ErrImageNotFound {
 			return nil, nil, nil, share.ScanErrorCode_ScanErrImageNotFound
 		} else if err == container.ErrMethodNotSupported {
 			return nil, nil, nil, share.ScanErrorCode_ScanErrDriverAPINotSupport
