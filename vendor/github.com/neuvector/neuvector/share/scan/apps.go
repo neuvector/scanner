@@ -63,7 +63,7 @@ const (
 	rDescFileName   = "DESCRIPTION"
 )
 
-var verRegexp = regexp.MustCompile(`<([a-zA-Z0-9\.]+)>([0-9\.]+)</([a-zA-Z0-9\.]+)>`)
+// var verRegexp = regexp.MustCompile(`<([a-zA-Z0-9\.]+)>([0-9\.]+)</([a-zA-Z0-9\.]+)>`)
 var pyRegexp = regexp.MustCompile(`/([a-zA-Z0-9_\.]+)-([a-zA-Z0-9\.]+)[\-a-zA-Z0-9\.]*\.(egg-info\/PKG-INFO|dist-info\/WHEEL)$`)
 var rubyRegexp = regexp.MustCompile(`/([a-zA-Z0-9_\-]+)-([0-9\.]+)\.gemspec$`)
 
@@ -84,6 +84,7 @@ type AppPackage struct {
 	FileName   string `json:"file_name"`
 }
 
+/*
 type mvnProject struct {
 	Parent       mvnParent       `xml:"parent"`
 	ArtifactId   string          `xml:"artifactId"`
@@ -102,6 +103,7 @@ type mvnDependency struct {
 	Version    string `xml:"version"`
 	Scope      string `xml:"scope"`
 }
+*/
 
 type dotnetDependency struct {
 	Deps map[string]string `json:"dependencies"`
@@ -139,10 +141,6 @@ func (s *ScanApps) name() string {
 	return AppFileName
 }
 
-func (s *ScanApps) empty() bool {
-	return len(s.pkgs) == 0
-}
-
 func (s *ScanApps) Data() map[string][]AppPackage {
 	return s.pkgs
 }
@@ -176,7 +174,7 @@ func (s *ScanApps) ExtractAppPkg(filename, fullpath string) {
 	} else if IsJava(filename) {
 		if r, err := zip.OpenReader(fullpath); err == nil {
 			dedup := utils.NewSet()
-			s.parseJarPackage(r.Reader, filename, filename, fullpath, 0, dedup)
+			s.parseJarPackage(&r.Reader, filename, filename, fullpath, 0, dedup)
 			r.Close()
 		} else {
 			log.WithFields(log.Fields{"err": err}).Error("open jar file fail")
@@ -235,11 +233,8 @@ func isGolang(filename, fullpath string) bool {
 	defer f.Close()
 
 	_, _, err = readRawBuildInfo(f, true)
-	if err != nil {
-		return false
-	}
 
-	return true
+	return err == nil
 }
 
 func (s *ScanApps) parseGolangPackage(filename, fullpath string) {
@@ -329,10 +324,6 @@ func (s *ScanApps) parseNodePackage(filename, fullpath string) {
 		FileName:   filename,
 	}
 	s.pkgs[filename] = []AppPackage{pkg}
-}
-
-func isJavaJar(filename string) bool {
-	return strings.HasSuffix(filename, ".jar")
 }
 
 func IsJava(filename string) bool {
@@ -433,7 +424,7 @@ func parseJarManifestFile(path string, rc io.Reader) (*AppPackage, error) {
 	return &pkg, nil
 }
 
-func (s *ScanApps) parseJarPackage(r zip.Reader, origJar, filename, fullpath string, depth int, dedup utils.Set) {
+func (s *ScanApps) parseJarPackage(r *zip.Reader, origJar, filename, fullpath string, depth int, dedup utils.Set) {
 	// in-memory unzip the jar file then walk through.
 	tempDir, err := os.MkdirTemp("", "")
 	if err == nil {
@@ -462,7 +453,7 @@ func (s *ScanApps) parseJarPackage(r zip.Reader, origJar, filename, fullpath str
 					if _, err := io.Copy(dstFile, jarFile); err == nil {
 						dstFile.Close()
 						if jarReader, err := zip.OpenReader(dstPath); err == nil {
-							s.parseJarPackage(jarReader.Reader, origJar, f.Name, dstPath, depth+1, dedup)
+							s.parseJarPackage(&jarReader.Reader, origJar, f.Name, dstPath, depth+1, dedup)
 							jarReader.Close()
 						}
 					} else {
@@ -622,8 +613,8 @@ func (s *ScanApps) parsePythonPackage(filename string) {
 		name := sub[1]
 		ver := sub[2]
 		var pkgPath string
-		pkgPath = strings.TrimRight(filename, ".egg-info/PKG-INFO")
-		pkgPath = strings.TrimRight(pkgPath, ".dist-info/WHEEL")
+		pkgPath = strings.TrimSuffix(filename, ".egg-info/PKG-INFO")
+		pkgPath = strings.TrimSuffix(pkgPath, ".dist-info/WHEEL")
 		pkg := AppPackage{
 			AppName:    python,
 			ModuleName: fmt.Sprintf("python:%s", name),
@@ -640,8 +631,7 @@ func (s *ScanApps) parseRubyPackage(filename string) {
 		sub := match[0]
 		name := sub[1]
 		ver := sub[2]
-		var pkgPath string
-		pkgPath = strings.TrimRight(filename, ".gemspec")
+		pkgPath := strings.TrimSuffix(filename, ".gemspec")
 		pkg := AppPackage{
 			AppName:    ruby,
 			ModuleName: ruby + ":" + name,
@@ -687,11 +677,9 @@ func (s *ScanApps) parseWordpressPackage(filename, fullpath string) {
 			}
 		}
 	}
-
-	return
 }
 
-func (s *ScanApps) parseDotNetPackage(filename, fullpath string) {
+func (s *ScanApps) parseDotNetPackage(filename string, fullpath string) {
 	if fi, err := os.Stat(fullpath); err != nil {
 		log.WithFields(log.Fields{"err": err, "fullpath": fullpath, "filename": filename}).Error("Failed to stat file")
 		return
@@ -748,7 +736,8 @@ func (s *ScanApps) parseDotNetPackage(filename, fullpath string) {
 			// it is possible that there are multiple core versions in different dependencies
 			//    Microsoft.NETCore.App/2.2.8   ==> 2.2.8
 			//    Microsoft.AspNetCore.ApplicationInsights.HostingStartup/2.2.0 ==> 2.2.0 (x)
-			if strings.HasPrefix(target, "Microsoft.NETCore.App/") || strings.HasPrefix(target, "Microsoft.AspNetCore.App/") {
+			if strings.HasPrefix(target, "Microsoft.NETCore.App/") || strings.HasPrefix(target, "Microsoft.AspNetCore.App/") ||
+				strings.HasPrefix(target, "Microsoft.NETCore.App.Runtime") || strings.HasPrefix(target, "Microsoft.AspNetCore.App.Runtime") {
 				if o := strings.Index(target, "/"); o != -1 {
 					version := target[o+1:]
 					if o = strings.Index(version, "-"); o != -1 {
@@ -771,26 +760,41 @@ func (s *ScanApps) parseDotNetPackage(filename, fullpath string) {
 					pkgs = append(pkgs, pkg)
 				}
 			}
-		}
-	}
 
-	if coreVersion != "" {
-		key := fmt.Sprintf("%s-%s", ".NET:Core", coreVersion)
-		if !dedup.Contains(key) {
-			dedup.Add(key)
-			pkg := AppPackage{
-				AppName:    ".NET",
-				ModuleName: ".NET:Core",
-				Version:    coreVersion,
-				FileName:   filename,
+			if coreVersion != "" {
+				name := getDotNetModuleName(target)
+				if name == "" {
+					log.WithFields(log.Fields{"fullpath": fullpath, "filename": filename}).Error("Failed to determine .Net ModuleName")
+					continue
+				}
+				key := fmt.Sprintf(".NET:%s-%s", name, coreVersion)
+				if !dedup.Contains(key) {
+					dedup.Add(key)
+					pkg := AppPackage{
+						AppName:    ".NET",
+						ModuleName: ".NET:" + name,
+						Version:    coreVersion,
+						FileName:   filename,
+					}
+					pkgs = append(pkgs, pkg)
+				}
 			}
-			pkgs = append(pkgs, pkg)
 		}
 	}
 
 	if len(pkgs) > 0 {
 		s.pkgs[filename] = pkgs
 	}
+}
+
+func getDotNetModuleName(input string) string {
+	splits := strings.Split(input, "/")
+	for _, split := range splits {
+		if strings.HasPrefix(split, "Microsoft.NETCore.") || strings.HasPrefix(split, "Microsoft.AspNetCore.") && !strings.HasSuffix(split, ".json") {
+			return split
+		}
+	}
+	return ""
 }
 
 func (s *ScanApps) parseRLangPackage(filename, fullpath string) {

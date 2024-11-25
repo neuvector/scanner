@@ -7,7 +7,6 @@ import (
 )
 
 type TimerWheel struct {
-	state         int
 	tickDuration  time.Duration
 	roundDuration time.Duration
 	wheelCount    int
@@ -63,21 +62,18 @@ func NewTimerWheelWithTick(tick time.Duration) *TimerWheel {
 func (t *TimerWheel) Start() {
 	t.tick = time.NewTicker(t.tickDuration)
 	go func() {
-		for {
-			select {
-			case <-t.tick.C:
-				t.lock.Lock()
-				t.wheelCursor++
-				if t.wheelCursor == t.wheelCount {
-					t.wheelCursor = 0
-				}
-
-				iterator := t.wheel[t.wheelCursor]
-				tasks := t.fetchExpiredTimeouts(iterator)
-				t.lock.Unlock()
-
-				t.notifyExpiredTimeOut(tasks)
+		for range t.tick.C {
+			t.lock.Lock()
+			t.wheelCursor++
+			if t.wheelCursor == t.wheelCount {
+				t.wheelCursor = 0
 			}
+
+			iterator := t.wheel[t.wheelCursor]
+			tasks := t.fetchExpiredTimeouts(iterator)
+			t.lock.Unlock()
+
+			t.notifyExpiredTimeOut(tasks)
 		}
 	}()
 }
@@ -112,18 +108,17 @@ func (t *TimerWheel) AddTask(task TimerTask, delay time.Duration) (string, error
 	return tid, err
 }
 
-func (t *TimerWheel) RemoveTask(taskId string) error {
+func (t *TimerWheel) RemoveTask(taskId string) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
 	for _, it := range t.wheel {
-		for k, _ := range it.items {
+		for k := range it.items {
 			if taskId == k {
 				delete(it.items, k)
 			}
 		}
 	}
-	return nil
 }
 
 func (t *TimerWheel) scheduleTimeOut(timeOut *WheelTimeOut) (string, error) {
@@ -136,8 +131,8 @@ func (t *TimerWheel) scheduleTimeOut(timeOut *WheelTimeOut) (string, error) {
 
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	stopIndex := t.wheelCursor + int(relativeIndex)	// real slot index from current slot index
-	if stopIndex >= t.wheelCount {					// wrap around
+	stopIndex := t.wheelCursor + int(relativeIndex) // real slot index from current slot index
+	if stopIndex >= t.wheelCount {                  // wrap around
 		stopIndex = stopIndex - t.wheelCount
 	}
 
