@@ -11,7 +11,7 @@ require (
 	github.com/docker/docker v27.1.1+incompatible
 	github.com/google/uuid v1.6.0
 	github.com/jedib0t/go-pretty/v6 v6.4.6
-	github.com/neuvector/neuvector v0.0.0-20241123172959-79a487821a56
+	github.com/neuvector/neuvector v0.0.0-20241127074625-915f6caaed4e
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/sirupsen/logrus v1.9.3
 	google.golang.org/grpc v1.62.1
