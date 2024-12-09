@@ -67,16 +67,16 @@ type dbSpace struct {
 
 var DBS dbSpace = dbSpace{
 	Buffers: [DBMax]dbBuffer{
-		DBUbuntu:  dbBuffer{Name: "ubuntu"},
-		DBDebian:  dbBuffer{Name: "debian"},
-		DBCentos:  dbBuffer{Name: "centos"},
-		DBAlpine:  dbBuffer{Name: "alpine"},
-		DBAmazon:  dbBuffer{Name: "amazon"},
-		DBOracle:  dbBuffer{Name: "oracle"},
-		DBMariner: dbBuffer{Name: "mariner"},
-		DBPhoton:  dbBuffer{Name: "photon"},
-		DBSuse:    dbBuffer{Name: "suse"},
-		DBRocky:   dbBuffer{Name: "rocky"},
+		DBUbuntu:  {Name: "ubuntu"},
+		DBDebian:  {Name: "debian"},
+		DBCentos:  {Name: "centos"},
+		DBAlpine:  {Name: "alpine"},
+		DBAmazon:  {Name: "amazon"},
+		DBOracle:  {Name: "oracle"},
+		DBMariner: {Name: "mariner"},
+		DBPhoton:  {Name: "photon"},
+		DBSuse:    {Name: "suse"},
+		DBRocky:   {Name: "rocky"},
 	},
 }
 
@@ -492,7 +492,7 @@ func LoadAppVulsTb(path string) (map[string][]AppModuleVul, error) {
 	// org.apache.logging.log4j.log4j-core: for backward compatibility
 	// log4j-core: for jar file without pom.xml. Prefix jar: to avoid collision
 	var mns []string
-	for mn, _ := range vul {
+	for mn := range vul {
 		if colon := strings.LastIndex(mn, ":"); colon > 0 {
 			mns = append(mns, mn)
 		}

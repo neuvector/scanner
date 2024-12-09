@@ -289,7 +289,7 @@ func (lc *ImageLayerCacher) pruneRecordCache(name string, cacher *CacherData, ke
 
 	// exclude current cached layers, pick 8-16 victims
 	var keys []string
-	for key, _ := range cacher.CacheRecordMap {
+	for key := range cacher.CacheRecordMap {
 		if keepers.Contains(key) {
 			continue
 		}

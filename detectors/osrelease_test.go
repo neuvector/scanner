@@ -16,7 +16,7 @@ CPE_NAME="cpe:2.3:o:amazon:amazon_linux:2"
 HOME_URL="https://amazonlinux.com/"`
 
 	data := map[string]*FeatureFile{
-		"etc/os-release": &FeatureFile{Data: []byte(osr)},
+		"etc/os-release": {Data: []byte(osr)},
 	}
 
 	ns := detectOSRelease(data)

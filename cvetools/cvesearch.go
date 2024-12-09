@@ -478,7 +478,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 			// remove the opaque directories/files from lower layers
 			for _, dir := range removed[layers[i]] {
 				// log.WithFields(log.Fields{"dir": dir, "layerID": layers[i]}).Debug("Remove")
-				for fpath, _ := range fileMap {
+				for fpath := range fileMap {
 					if strings.HasPrefix(fpath, dir) {
 						delete(fileMap, fpath)
 					}
@@ -553,7 +553,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 		isBase := baseLayers.Contains(l)
 		if lf, ok := layerFiles[l]; ok {
 			var hasRpmPackages bool
-			for filename, _ := range lf.Pkgs {
+			for filename := range lf.Pkgs {
 				if scan.RPMPkgFiles.Contains(filename) {
 					hasRpmPackages = true
 					break
@@ -1309,7 +1309,7 @@ func makeFeatureMap(vss []common.VulShort, namespace string) map[string][]common
 				Namespace: v.Namespace,
 				Fixin: []common.FeaShort{
 					// make a copy instead of reference
-					common.FeaShort{Name: ft.Name, Version: ft.Version, MinVer: ft.MinVer},
+					{Name: ft.Name, Version: ft.Version, MinVer: ft.MinVer},
 				},
 				CPEs: v.CPEs,
 			}

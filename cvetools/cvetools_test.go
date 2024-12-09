@@ -15,18 +15,18 @@ func TestSelectDB(t *testing.T) {
 	}
 
 	tests := map[string]result{
-		"alpine:3.4.6":       result{"alpine:3.4", common.DBAlpine},
-		"rhel:8.3":           result{"centos:8", common.DBCentos},
-		"mariner:1.0":        result{"mariner:1.0", common.DBMariner},
-		"opensuse-leap:15.2": result{"sles:l15.2", common.DBSuse},
-		"ol:7.8.2":           result{"oracle:7", common.DBOracle},
-		"ubuntu:7.1":         result{"ubuntu:7.1", common.DBUbuntu},
-		"debian:3.1":         result{"debian:3.1", common.DBDebian},
-		"server:5.4":         result{"centos:5", common.DBCentos},
-		"centos:5.4":         result{"centos:5", common.DBCentos},
-		"amzn:1.8":           result{"amzn:1", common.DBAmazon},
-		"sles:2.7":           result{"sles:2.7", common.DBSuse},
-		"opensuse-leap:2.7":  result{"sles:l2.7", common.DBSuse},
+		"alpine:3.4.6":       {"alpine:3.4", common.DBAlpine},
+		"rhel:8.3":           {"centos:8", common.DBCentos},
+		"mariner:1.0":        {"mariner:1.0", common.DBMariner},
+		"opensuse-leap:15.2": {"sles:l15.2", common.DBSuse},
+		"ol:7.8.2":           {"oracle:7", common.DBOracle},
+		"ubuntu:7.1":         {"ubuntu:7.1", common.DBUbuntu},
+		"debian:3.1":         {"debian:3.1", common.DBDebian},
+		"server:5.4":         {"centos:5", common.DBCentos},
+		"centos:5.4":         {"centos:5", common.DBCentos},
+		"amzn:1.8":           {"amzn:1", common.DBAmazon},
+		"sles:2.7":           {"sles:2.7", common.DBSuse},
+		"opensuse-leap:2.7":  {"sles:l2.7", common.DBSuse},
 	}
 
 	for os, r := range tests {
@@ -85,11 +85,11 @@ func TestEpochComparison(t *testing.T) {
 	nsWithEpoch := "rhel:8"
 	verString := "0:1.5"
 	shortVulMap := map[string][]common.VulShort{
-		"rhel:8:test": []common.VulShort{common.VulShort{
+		"rhel:8:test": {{
 			Name:      "CVE-1",
 			Namespace: "rhel:8",
 			Fixin: []common.FeaShort{
-				common.FeaShort{
+				{
 					Name:    "test",
 					Version: "1:1.0",
 					MinVer:  "",
@@ -98,11 +98,11 @@ func TestEpochComparison(t *testing.T) {
 			CPEs: []string{},
 		},
 		},
-		"amzn:2023:test": []common.VulShort{common.VulShort{
+		"amzn:2023:test": {{
 			Name:      "CVE-1",
 			Namespace: "amzn:2023",
 			Fixin: []common.FeaShort{
-				common.FeaShort{
+				{
 					Name:    "test",
 					Version: "1:1.0",
 					MinVer:  "",
