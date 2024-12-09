@@ -703,7 +703,7 @@ func collectLayerRawRecord(imgPath string, downloads []string) (map[string][]sha
 		lmap := make(map[string]string)
 		if _, rFiles, err := collectImageFileMap(fpath, lmap); err == nil {
 			files := make([]string, 0)
-			for f, _ := range lmap {
+			for f := range lmap {
 				files = append(files, f)
 			}
 			fmap[id] = files

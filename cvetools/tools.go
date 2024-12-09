@@ -85,7 +85,7 @@ func collectImageFileMap(rootPath string, fmap map[string]string) (int, []string
 
 	// (1) remove the opaque directories from lower layers
 	for _, dir := range opqDirs {
-		for path, _ := range fmap {
+		for path := range fmap {
 			if strings.HasPrefix(path, dir) {
 				// log.WithFields(log.Fields{"path": path, "dir": dir}).Info("Remove")
 				delete(fmap, path)
