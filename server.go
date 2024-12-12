@@ -413,7 +413,7 @@ func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegister
 		return errors.New("Failed to connect to controller")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*180)
 	defer cancel()
 
 	caps, err := client.GetCaps(ctx, &share.RPCVoid{})
