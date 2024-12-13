@@ -80,7 +80,13 @@ jobs:
         registry: ${{ env.PRIME_REGISTRY }}
         username: ${{ env.PRIME_REGISTRY_USERNAME }}
         password: ${{ env.PRIME_REGISTRY_PASSWORD }}
+    - name: Check if we should tag v6 scanner
+      run: |
+        if [[ ${{ github.event.ref }} =~ ^v[0-9]+\.[0-9]+$ ]];then
+          echo "UPDATE_MUTABLE_TAG=True" >> $GITHUB_ENV
+        fi
     - name: Tag v6 scanner
+      if: env.UPDATE_MUTABLE_TAG == 'True'
       run: |
         docker buildx imagetools create --tag ${PRIME_REGISTRY}/rancher/neuvector-scanner:6 ${PRIME_REGISTRY}/rancher/neuvector-scanner:${TAG}
         docker buildx imagetools create --tag docker.io/${{ github.repository_owner }}/scanner:6 docker.io/${{ github.repository_owner }}/scanner:${TAG}
