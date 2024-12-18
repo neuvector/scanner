@@ -215,6 +215,7 @@ func main() {
 	noTask := flag.Bool("no_task", false, "Not using scanner task")
 	verbose := flag.Bool("x", false, "more debug")
 	tlsVerification := flag.Bool("enable-tls-verification", false, "enable tls verification")
+	proxyUrl := flag.String("proxy_url", "", "A URL to the proxy to use during on demand scanning")
 
 	output := flag.String("o", "", "Output CVEDB in json format, specify the output file")
 	show := flag.String("show", "", "Standalone Mode: Stdout print options, cmd,module")
@@ -421,6 +422,8 @@ func main() {
 				BaseImage:   *baseImage,
 			}
 		}
+
+		req.Proxy = *proxyUrl
 
 		result := scanOnDemand(req, dbData, *show, *capCritical)
 
