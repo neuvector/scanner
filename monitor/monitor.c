@@ -40,6 +40,7 @@
 #define ENV_SCANNER_CTRL_PASS          "SCANNER_CTRL_API_PASSWORD"
 #define ENV_SCANNER_TLS_VERIFICATION   "SCANNER_STANDALONE_TLS_VERIFICATION"
 #define ENV_SCANNER_DEBUG_MODE         "SCANNER_DEBUG_MODE"
+#define ENV_SCANNER_PROXY_URL          "PROXY_URL"
 
 #define ENV_SCANNER_CACHE_MAX   "MAX_CACHE_RECORD_MB"
 #define ENV_CAP_CRITICAL        "CAP_CRITICAL"
@@ -134,7 +135,7 @@ static pid_t fork_exec(int i)
     pid_t pid;
     char *args[PROC_ARGS_MAX], *join, *adv, *url;
     char *join_port, *adv_port;
-    char *license, *registry, *repository, *tag, *user, *pass, *base, *api_user, *api_pass, *enable;
+    char *license, *registry, *repository, *tag, *user, *pass, *base, *api_user, *api_pass, *enable, *proxy_url;
     char *on_demand, *cache_record_max;
     int a;
 
@@ -254,6 +255,10 @@ static pid_t fork_exec(int i)
         }
         if ((api_pass = getenv(ENV_SCANNER_TLS_VERIFICATION)) != NULL) {
             args[a ++] = "--enable-tls-verification";
+        }
+        if ((proxy_url = getenv(ENV_SCANNER_PROXY_URL)) != NULL) {
+            args[a ++] = "--proxy_url";
+            args[a ++] = proxy_url;
         }
         args[a] = NULL;
         break;
