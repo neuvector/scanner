@@ -90,4 +90,5 @@ jobs:
       if: env.UPDATE_MUTABLE_TAG == 'True'
       run: |
         docker buildx imagetools create --tag ${PRIME_REGISTRY}/rancher/neuvector-scanner:6 ${PRIME_REGISTRY}/rancher/neuvector-scanner:${TAG}
+        docker buildx imagetools create --tag docker.io/rancher/neuvector-scanner:6 docker.io/rancher/neuvector-scanner:${TAG}
         docker buildx imagetools create --tag docker.io/${{ github.repository_owner }}/scanner:6 docker.io/${{ github.repository_owner }}/scanner:${TAG}
