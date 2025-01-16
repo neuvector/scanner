@@ -142,9 +142,7 @@ func (cv *ScanTools) ScanImageData(data *share.ScanData) (*share.ScanResult, err
 		Secrets:         &share.ScanSecretResult{},
 	}
 
-	pkgs, err := utils.SelectivelyExtractArchive(bytes.NewReader(data.Buffer), func(filename string) bool {
-		return true
-	}, maxFileSize)
+	pkgs, err := utils.ExtractAllArchiveData(bytes.NewReader(data.Buffer), maxFileSize)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("read file error")
 		return result, err
