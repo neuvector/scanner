@@ -7246,6 +7246,10 @@ definitions:
     required:
       - groups
     properties:
+      use_name_referral:
+        type: boolean
+        example: false
+        description: Do not export groups' criteria. Instead, refer to NvGroupDefinition CRs for all groups involved in the export.
       groups:
         type: array
         items:
@@ -7646,6 +7650,8 @@ definitions:
       - last_modified_timestamp
       - cfg_type
       - priority
+      - match_counter
+      - last_match_timestamp
     properties:
       id:
         type: integer
@@ -7695,6 +7701,14 @@ definitions:
         type: integer
         format: uint32
         example: 0
+      match_counter:
+        type: integer
+        format: uint64
+        example: 699
+      last_match_timestamp:
+        type: integer
+        format: int64
+        example: 1736811451
   RESTPolicyRuleActionData:
     type: object
     properties:

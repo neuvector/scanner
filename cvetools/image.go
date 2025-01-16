@@ -15,10 +15,10 @@ import (
 	"time"
 
 	"github.com/docker/docker/errdefs"
-	"github.com/opencontainers/go-digest"
 	goDigest "github.com/opencontainers/go-digest"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/coreos/clair/pkg/tarutil"
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/container"
 	"github.com/neuvector/neuvector/share/scan"
@@ -185,7 +185,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 
 	log.WithFields(log.Fields{"imageName": imageName, "downloads": downloads}).Debug()
 
-	layerModules, errCode := getImageLayerIterate(ctx, downloads, nil, false, imgPath,
+	layerModules, errCode := getImageLayerIterate(ctx, downloads, nil, imgPath,
 		func(ctx context.Context, layer string) (interface{}, int64, error) {
 			blob := blobs[layer]
 			file, err := os.Open(filepath.Join(repoFolder, blob))
@@ -334,13 +334,11 @@ func getImageLayers(tmpDir string, imageTar string) ([]string, map[string]string
 	defer reader.Close()
 
 	//get the manifest from the image tar
-	files, _ := utils.SelectivelyExtractArchive(bufio.NewReader(reader), func(filename string) bool {
-		if filename == manifestJson || strings.HasSuffix(filename, layerJson) || filename == ociLayout {
-			return true
-		} else {
-			return false
-		}
-	}, maxFileSize)
+	filenames := []string{manifestJson, layerJson, ociLayout}
+	files, err := tarutil.ExtractFiles(bufio.NewReader(reader), filenames)
+	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("Extract files error")
+	}
 
 	// https://github.com/opencontainers/image-spec/blob/main/image-layout.md
 	// Optional: Following the index.json to find a manifest
@@ -348,13 +346,13 @@ func getImageLayers(tmpDir string, imageTar string) ([]string, map[string]string
 	log.WithFields(log.Fields{"bOciLayout": bOciLayout}).Debug()
 
 	if dat, ok := files[manifestJson]; !ok {
-		return nil, nil, fmt.Errorf("Can not locate the manifest.json in image")
+		return nil, nil, fmt.Errorf("can not locate the manifest.json in image")
 	} else {
 		if err = json.Unmarshal(dat, &image); err != nil {
 			return nil, nil, err
 		}
 		if len(image) == 0 {
-			return nil, nil, fmt.Errorf("Can not extract layer from the image")
+			return nil, nil, fmt.Errorf("can not extract layer from the image")
 		}
 	}
 
@@ -424,7 +422,7 @@ func getApkPackages(fullpath string) ([]byte, error) {
 }
 
 func getImageLayerIterate(
-	ctx context.Context, layers []string, sizes map[string]int64, schemaV1 bool, imgPath string,
+	ctx context.Context, layers []string, sizes map[string]int64, imgPath string,
 	layerReader func(ctx context.Context, layer string) (interface{}, int64, error),
 ) (map[string]*LayerFiles, share.ScanErrorCode) { // layer -> filename -> file content
 	lfs := make(map[string]*LayerFiles)
@@ -746,7 +744,7 @@ func DownloadRemoteImage(ctx context.Context, rc *scan.RegClient, name, imgPath 
 
 	log.WithFields(log.Fields{"downloads": downloads}).Debug()
 	// scheme is always set to v1 because layers of v2 image have been reversed in GetImageInfo.
-	layerModules, err := getImageLayerIterate(ctx, downloads, sizes, true, imgPath, func(ctx context.Context, layer string) (interface{}, int64, error) {
+	layerModules, err := getImageLayerIterate(ctx, downloads, sizes, imgPath, func(ctx context.Context, layer string) (interface{}, int64, error) {
 		return downloadRemoteLayer(ctx, rc, name, goDigest.Digest(layer))
 	})
 
@@ -785,7 +783,7 @@ func DownloadRemoteImage(ctx context.Context, rc *scan.RegClient, name, imgPath 
 	return cacheLayers, err
 }
 
-func downloadRemoteLayer(ctx context.Context, rc *scan.RegClient, repository string, digest digest.Digest) (io.ReadCloser, int64, error) {
+func downloadRemoteLayer(ctx context.Context, rc *scan.RegClient, repository string, digest goDigest.Digest) (io.ReadCloser, int64, error) {
 	url := layerURL("/v2/%s/blobs/%s", rc.URL, repository, digest)
 	log.WithFields(log.Fields{"digest": digest}).Debug()
 

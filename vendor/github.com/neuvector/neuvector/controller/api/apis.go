@@ -534,6 +534,7 @@ type RESTListData struct {
 // NV future: 	     process profile mode value priority is "profile_mode" -> "policy_mode"
 // NV future:           file profile mode value priority is "file_profile_mode" -> "profile_mode" -> "policy_mode"
 type RESTGroupExport struct {
+	UseNameReferral     bool                     `json:"use_name_referral"` // whether to use referranl for exported groups
 	Groups              []string                 `json:"groups"`
 	PolicyMode          string                   `json:"policy_mode,omitempty"`
 	ProfileMode         string                   `json:"profile_mode,omitempty"` // for both process/file profiles(if specified) since 5.4.1
@@ -1261,14 +1262,15 @@ type RESTGroupConfig struct {
 }
 
 type RESTCrdGroupConfig struct {
-	OriginalName string               `json:"original_name"`
-	Name         string               `json:"name"`
-	Comment      string               `json:"comment"`
-	Criteria     *[]RESTCriteriaEntry `json:"criteria,omitempty"`
-	MonMetric    *bool                `json:"mon_metric,omitempty"`
-	GrpSessCur   *uint32              `json:"grp_sess_cur,omitempty"`
-	GrpSessRate  *uint32              `json:"grp_sess_rate,omitempty"`
-	GrpBandWidth *uint32              `json:"grp_band_width,omitempty"`
+	OriginalName string              `json:"original_name"`
+	Name         string              `json:"name"`
+	Comment      string              `json:"comment"`
+	NameReferral bool                `json:"name_referral,omitempty"`
+	Criteria     []RESTCriteriaEntry `json:"criteria,omitempty"`
+	MonMetric    *bool               `json:"mon_metric,omitempty"`
+	GrpSessCur   *uint32             `json:"grp_sess_cur,omitempty"`
+	GrpSessRate  *uint32             `json:"grp_sess_rate,omitempty"`
+	GrpBandWidth *uint32             `json:"grp_band_width,omitempty"`
 }
 
 type RESTGroupsData struct {
@@ -1314,6 +1316,8 @@ type RESTPolicyRule struct {
 	LastModTS    int64    `json:"last_modified_timestamp"`
 	CfgType      string   `json:"cfg_type"` // CfgTypeLearned / CfgTypeUserCreated / CfgTypeGround / CfgTypeFederal (see above)
 	Priority     uint32   `json:"priority"`
+	MatchCntr    uint64   `json:"match_counter"`
+	LastMatchTS  int64    `json:"last_match_timestamp"`
 }
 
 type RESTPolicyRuleData struct {
@@ -2442,6 +2446,7 @@ type RESTVulnerabilityAssetV2 struct {
 	VectorsV3   string                              `json:"vectors_v3"`
 	PublishedTS int64                               `json:"published_timestamp"`
 	LastModTS   int64                               `json:"last_modified_timestamp"`
+	FeedRating  string                              `json:"feed_rating"`
 
 	Workloads   []*RESTWorkloadAsset `json:"workloads,omitempty"`
 	WorkloadIDs []string             `json:"-"`
@@ -3036,6 +3041,7 @@ type RESTProcessProfileConfigData struct {
 
 const MinDlpRuleID = 20000
 const MinDlpPredefinedRuleID = 30000
+const MinDlpFedPredefinedRuleID = 35000
 const MaxDlpPredefinedRuleID = 40000
 
 type RESTDlpCriteriaEntry struct {
@@ -3078,7 +3084,7 @@ type RESTDlpGroup struct {
 	Name    string            `json:"name"`
 	Status  bool              `json:"status"`
 	Sensors []*RESTDlpSetting `json:"sensors"`
-	CfgType string            `json:"cfg_type"` // CfgTypeUserCreated / CfgTypeGround
+	CfgType string            `json:"cfg_type"` // CfgTypeUserCreated / CfgTypeGround / CfgTypeFederal
 }
 
 type RESTDlpGroupData struct {
@@ -3113,7 +3119,7 @@ type RESTDlpSensor struct {
 	RuleList  []*RESTDlpRule `json:"rules"`
 	Comment   string         `json:"comment"`
 	Predefine bool           `json:"predefine"`
-	CfgType   string         `json:"cfg_type"` // CfgTypeUserCreated / CfgTypeGround
+	CfgType   string         `json:"cfg_type"` // CfgTypeUserCreated / CfgTypeGround / CfgTypeFederal
 }
 
 type RESTDlpSensorData struct {
@@ -3130,6 +3136,7 @@ type RESTDlpSensorConfig struct {
 	RuleDelList *[]RESTDlpRule `json:"delete,omitempty"` //delete list used by CLI
 	Rules       *[]RESTDlpRule `json:"rules,omitempty"`  //replace list used by GUI
 	Comment     *string        `json:"comment,omitempty"`
+	CfgType     string         `json:"cfg_type"` //CfgTypeUserCreated / CfgTypeGround / CfgTypeFederal
 }
 
 type RESTDlpSensorConfigData struct {
@@ -3241,6 +3248,7 @@ type RESTWafSensorConfig struct {
 	RuleDelList *[]RESTWafRule `json:"delete,omitempty"` //delete list used by CLI
 	Rules       *[]RESTWafRule `json:"rules,omitempty"`  //replace list used by GUI
 	Comment     *string        `json:"comment,omitempty"`
+	CfgType     string         `json:"cfg_type"` //CfgTypeUserCreated / CfgTypeGround / CfgTypeFederal
 }
 
 type RESTWafSensorConfigData struct {
