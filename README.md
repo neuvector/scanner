@@ -23,7 +23,7 @@ Or just [click here](//github.com/neuvector/neuvector/issues/new?title=%5BSCAN%5
 
 # License
 
-Copyright © 2016-2022 [NeuVector Inc](https://neuvector.com). All Rights Reserved
+Copyright © 2016-2025 [SUSE](https://www.suse.com/products/rancher/security/). All Rights Reserved
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
