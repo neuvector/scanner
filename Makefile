@@ -87,7 +87,7 @@ BUILD_ACTION = --load
 ARCH := $(shell uname -p)
 
 # Keep this as the first
-slsa_all: test build copy_scan_slsa
+slsa_all: test build copy_scan_slsa gen_license
 
 build:
 	go build -ldflags='-s -w' -buildvcs=false
@@ -99,6 +99,10 @@ test:
 	if [ "$(ARCH)" = "x86_64" ]; then go test ./...;fi
 
 STAGE_DIR = stage
+
+gen_license:
+	mkdir -p ${STAGE_DIR}/licenses
+	cd vendor && ../genlic.sh > ../${STAGE_DIR}/licenses/neuvector-license.txt
 
 copy_scan_slsa:
 	mkdir -p ${STAGE_DIR}/usr/local/bin/

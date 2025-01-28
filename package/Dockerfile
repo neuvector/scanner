@@ -19,7 +19,7 @@ COPY detectors/ /src/detectors
 COPY monitor/ /src/monitor
 COPY task/ /src/task
 COPY vendor/ /src/vendor
-COPY Makefile go.mod go.sum *.go /src/
+COPY Makefile go.mod go.sum *.go genlic.sh /src/
 
 WORKDIR /src
 RUN git clone https://github.com/neuvector/sigstore-interface --single-branch sigstore-interface && cd sigstore-interface && git checkout ${SIGSTORE_VERSION} && make
