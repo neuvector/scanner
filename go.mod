@@ -5,7 +5,7 @@ go 1.22
 replace k8s.io/cri-api => k8s.io/cri-api v0.25.16
 
 require (
-	github.com/coreos/clair v2.1.0+incompatible
+	github.com/coreos/clair v2.1.8+incompatible
 	github.com/docker/docker v27.1.1+incompatible
 	github.com/google/uuid v1.6.0
 	github.com/jedib0t/go-pretty/v6 v6.4.6
