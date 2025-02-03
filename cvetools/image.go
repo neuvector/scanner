@@ -18,13 +18,13 @@ import (
 	goDigest "github.com/opencontainers/go-digest"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/coreos/clair/pkg/tarutil"
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/container"
 	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/scan/registry"
 	"github.com/neuvector/neuvector/share/scan/secrets"
 	"github.com/neuvector/neuvector/share/utils"
+	"github.com/quay/clair/v2/pkg/tarutil"
 )
 
 const (

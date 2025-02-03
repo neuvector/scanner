@@ -1116,6 +1116,7 @@ type RESTConversationReportEntry struct {
 	CIP          string `json:"client_ip,omitempty"`
 	SIP          string `json:"server_ip,omitempty"`
 	FQDN         string `json:"fqdn,omitempty"`
+	LastSeenAt   int64  `json:"last_seen_at"`
 }
 
 type RESTConversationReport struct {

@@ -14242,6 +14242,9 @@ definitions:
         type: string
       fqdn:
         type: string
+      last_seen_at:
+        type: integer
+        format: int64
   RESTSecurityScores:
     type: object
     properties:
