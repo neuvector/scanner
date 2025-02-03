@@ -5,12 +5,12 @@ go 1.22
 replace k8s.io/cri-api => k8s.io/cri-api v0.25.16
 
 require (
-	github.com/coreos/clair v2.1.0+incompatible
 	github.com/docker/docker v27.5.1+incompatible
 	github.com/google/uuid v1.6.0
 	github.com/jedib0t/go-pretty/v6 v6.4.6
-	github.com/neuvector/neuvector v0.0.0-20250122185722-966f408002e0
+	github.com/neuvector/neuvector v0.0.0-20250131213859-0656f37d29ed
 	github.com/opencontainers/go-digest v1.0.0
+	github.com/quay/clair/v2 v2.1.8
 	github.com/sirupsen/logrus v1.9.3
 	google.golang.org/grpc v1.69.2
 )
@@ -115,7 +115,7 @@ require (
 	k8s.io/cri-api v0.29.3 // indirect
 	k8s.io/klog/v2 v2.110.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
-	k8s.io/utils v0.0.0-20231127182322-b307cd553661 // indirect
+	k8s.io/utils v0.0.0-20241210054802-24370beab758 // indirect
 	modernc.org/libc v1.22.2 // indirect
 	modernc.org/mathutil v1.5.0 // indirect
 	modernc.org/memory v1.5.0 // indirect
