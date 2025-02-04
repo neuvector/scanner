@@ -371,7 +371,7 @@ github.com/neuvector/go-rpmdb/pkg/bdb
 github.com/neuvector/go-rpmdb/pkg/db
 github.com/neuvector/go-rpmdb/pkg/ndb
 github.com/neuvector/go-rpmdb/pkg/sqlite3
-# github.com/neuvector/neuvector v0.0.0-20250131213859-0656f37d29ed
+# github.com/neuvector/neuvector v0.0.0-20250204034627-a868ddae5754
 ## explicit; go 1.22
 github.com/neuvector/neuvector/controller/api
 github.com/neuvector/neuvector/share
@@ -434,7 +434,7 @@ github.com/streadway/simpleuuid
 ## explicit; go 1.12
 github.com/vishvananda/netlink
 github.com/vishvananda/netlink/nl
-# github.com/vishvananda/netns v0.0.4
+# github.com/vishvananda/netns v0.0.5
 ## explicit; go 1.17
 github.com/vishvananda/netns
 # go.opencensus.io v0.24.0
