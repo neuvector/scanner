@@ -8,7 +8,7 @@ require (
 	github.com/docker/docker v27.5.1+incompatible
 	github.com/google/uuid v1.6.0
 	github.com/jedib0t/go-pretty/v6 v6.4.6
-	github.com/neuvector/neuvector v0.0.0-20250131213859-0656f37d29ed
+	github.com/neuvector/neuvector v0.0.0-20250204034627-a868ddae5754
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/quay/clair/v2 v2.1.8
 	github.com/sirupsen/logrus v1.9.3
@@ -87,7 +87,7 @@ require (
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/streadway/simpleuuid v0.0.0-20130420165545-6617b501e485 // indirect
 	github.com/vishvananda/netlink v1.2.1-beta.2 // indirect
-	github.com/vishvananda/netns v0.0.4 // indirect
+	github.com/vishvananda/netns v0.0.5 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.45.0 // indirect
 	go.opentelemetry.io/otel v1.31.0 // indirect

@@ -237,8 +237,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/neuvector/go-rpmdb v0.0.0-20240605184921-0db4de14c27a h1:lmvuJ3uQVRk14exDRLu1Oq78iz8dLE7CJo+QodD+tos=
 github.com/neuvector/go-rpmdb v0.0.0-20240605184921-0db4de14c27a/go.mod h1:tQW+vmxLXFPfI1HuRjoiIxOh8A7JudpfWl8xmezEGSs=
-github.com/neuvector/neuvector v0.0.0-20250131213859-0656f37d29ed h1:d7bLVlth3gb6xjAB+U9a7n6vwAtAsFhyKkPO1cSU/b0=
-github.com/neuvector/neuvector v0.0.0-20250131213859-0656f37d29ed/go.mod h1:R850p5WpHv9A0K6iIjcUYgt3MJRKSwwGX2b6IiAAAV8=
+github.com/neuvector/neuvector v0.0.0-20250204034627-a868ddae5754 h1:2LXnyeVj5lofo85ywl/YYm7NJ3DlwsDPonajAroa9XM=
+github.com/neuvector/neuvector v0.0.0-20250204034627-a868ddae5754/go.mod h1:CmWYxZB8RgSQxHZM+L05KImLwOzI6g61TmCGfjW/6K4=
 github.com/onsi/ginkgo/v2 v2.13.0 h1:0jY9lJquiL8fcf3M4LAXN5aMlS/b2BV86HFFPCPMgE4=
 github.com/onsi/ginkgo/v2 v2.13.0/go.mod h1:TE309ZR8s5FsKKpuB1YAQYBzCaAfUgatB/xlT/ETL/o=
 github.com/onsi/gomega v1.29.0 h1:KIA/t2t5UBzoirT4H9tsML45GEbo3ouUnBHsCfD2tVg=
@@ -307,8 +307,8 @@ github.com/tylerb/graceful v1.2.15/go.mod h1:LPYTbOYmUTdabwRt0TGhLllQ0MUNbs0Y5q1
 github.com/vishvananda/netlink v1.2.1-beta.2 h1:Llsql0lnQEbHj0I1OuKyp8otXp0r3q0mPkuhwHfStVs=
 github.com/vishvananda/netlink v1.2.1-beta.2/go.mod h1:twkDnbuQxJYemMlGd4JFIcuhgX83tXhKS2B/PRMpOho=
 github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae/go.mod h1:DD4vA1DwXk04H54A1oHXtwZmA0grkVMdPxx/VGLCah0=
-github.com/vishvananda/netns v0.0.4 h1:Oeaw1EM2JMxD51g9uhtC0D7erkIjgmj8+JZc26m1YX8=
-github.com/vishvananda/netns v0.0.4/go.mod h1:SpkAiCQRtJ6TvvxPnOSyH3BMl6unz3xZlaprSwhNNJM=
+github.com/vishvananda/netns v0.0.5 h1:DfiHV+j8bA32MFM7bfEunvT8IAqQ/NzSJHtcmW5zdEY=
+github.com/vishvananda/netns v0.0.5/go.mod h1:SpkAiCQRtJ6TvvxPnOSyH3BMl6unz3xZlaprSwhNNJM=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 go.opencensus.io v0.24.0 h1:y73uSU6J157QMP2kn2r30vwW1A2W2WFwSCGnAVxeaD0=
