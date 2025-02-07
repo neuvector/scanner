@@ -2,7 +2,7 @@ module github.com/neuvector/scanner
 
 go 1.22
 
-replace k8s.io/cri-api => k8s.io/cri-api v0.25.16
+replace k8s.io/cri-api => k8s.io/cri-api v0.27.16
 
 require (
 	github.com/docker/docker v27.5.1+incompatible
