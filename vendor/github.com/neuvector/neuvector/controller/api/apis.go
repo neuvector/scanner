@@ -69,6 +69,7 @@ const RESTErrPlatformAuthDisabled int = 50
 const RESTErrRancherUnauthorized int = 51
 const RESTErrRemoteExportFail int = 52
 const RESTErrInvalidQueryToken int = 53
+const RESTErrPollJobNotFoundError int = 54
 
 const FilterPrefix string = "f_"
 const SortPrefix string = "s_"
@@ -2244,14 +2245,24 @@ type RESTServiceBatchConfigData struct {
 }
 
 type RESTScanConfig struct {
-	AutoScan bool `json:"auto_scan"`
+	AutoScan bool `json:"auto_scan"` // Deprecated, keeps for backward compatibility
+	// New fields for auto scan, to separate from the old unified auto scan
+	EnableAutoScanWorkload *bool `json:"enable_auto_scan_workload,omitempty"`
+	EnableAutoScanHost     *bool `json:"enable_auto_scan_host,omitempty"`
 }
 
 type RESTScanConfigConfig struct {
-	AutoScan *bool `json:"auto_scan"`
+	AutoScan *bool `json:"auto_scan"` // Deprecated, keeps for backward compatibility
+	// New fields for auto scan, to separate from the old unified auto scan
+	EnableAutoScanWorkload *bool `json:"enable_auto_scan_workload"`
+	EnableAutoScanHost     *bool `json:"enable_auto_scan_host"`
 }
 
 type RESTScanConfigData struct {
+	Config *RESTScanConfigConfig `json:"config"`
+}
+
+type RESTScanConfigResp struct {
 	Config *RESTScanConfig `json:"config"`
 }
 
