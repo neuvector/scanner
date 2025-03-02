@@ -7,7 +7,7 @@ replace k8s.io/cri-api => k8s.io/cri-api v0.25.16
 require (
 	github.com/docker/docker v27.5.1+incompatible
 	github.com/google/uuid v1.6.0
-	github.com/jedib0t/go-pretty/v6 v6.6.6
+	github.com/jedib0t/go-pretty/v6 v6.6.7
 	github.com/neuvector/neuvector v0.0.0-20250204034627-a868ddae5754
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/quay/clair/v2 v2.1.8
