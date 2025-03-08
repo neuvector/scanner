@@ -5,7 +5,7 @@ swagger: '2.0'
 ################################################################################
 info:
   description: Secure Docker and Kubernetes based container deployments with the NeuVector run-time security solution.
-  version: '5.4.2'
+  version: '5.4.3'
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
@@ -2353,7 +2353,7 @@ paths:
     get:
       tags:
         - Scan
-      summary: Get scan configure
+      summary: Retrieve scan configuration, including global auto-scan settings and fine-grained controls for workloads and hosts.
       security:
         - ApiKeyAuth: []
         - TokenAuth: []
@@ -2363,11 +2363,11 @@ paths:
         '200':
           description: Success
           schema:
-            $ref: '#/definitions/RESTScanConfigData'
+            $ref: '#/definitions/RESTScanConfigResp'
     patch:
       tags:
         - Scan
-      summary: Update scan configure
+      summary: Auto-scan can be configured either globally or with fine-grained control for workloads and hosts. If any of the detailed control fields (enable_auto_scan_workload, enable_auto_scan_host) is explicitly provided, its value takes precedence and overrides the auto-scan setting.
       security:
         - ApiKeyAuth: []
         - TokenAuth: []
@@ -9127,6 +9127,31 @@ definitions:
       - auto_scan
     properties:
       auto_scan:
+        description: Global auto-scan setting. When true, auto-scan is adopted unless one of the detailed control flags (enable_auto_scan_workload or enable_auto_scan_host) is explicitly provided (non-nil).
+        type: boolean
+        example: false
+      enable_auto_scan_workload:
+        description: Optional detailed control for workload auto-scan. If provided (non-nil), its value is adopted.
+        type: boolean
+        example: false
+      enable_auto_scan_host:
+        description: Optional detailed control for host auto-scan. If provided (non-nil), its value is adopted.
+        type: boolean
+        example: false
+  RESTScanConfigConfig:
+    type: object
+    minProperties: 1
+    properties:
+      auto_scan:
+        description: Global auto-scan setting. When true, auto-scan is adopted unless one of the detailed control flags (enable_auto_scan_workload or enable_auto_scan_host) is explicitly provided (non-nil).
+        type: boolean
+        example: false
+      enable_auto_scan_workload:
+        description: Optional detailed control for workload auto-scan. If provided (non-nil), its value is adopted.
+        type: boolean
+        example: false
+      enable_auto_scan_host:
+        description: Optional detailed control for host auto-scan. If provided (non-nil), its value is adopted.
         type: boolean
         example: false
   RESTScanConfigData:
@@ -9135,7 +9160,14 @@ definitions:
       - config
     properties:
       config:
-        $ref: '#/definitions/RESTScanConfig'
+        $ref: '#/definitions/RESTScanConfigConfig'
+  RESTScanConfigResp:
+    type: object
+    required:
+      - config
+    properties:
+      config:
+        $ref: '#/definitions/RESTScanConfig'        
   RESTScanImageSummaryData:
     type: object
     required:
