@@ -42,11 +42,8 @@ github.com/Microsoft/hcsshim/internal/wclayer
 github.com/Microsoft/hcsshim/internal/winapi
 github.com/Microsoft/hcsshim/osversion
 github.com/Microsoft/hcsshim/pkg/ociwclayer
-# github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da
-## explicit
-github.com/armon/go-metrics
-# github.com/aws/aws-sdk-go v1.42.36
-## explicit; go 1.11
+# github.com/aws/aws-sdk-go v1.55.6
+## explicit; go 1.19
 github.com/aws/aws-sdk-go/aws/awserr
 github.com/aws/aws-sdk-go/aws/endpoints
 # github.com/codegangsta/inject v0.0.0-20150114235600-33e0aa1cb7c0
@@ -58,28 +55,9 @@ github.com/codeskyblue/go-sh
 # github.com/containerd/cgroups/v3 v3.0.2
 ## explicit; go 1.18
 github.com/containerd/cgroups/v3/cgroup1/stats
-# github.com/containerd/containerd v1.7.18
+# github.com/containerd/containerd v1.7.25
 ## explicit; go 1.21
 github.com/containerd/containerd
-github.com/containerd/containerd/api/events
-github.com/containerd/containerd/api/runtime/sandbox/v1
-github.com/containerd/containerd/api/services/containers/v1
-github.com/containerd/containerd/api/services/content/v1
-github.com/containerd/containerd/api/services/diff/v1
-github.com/containerd/containerd/api/services/events/v1
-github.com/containerd/containerd/api/services/images/v1
-github.com/containerd/containerd/api/services/introspection/v1
-github.com/containerd/containerd/api/services/leases/v1
-github.com/containerd/containerd/api/services/namespaces/v1
-github.com/containerd/containerd/api/services/sandbox/v1
-github.com/containerd/containerd/api/services/snapshots/v1
-github.com/containerd/containerd/api/services/streaming/v1
-github.com/containerd/containerd/api/services/tasks/v1
-github.com/containerd/containerd/api/services/transfer/v1
-github.com/containerd/containerd/api/services/version/v1
-github.com/containerd/containerd/api/types
-github.com/containerd/containerd/api/types/task
-github.com/containerd/containerd/api/types/transfer
 github.com/containerd/containerd/archive
 github.com/containerd/containerd/archive/compression
 github.com/containerd/containerd/archive/tarheader
@@ -117,15 +95,11 @@ github.com/containerd/containerd/pkg/transfer
 github.com/containerd/containerd/pkg/transfer/proxy
 github.com/containerd/containerd/pkg/transfer/streaming
 github.com/containerd/containerd/pkg/unpack
-github.com/containerd/containerd/pkg/userns
-github.com/containerd/containerd/platforms
 github.com/containerd/containerd/plugin
 github.com/containerd/containerd/protobuf
-github.com/containerd/containerd/protobuf/plugin
 github.com/containerd/containerd/protobuf/proto
 github.com/containerd/containerd/protobuf/types
 github.com/containerd/containerd/reference
-github.com/containerd/containerd/reference/docker
 github.com/containerd/containerd/remotes
 github.com/containerd/containerd/remotes/docker
 github.com/containerd/containerd/remotes/docker/auth
@@ -133,7 +107,6 @@ github.com/containerd/containerd/remotes/docker/schema1
 github.com/containerd/containerd/remotes/errors
 github.com/containerd/containerd/rootfs
 github.com/containerd/containerd/runtime/linux/runctypes
-github.com/containerd/containerd/runtime/v2/runc/options
 github.com/containerd/containerd/sandbox
 github.com/containerd/containerd/sandbox/proxy
 github.com/containerd/containerd/services
@@ -143,11 +116,34 @@ github.com/containerd/containerd/snapshots
 github.com/containerd/containerd/snapshots/proxy
 github.com/containerd/containerd/tracing
 github.com/containerd/containerd/version
-# github.com/containerd/continuity v0.4.2
-## explicit; go 1.19
+# github.com/containerd/containerd/api v1.8.0
+## explicit; go 1.21
+github.com/containerd/containerd/api/events
+github.com/containerd/containerd/api/runtime/sandbox/v1
+github.com/containerd/containerd/api/services/containers/v1
+github.com/containerd/containerd/api/services/content/v1
+github.com/containerd/containerd/api/services/diff/v1
+github.com/containerd/containerd/api/services/events/v1
+github.com/containerd/containerd/api/services/images/v1
+github.com/containerd/containerd/api/services/introspection/v1
+github.com/containerd/containerd/api/services/leases/v1
+github.com/containerd/containerd/api/services/namespaces/v1
+github.com/containerd/containerd/api/services/sandbox/v1
+github.com/containerd/containerd/api/services/snapshots/v1
+github.com/containerd/containerd/api/services/streaming/v1
+github.com/containerd/containerd/api/services/tasks/v1
+github.com/containerd/containerd/api/services/transfer/v1
+github.com/containerd/containerd/api/services/version/v1
+github.com/containerd/containerd/api/types
+github.com/containerd/containerd/api/types/runc/options
+github.com/containerd/containerd/api/types/task
+github.com/containerd/containerd/api/types/transfer
+# github.com/containerd/continuity v0.4.4
+## explicit; go 1.21
+github.com/containerd/continuity/devices
 github.com/containerd/continuity/fs
 github.com/containerd/continuity/sysx
-# github.com/containerd/errdefs v0.1.0
+# github.com/containerd/errdefs v0.3.0
 ## explicit; go 1.20
 github.com/containerd/errdefs
 # github.com/containerd/fifo v1.1.0
@@ -156,7 +152,10 @@ github.com/containerd/fifo
 # github.com/containerd/log v0.1.0
 ## explicit; go 1.20
 github.com/containerd/log
-# github.com/containerd/ttrpc v1.2.4
+# github.com/containerd/platforms v0.2.1
+## explicit; go 1.20
+github.com/containerd/platforms
+# github.com/containerd/ttrpc v1.2.5
 ## explicit; go 1.19
 github.com/containerd/ttrpc
 # github.com/containerd/typeurl v1.0.3-0.20220422153119-7f6e6d160d67
@@ -168,7 +167,7 @@ github.com/containerd/typeurl/v2
 # github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 ## explicit
 github.com/davecgh/go-spew/spew
-# github.com/distribution/reference v0.5.0
+# github.com/distribution/reference v0.6.0
 ## explicit; go 1.20
 github.com/distribution/reference
 # github.com/docker/distribution v2.8.3+incompatible
@@ -286,21 +285,12 @@ github.com/google/uuid
 # github.com/hashicorp/go-cleanhttp v0.5.2
 ## explicit; go 1.13
 github.com/hashicorp/go-cleanhttp
-# github.com/hashicorp/go-immutable-radix v1.0.0
-## explicit
-github.com/hashicorp/go-immutable-radix
 # github.com/hashicorp/go-rootcerts v1.0.2
 ## explicit; go 1.12
 github.com/hashicorp/go-rootcerts
-# github.com/hashicorp/go-version v1.4.0
+# github.com/hashicorp/go-version v1.7.0
 ## explicit
 github.com/hashicorp/go-version
-# github.com/hashicorp/golang-lru v0.5.4
-## explicit; go 1.12
-github.com/hashicorp/golang-lru/simplelru
-# github.com/hashicorp/serf v0.9.7
-## explicit; go 1.12
-github.com/hashicorp/serf/coordinate
 # github.com/jedib0t/go-pretty/v6 v6.6.7
 ## explicit; go 1.18
 github.com/jedib0t/go-pretty/v6/table
@@ -311,7 +301,7 @@ github.com/josharian/intern
 # github.com/json-iterator/go v1.1.12
 ## explicit; go 1.12
 github.com/json-iterator/go
-# github.com/klauspost/compress v1.16.5
+# github.com/klauspost/compress v1.16.7
 ## explicit; go 1.18
 github.com/klauspost/compress
 github.com/klauspost/compress/fse
@@ -352,9 +342,12 @@ github.com/moby/sys/sequential
 # github.com/moby/sys/signal v0.7.0
 ## explicit; go 1.16
 github.com/moby/sys/signal
-# github.com/moby/sys/user v0.1.0
+# github.com/moby/sys/user v0.3.0
 ## explicit; go 1.17
 github.com/moby/sys/user
+# github.com/moby/sys/userns v0.1.0
+## explicit; go 1.21
+github.com/moby/sys/userns
 # github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
 ## explicit
 github.com/modern-go/concurrent
@@ -371,8 +364,8 @@ github.com/neuvector/go-rpmdb/pkg/bdb
 github.com/neuvector/go-rpmdb/pkg/db
 github.com/neuvector/go-rpmdb/pkg/ndb
 github.com/neuvector/go-rpmdb/pkg/sqlite3
-# github.com/neuvector/neuvector v0.0.0-20250204034627-a868ddae5754
-## explicit; go 1.22
+# github.com/neuvector/neuvector v0.0.0-20250312183056-77ca1c33c622
+## explicit; go 1.23.0
 github.com/neuvector/neuvector/controller/api
 github.com/neuvector/neuvector/share
 github.com/neuvector/neuvector/share/cluster
@@ -404,7 +397,7 @@ github.com/opencontainers/go-digest
 github.com/opencontainers/image-spec/identity
 github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
-# github.com/opencontainers/runtime-spec v1.1.1-0.20230922153023-c0e90434df2a
+# github.com/opencontainers/runtime-spec v1.2.0
 ## explicit
 github.com/opencontainers/runtime-spec/specs-go
 # github.com/opencontainers/selinux v1.11.0
@@ -430,7 +423,7 @@ github.com/sirupsen/logrus
 # github.com/streadway/simpleuuid v0.0.0-20130420165545-6617b501e485
 ## explicit
 github.com/streadway/simpleuuid
-# github.com/vishvananda/netlink v1.2.1-beta.2
+# github.com/vishvananda/netlink v1.3.0
 ## explicit; go 1.12
 github.com/vishvananda/netlink
 github.com/vishvananda/netlink/nl
@@ -475,39 +468,40 @@ go.opentelemetry.io/otel/metric/embedded
 go.opentelemetry.io/otel/trace
 go.opentelemetry.io/otel/trace/embedded
 go.opentelemetry.io/otel/trace/noop
-# golang.org/x/crypto v0.32.0
-## explicit; go 1.20
+# golang.org/x/crypto v0.36.0
+## explicit; go 1.23.0
 golang.org/x/crypto/cryptobyte
 golang.org/x/crypto/cryptobyte/asn1
-# golang.org/x/net v0.34.0
-## explicit; go 1.18
+# golang.org/x/net v0.37.0
+## explicit; go 1.23.0
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
+golang.org/x/net/internal/httpcommon
 golang.org/x/net/internal/socks
 golang.org/x/net/internal/timeseries
 golang.org/x/net/proxy
 golang.org/x/net/trace
-# golang.org/x/oauth2 v0.25.0
-## explicit; go 1.18
+# golang.org/x/oauth2 v0.28.0
+## explicit; go 1.23.0
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
-# golang.org/x/sync v0.11.0
-## explicit; go 1.18
+# golang.org/x/sync v0.12.0
+## explicit; go 1.23.0
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.30.0
-## explicit; go 1.18
+# golang.org/x/sys v0.31.0
+## explicit; go 1.23.0
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
-# golang.org/x/term v0.29.0
-## explicit; go 1.18
+# golang.org/x/term v0.30.0
+## explicit; go 1.23.0
 golang.org/x/term
-# golang.org/x/text v0.22.0
-## explicit; go 1.18
+# golang.org/x/text v0.23.0
+## explicit; go 1.23.0
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
