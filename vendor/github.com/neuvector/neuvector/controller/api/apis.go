@@ -69,6 +69,7 @@ const RESTErrPlatformAuthDisabled int = 50
 const RESTErrRancherUnauthorized int = 51
 const RESTErrRemoteExportFail int = 52
 const RESTErrInvalidQueryToken int = 53
+const RESTErrPollJobNotFoundError int = 54
 
 const FilterPrefix string = "f_"
 const SortPrefix string = "s_"
@@ -2244,14 +2245,24 @@ type RESTServiceBatchConfigData struct {
 }
 
 type RESTScanConfig struct {
-	AutoScan bool `json:"auto_scan"`
+	AutoScan bool `json:"auto_scan"` // Deprecated, keeps for backward compatibility
+	// New fields for auto scan, to separate from the old unified auto scan
+	EnableAutoScanWorkload *bool `json:"enable_auto_scan_workload,omitempty"`
+	EnableAutoScanHost     *bool `json:"enable_auto_scan_host,omitempty"`
 }
 
 type RESTScanConfigConfig struct {
-	AutoScan *bool `json:"auto_scan"`
+	AutoScan *bool `json:"auto_scan"` // Deprecated, keeps for backward compatibility
+	// New fields for auto scan, to separate from the old unified auto scan
+	EnableAutoScanWorkload *bool `json:"enable_auto_scan_workload"`
+	EnableAutoScanHost     *bool `json:"enable_auto_scan_host"`
 }
 
 type RESTScanConfigData struct {
+	Config *RESTScanConfigConfig `json:"config"`
+}
+
+type RESTScanConfigResp struct {
 	Config *RESTScanConfig `json:"config"`
 }
 
@@ -4007,12 +4018,21 @@ type RESTRemoteRepo_GitHubConfig struct {
 	PersonalAccessTokenEmail         string `json:"personal_access_token_email"`
 }
 
+type RESTRemoteRepo_AzureDevopsConfig struct {
+	OrganizationName    *string `json:"organization_name"`
+	ProjectName         *string `json:"project_name"`
+	RepoName            *string `json:"repo_name"`
+	BranchName          *string `json:"branch_name"`
+	PersonalAccessToken *string `json:"personal_access_token,cloak"`
+}
+
 type RESTRemoteRepository struct {
-	Nickname            string                       `json:"nickname"`
-	Provider            string                       `json:"provider"`
-	Comment             string                       `json:"comment"`
-	Enable              bool                         `json:"enable"`
-	GitHubConfiguration *RESTRemoteRepo_GitHubConfig `json:"github_configuration"`
+	Nickname                 string                            `json:"nickname"`
+	Provider                 string                            `json:"provider"`
+	Comment                  string                            `json:"comment"`
+	Enable                   bool                              `json:"enable"`
+	GitHubConfiguration      *RESTRemoteRepo_GitHubConfig      `json:"github_configuration"`
+	AzureDevopsConfiguration *RESTRemoteRepo_AzureDevopsConfig `json:"azure_devops_configuration"`
 }
 
 type RESTRemoteRepository_GitHubConfigConfig struct {
@@ -4047,10 +4067,11 @@ func (g *RESTRemoteRepository_GitHubConfigConfig) IsValid() bool {
 
 type RESTRemoteRepositoryConfig struct {
 	// Provider is unchangable
-	Nickname            string                                   `json:"nickname"`
-	Comment             *string                                  `json:"comment"`
-	Enable              *bool                                    `json:"enable"`
-	GitHubConfiguration *RESTRemoteRepository_GitHubConfigConfig `json:"github_configuration"`
+	Nickname                 string                                   `json:"nickname"`
+	Comment                  *string                                  `json:"comment"`
+	Enable                   *bool                                    `json:"enable"`
+	GitHubConfiguration      *RESTRemoteRepository_GitHubConfigConfig `json:"github_configuration"`
+	AzureDevopsConfiguration *RESTRemoteRepo_AzureDevopsConfig        `json:"azure_devops_configuration"`
 }
 
 type RESTRemoteRepositoryConfigData struct {
@@ -4213,6 +4234,7 @@ type RESTVulQueryStats struct {
 	QueryToken              string                  `json:"query_token"`
 	PerfStats               []string                `json:"debug_perf_stats"`
 	Summary                 *VulAssetSessionSummary `json:"summary"`
+	Status                  string                  `json:"status"`
 }
 
 // for asset pagination

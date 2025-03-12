@@ -96,8 +96,7 @@ func NewGRPCServerTCP(endpoint string) (*GRPCServer, error) {
 		return nil, fmt.Errorf("failed to create new server credentials: %w", err)
 	}
 
-	//TODO: addressing go-linter "SA1019: grpc.NewGZIPDecompressor is deprecated: use package encoding/gzip. (staticcheck)"
-	//nolint:staticcheck
+	//nolint:staticcheck // SA1019
 	opts := []grpc.ServerOption{
 		grpc.Creds(ct),
 		grpc.UnaryInterceptor(middlefunc),
@@ -168,8 +167,7 @@ func ReloadInternalCert() error {
 }
 
 func NewGRPCServerUnix(socket string) (*GRPCServer, error) {
-	//TODO: addressing go-linter "SA1019: grpc.NewGZIPDecompressor is deprecated: use package encoding/gzip. (staticcheck)"
-	//nolint:staticcheck
+	//nolint:staticcheck // SA1019
 	opts := []grpc.ServerOption{
 		grpc.RPCCompressor(grpc.NewGZIPCompressor()),
 		grpc.RPCDecompressor(grpc.NewGZIPDecompressor()),
@@ -318,8 +316,7 @@ func newGRPCClientTCP(ctx context.Context, key, endpoint string, cb GRPCCallback
 	// This is to be compatible with pre-3.2 grpc server that doesn't install decompressor.
 	var opts []grpc.DialOption
 	if compress {
-		//TODO: addressing go-linter "SA1019: grpc.NewGZIPDecompressor is deprecated: use package encoding/gzip. (staticcheck)"
-		//nolint:staticcheck
+		//nolint:staticcheck // SA1019
 		opts = []grpc.DialOption{
 			grpc.WithTransportCredentials(ct),
 			grpc.WithDecompressor(grpc.NewGZIPDecompressor()),
@@ -330,8 +327,7 @@ func newGRPCClientTCP(ctx context.Context, key, endpoint string, cb GRPCCallback
 				grpc.MaxCallSendMsgSize(GRPCMaxMsgSize)),
 		}
 	} else {
-		//TODO: addressing go-linter "SA1019: grpc.NewGZIPDecompressor is deprecated: use package encoding/gzip. (staticcheck)"
-		//nolint:staticcheck
+		//nolint:staticcheck // SA1019
 		opts = []grpc.DialOption{
 			grpc.WithTransportCredentials(ct),
 			grpc.WithDecompressor(grpc.NewGZIPDecompressor()),
@@ -342,6 +338,7 @@ func newGRPCClientTCP(ctx context.Context, key, endpoint string, cb GRPCCallback
 		}
 	}
 
+	//nolint:staticcheck // SA1019
 	conn, err := grpc.DialContext(ctx, endpoint, opts...)
 	if err != nil {
 		return nil, err
@@ -357,8 +354,7 @@ func newGRPCClientTCP(ctx context.Context, key, endpoint string, cb GRPCCallback
 func newGRPCClientUnix(ctx context.Context, key, socket string, cb GRPCCallback, compress bool) (*GRPCClient, error) {
 	var opts []grpc.DialOption
 	if compress {
-		//TODO: addressing go-linter "SA1019: grpc.NewGZIPDecompressor is deprecated: use package encoding/gzip. (staticcheck)"
-		//nolint:staticcheck
+		//nolint:staticcheck // SA1019
 		opts = []grpc.DialOption{
 			grpc.WithInsecure(),
 			grpc.WithDecompressor(grpc.NewGZIPDecompressor()),
@@ -372,8 +368,7 @@ func newGRPCClientUnix(ctx context.Context, key, socket string, cb GRPCCallback,
 			}),
 		}
 	} else {
-		//TODO: addressing go-linter "SA1019: grpc.NewGZIPDecompressor is deprecated: use package encoding/gzip. (staticcheck)"
-		//nolint:staticcheck
+		//nolint:staticcheck // SA1019
 		opts = []grpc.DialOption{
 			grpc.WithInsecure(),
 			grpc.WithDecompressor(grpc.NewGZIPDecompressor()),
@@ -387,6 +382,7 @@ func newGRPCClientUnix(ctx context.Context, key, socket string, cb GRPCCallback,
 		}
 	}
 
+	//nolint:staticcheck // SA1019
 	conn, err := grpc.DialContext(ctx, socket, opts...)
 	if err != nil {
 		return nil, err
@@ -415,6 +411,8 @@ func isUnixSocketEndpoint(endpoint string) bool {
 	return !strings.Contains(endpoint, ":")
 }
 
+// Create a GRPCClient, connect to remote and see if GRPCCompressed is enabled.
+// After that, close the connection.
 func IsControllerGRPCCommpressed(endpoint string) bool {
 	var err error
 	var c *GRPCClient
@@ -431,6 +429,7 @@ func IsControllerGRPCCommpressed(endpoint string) bool {
 		log.WithFields(log.Fields{"err": err}).Error("Failed to get controller cap client")
 		return false
 	}
+	defer c.Close()
 
 	s := share.NewControllerCapServiceClient(c.GetClient())
 
@@ -442,6 +441,8 @@ func IsControllerGRPCCommpressed(endpoint string) bool {
 	}
 }
 
+// Create a GRPCClient, connect to remote and see if GRPCCompressed is enabled.
+// After that, close the connection.
 func IsEnforcerGRPCCommpressed(endpoint string) bool {
 	var err error
 	var c *GRPCClient
@@ -458,6 +459,7 @@ func IsEnforcerGRPCCommpressed(endpoint string) bool {
 		log.WithFields(log.Fields{"err": err}).Error("Failed to get enforcer cap client")
 		return false
 	}
+	defer c.Close()
 
 	s := share.NewEnforcerCapServiceClient(c.GetClient())
 
