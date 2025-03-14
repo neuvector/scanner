@@ -203,8 +203,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/neuvector/go-rpmdb v0.0.0-20240605184921-0db4de14c27a h1:lmvuJ3uQVRk14exDRLu1Oq78iz8dLE7CJo+QodD+tos=
 github.com/neuvector/go-rpmdb v0.0.0-20240605184921-0db4de14c27a/go.mod h1:tQW+vmxLXFPfI1HuRjoiIxOh8A7JudpfWl8xmezEGSs=
-github.com/neuvector/neuvector v0.0.0-20250312183056-77ca1c33c622 h1:l4zNaH6MQze+8r69sbtF8U4I3tBiomhUPzXAJGYmJvc=
-github.com/neuvector/neuvector v0.0.0-20250312183056-77ca1c33c622/go.mod h1:4khQx4JRLOE8uzWStT2RuwSrIKfVnBJJp3ITp9jV2JE=
+github.com/neuvector/neuvector v0.0.0-20250313013019-991f5ea08846 h1:oa8Y/6/eB+Z3IVJVhtZq0XIgum7bBKo4ZANGkiY79GA=
+github.com/neuvector/neuvector v0.0.0-20250313013019-991f5ea08846/go.mod h1:4khQx4JRLOE8uzWStT2RuwSrIKfVnBJJp3ITp9jV2JE=
 github.com/onsi/ginkgo/v2 v2.13.0 h1:0jY9lJquiL8fcf3M4LAXN5aMlS/b2BV86HFFPCPMgE4=
 github.com/onsi/ginkgo/v2 v2.13.0/go.mod h1:TE309ZR8s5FsKKpuB1YAQYBzCaAfUgatB/xlT/ETL/o=
 github.com/onsi/gomega v1.29.0 h1:KIA/t2t5UBzoirT4H9tsML45GEbo3ouUnBHsCfD2tVg=
