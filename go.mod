@@ -10,7 +10,7 @@ require (
 	github.com/docker/docker v27.5.1+incompatible
 	github.com/google/uuid v1.6.0
 	github.com/jedib0t/go-pretty/v6 v6.6.7
-	github.com/neuvector/neuvector v0.0.0-20250318171256-1d62b7f73bb8
+	github.com/neuvector/neuvector v0.0.0-20250321203628-eeda65e12b5e
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/quay/clair/v2 v2.1.8
 	github.com/sirupsen/logrus v1.9.3
@@ -81,7 +81,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/neuvector/go-rpmdb v0.0.0-20240605184921-0db4de14c27a // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
-	github.com/opencontainers/runtime-spec v1.2.0 // indirect
+	github.com/opencontainers/runtime-spec v1.2.1 // indirect
 	github.com/opencontainers/selinux v1.11.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230126093431-47fa9a501578 // indirect
