@@ -2,6 +2,7 @@ package cvetools
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -60,9 +61,27 @@ func (cv *ScanTools) DetectAppVul(path string, apps []detectors.AppFeatureVersio
 	return vuls
 }
 
+var prefixVersionRegexp = regexp.MustCompile(`^(\d+\.\d+\.\d+)`)
+
+// a proper version is like:  1.0.0 (Major: 1, Minor: 0, Patch: 0)
+func getPrefixVersion(version string) string {
+	match := prefixVersionRegexp.FindStringSubmatch(version)
+	if len(match) > 1 {
+		return match[1]
+	}
+	return version // not a prpoer version
+}
+
 func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detectors.AppFeatureVersion, mv []common.AppModuleVul) []vulFullReport {
 	vuls := make([]vulFullReport, 0)
 	for _, v := range mv {
+		// should be good for all apps but focus on the golang now
+		if strings.HasPrefix(app.ModuleName, "go:") {
+			for i := range v.AffectedVer {
+				v.AffectedVer[i].Version = getPrefixVersion(v.AffectedVer[i].Version)
+			}
+		}
+
 		if common.Debugs.Enabled {
 			if common.Debugs.CVEs.Contains(v.VulName) && common.Debugs.Features.Contains(app.AppName) {
 				log.WithFields(log.Fields{
