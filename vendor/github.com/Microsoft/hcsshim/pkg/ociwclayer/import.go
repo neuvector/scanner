@@ -6,6 +6,7 @@ import (
 	"archive/tar"
 	"bufio"
 	"context"
+	"errors"
 	"io"
 	"os"
 	"path"
@@ -60,6 +61,7 @@ func ImportLayerFromTar(ctx context.Context, r io.Reader, path string, parentLay
 
 func writeLayerFromTar(ctx context.Context, r io.Reader, w wclayer.LayerWriter, root string) (int64, error) {
 	t := tar.NewReader(r)
+	// CodeQL [SM03409] `internal\wclayer` uses `internal/safefile` to bind tar extraction to the layer's root directory
 	hdr, err := t.Next()
 	totalSize := int64(0)
 	buf := bufio.NewWriter(nil)
@@ -77,12 +79,14 @@ func writeLayerFromTar(ctx context.Context, r io.Reader, w wclayer.LayerWriter, 
 			if err != nil {
 				return 0, err
 			}
+			// CodeQL [SM03409] `internal\wclayer` uses `internal/safefile` to bind tar extraction to the layer's root directory
 			hdr, err = t.Next()
 		} else if hdr.Typeflag == tar.TypeLink {
 			err = w.AddLink(filepath.FromSlash(hdr.Name), filepath.FromSlash(hdr.Linkname))
 			if err != nil {
 				return 0, err
 			}
+			// CodeQL [SM03409] `internal\wclayer` uses `internal/safefile` to bind tar extraction to the layer's root directory
 			hdr, err = t.Next()
 		} else {
 			var (
@@ -102,7 +106,7 @@ func writeLayerFromTar(ctx context.Context, r io.Reader, w wclayer.LayerWriter, 
 			totalSize += size
 		}
 	}
-	if err != io.EOF {
+	if !errors.Is(err, io.EOF) {
 		return 0, err
 	}
 	return totalSize, nil
