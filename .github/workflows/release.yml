@@ -112,6 +112,7 @@ jobs:
       if: env.UPDATE_MUTABLE_TAG == 'True'
       run: |
         docker buildx imagetools create --tag docker.io/${{ github.repository_owner }}/scanner:6 docker.io/${{ github.repository_owner }}/scanner:${TAG}
+        docker buildx imagetools create --tag docker.io/${{ github.repository_owner }}/scanner:latest docker.io/${{ github.repository_owner }}/scanner:${TAG}
     - name: Login to registry
       if: env.UPDATE_MUTABLE_TAG == 'True'
       uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
