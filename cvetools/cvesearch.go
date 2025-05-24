@@ -102,6 +102,10 @@ var aliasMap map[string]string = map[string]string{
 	"docker-ce": "docker",
 }
 
+var matchKubenetesModeules map[string]bool = map[string]bool{ // should expand into a broader range later
+	"ingress-nginx": true,
+}
+
 func NewScanTools(rtSock string, sys *system.SystemTools, layerCacher *ImageLayerCacher, mFile string) *ScanTools {
 	cveDB := common.NewCveDB()
 	return &ScanTools{
@@ -148,12 +152,41 @@ func (cv *ScanTools) ScanImageData(data *share.ScanData) (*share.ScanResult, err
 		return result, err
 	}
 
+	var k8sAppString string
 	files := make(map[string]*detectors.FeatureFile)
 	for name, data := range pkgs {
 		files[name] = &detectors.FeatureFile{Data: data}
+		if name == scan.Kubernetes {
+			var kubeResource scan.KubernetesResource
+			if err := json.Unmarshal(data, &kubeResource); err != nil {
+				log.WithFields(log.Fields{"name": name, "data": string(data)}).Error()
+			}
+			k8sAppString = kubeResource.Name
+		}
 	}
-	appPkgs := scan.NewScanApps(true).DerivePkg(pkgs)
 
+	appPkgs := scan.NewScanApps(true).DerivePkg(pkgs)
+	if k8sAppString != "" {
+		log.WithFields(log.Fields{"k8sAppRes": k8sAppString}).Debug()
+		// append k8s repo into the appPkgs
+		if i := strings.Index(k8sAppString, ":"); i > 0 {
+			// remove the RKE variants
+			name := strings.TrimPrefix(strings.TrimPrefix(k8sAppString[:i], "rke2-"), "rke-")
+			if ok := matchKubenetesModeules[name]; ok {
+				name = fmt.Sprintf("go:k8s.io/%s", name)
+				version := strings.TrimPrefix(k8sAppString[i+1:], "v")
+				k8sAppRes := scan.AppPackage{
+					AppName:    "golang",        // belong to golang type
+					ModuleName: name,            // image name
+					Version:    version,         // tag
+					FileName:   scan.Kubernetes, // high-level k8s scan
+				}
+				appPkgs = append(appPkgs, k8sAppRes)
+			}
+		} else {
+			log.WithFields(log.Fields{"k8sAppString": k8sAppString}).Error("Invalid string")
+		}
+	}
 	// convert AppPackage to AppFeatureVersion
 	afvs := make([]detectors.AppFeatureVersion, len(appPkgs))
 	for i, a := range appPkgs {
