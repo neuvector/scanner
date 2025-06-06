@@ -923,6 +923,10 @@ func os2DB(ns *detectors.Namespace) (string, int) {
 			majorVersion := majorVersion(r[2])
 			nsName = "sles:lib" + majorVersion
 			db = common.DBSuse
+		case "sl-micro":
+			majorVersion := r[2]
+			nsName = "sles:micro" + majorVersion
+			db = common.DBSuse
 		case "rocky":
 			majorVersion := majorVersion(r[2])
 			nsName = "rocky:" + majorVersion
