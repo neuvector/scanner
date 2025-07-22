@@ -1229,6 +1229,13 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 				continue
 			}
 
+			// Do not comapre fips and non-fips version
+			if strings.Contains(ft.Version.String(), "fips") && !strings.Contains(fix.Version, "fips") {
+				continue
+			} else if !strings.Contains(ft.Version.String(), "fips") && strings.Contains(fix.Version, "fips") {
+				continue
+			}
+
 			ftVer := ft.Version
 			fixVer := fix.Version
 
