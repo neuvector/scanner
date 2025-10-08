@@ -4,7 +4,7 @@ ARG SIGSTORE_VERSION=51eb9aeb6b2c8c0aa33907a66e351abf902ab46c
 #
 # Builder
 #
-FROM registry.suse.com/bci/golang:1.24 AS builder
+FROM registry.suse.com/bci/golang:1.25 AS builder
 ARG VERSION
 ARG VULNDB_CHECKSUM
 ARG SIGSTORE_VERSION
