@@ -70,6 +70,7 @@ const (
 	CFGEndpointWafRule              = "waf_rule"
 	CFGEndpointWafGroup             = "waf_group"
 	CFGEndpointScript               = "script"
+	CFGEndpointCustomRule           = "custom_rule"
 	CFGEndpointCloud                = "cloud"
 	CFGEndpointCompliance           = "compliance"
 	CFGEndpointVulnerability        = "vulnerability"
@@ -101,6 +102,7 @@ const CLUSConfigDlpGroupStore string = CLUSConfigStore + CFGEndpointDlpGroup + "
 const CLUSConfigWafRuleStore string = CLUSConfigStore + CFGEndpointWafRule + "/"
 const CLUSConfigWafGroupStore string = CLUSConfigStore + CFGEndpointWafGroup + "/"
 const CLUSConfigScriptStore string = CLUSConfigStore + CFGEndpointScript + "/"
+const CLUSConfigCustomRuleStore string = CLUSConfigStore + CFGEndpointCustomRule + "/"
 const CLUSConfigCloudStore string = CLUSConfigStore + CFGEndpointCloud + "/"
 const CLUSConfigComplianceStore string = CLUSConfigStore + CFGEndpointCompliance + "/"
 const CLUSConfigVulnerabilityStore string = CLUSConfigStore + CFGEndpointVulnerability + "/"
@@ -172,6 +174,8 @@ const CLUSCtrlVerKey string = CLUSStateStore + "ctrl_ver"
 const CLUSKvRestoreKey string = CLUSStateStore + "kv_restore"
 const CLUSExpiredTokenStore string = CLUSStateStore + "expired_token/"
 const CLUSImportStore string = CLUSStateStore + "import/"
+
+const CLUSConfigSecretPatternsKey string = CLUSConfigCustomRuleStore + "secret_patterns"
 
 func CLUSExpiredTokenKey(token string) string {
 	return fmt.Sprintf("%s%s", CLUSExpiredTokenStore, token)
@@ -793,39 +797,41 @@ type CLUSSystemConfig struct {
 	NewServiceProfileBaseline string `json:"new_service_profile_baseline"`
 	UnusedGroupAging          uint8  `json:"unused_group_aging"`
 	CLUSSyslogConfig
-	SingleCVEPerSyslog    bool                      `json:"single_cve_per_syslog"`
-	SyslogCVEInLayers     bool                      `json:"syslog_cve_in_layers"`
-	AuthOrder             []string                  `json:"auth_order"`
-	AuthByPlatform        bool                      `json:"auth_by_platform"`
-	RancherEP             string                    `json:"rancher_ep"`
-	InternalSubnets       []string                  `json:"configured_internal_subnets,omitempty"`
-	WebhookEnable_UNUSED  bool                      `json:"webhook_enable"`
-	WebhookUrl_UNUSED     string                    `json:"webhook_url"`
-	Webhooks              []CLUSWebhook             `json:"webhooks"`
-	ClusterName           string                    `json:"cluster_name"`
-	ControllerDebug       []string                  `json:"controller_debug"`
-	TapProxymesh          bool                      `json:"tap_proxymesh"`
-	RegistryHttpProxy     CLUSProxy                 `json:"registry_http_proxy"`
-	RegistryHttpsProxy    CLUSProxy                 `json:"registry_https_proxy"`
-	IBMSAConfigNV         CLUSIBMSAConfigNV         `json:"ibmsa_config_nv"`
-	IBMSAConfig           CLUSIBMSAConfig           `json:"ibmsa_config"`
-	IBMSAOnboardData      CLUSIBMSAOnboardData      `json:"ibmsa_onboard_data"`
-	XffEnabled            bool                      `json:"xff_enabled"`
-	CfgType               TCfgType                  `json:"cfg_type"`
-	NetServiceStatus      bool                      `json:"net_service_status"`
-	NetServicePolicyMode  string                    `json:"net_service_policy_mode"`
-	DisableNetPolicy      bool                      `json:"disable_net_policy"`
-	DetectUnmanagedWl     bool                      `json:"detect_unmanaged_wl"`
-	EnableIcmpPolicy      bool                      `json:"enable_icmp_policy"`
-	ModeAutoD2M           bool                      `json:"mode_auto_d2m"`
-	ModeAutoD2MDuration   int64                     `json:"mode_auto_d2m_duration"`
-	ModeAutoM2P           bool                      `json:"mode_auto_m2p"`
-	ModeAutoM2PDuration   int64                     `json:"mode_auto_m2p_duration"`
-	ScannerAutoscale      CLUSSystemConfigAutoscale `json:"scanner_autoscale"`
-	NoTelemetryReport     bool                      `json:"no_telemetry_report,omitempty"`
-	RemoteRepositories    []CLUSRemoteRepository    `json:"remote_repositories"`
-	EnableTLSVerification bool                      `json:"enable_tls_verification"`
-	GlobalCaCerts         []string                  `json:"cacerts"`
+	SingleCVEPerSyslog         bool                      `json:"single_cve_per_syslog"`
+	SyslogCVEInLayers          bool                      `json:"syslog_cve_in_layers"`
+	AuthOrder                  []string                  `json:"auth_order"`
+	AuthByPlatform             bool                      `json:"auth_by_platform"`
+	RancherEP                  string                    `json:"rancher_ep"`
+	InternalSubnets            []string                  `json:"configured_internal_subnets,omitempty"`
+	WebhookEnable_UNUSED       bool                      `json:"webhook_enable"`
+	WebhookUrl_UNUSED          string                    `json:"webhook_url"`
+	Webhooks                   []CLUSWebhook             `json:"webhooks"`
+	ClusterName                string                    `json:"cluster_name"`
+	ControllerDebug            []string                  `json:"controller_debug"`
+	TapProxymesh               bool                      `json:"tap_proxymesh"`
+	RegistryHttpProxy          CLUSProxy                 `json:"registry_http_proxy"`
+	RegistryHttpsProxy         CLUSProxy                 `json:"registry_https_proxy"`
+	IBMSAConfigNV              CLUSIBMSAConfigNV         `json:"ibmsa_config_nv"`
+	IBMSAConfig                CLUSIBMSAConfig           `json:"ibmsa_config"`
+	IBMSAOnboardData           CLUSIBMSAOnboardData      `json:"ibmsa_onboard_data"`
+	XffEnabled                 bool                      `json:"xff_enabled"`
+	CfgType                    TCfgType                  `json:"cfg_type"`
+	NetServiceStatus           bool                      `json:"net_service_status"`
+	NetServicePolicyMode       string                    `json:"net_service_policy_mode"`
+	DisableNetPolicy           bool                      `json:"disable_net_policy"`
+	DetectUnmanagedWl          bool                      `json:"detect_unmanaged_wl"`
+	StrictGroupMode            bool                      `json:"strict_group_mode"`
+	EnableIcmpPolicy           bool                      `json:"enable_icmp_policy"`
+	ModeAutoD2M                bool                      `json:"mode_auto_d2m"`
+	ModeAutoD2MDuration        int64                     `json:"mode_auto_d2m_duration"`
+	ModeAutoM2P                bool                      `json:"mode_auto_m2p"`
+	ModeAutoM2PDuration        int64                     `json:"mode_auto_m2p_duration"`
+	ScannerAutoscale           CLUSSystemConfigAutoscale `json:"scanner_autoscale"`
+	NoTelemetryReport          bool                      `json:"no_telemetry_report,omitempty"`
+	RemoteRepositories         []CLUSRemoteRepository    `json:"remote_repositories"`
+	EnableTLSVerification      bool                      `json:"enable_tls_verification"`
+	GlobalCaCerts              []string                  `json:"cacerts"`
+	AllowNsUserExportNetPolicy bool                      `json:"allow_ns_user_export_net_policy,omitempty"`
 }
 
 type CLUSSystemConfigAutoscale struct {
@@ -836,7 +842,8 @@ type CLUSSystemConfigAutoscale struct {
 }
 
 type CLUSEULA struct {
-	Accepted bool `json:"accepted"`
+	Accepted      bool `json:"accepted"`
+	AcceptedBySSO bool `json:"accepted_by_sso"`
 }
 
 type NvFedPermissions struct {
@@ -2219,6 +2226,11 @@ type CLUSCrdCompProfile struct {
 	Name string `json:"name"`
 }
 
+type CLUSCrdResponseRules struct {
+	IDs        []uint32 `json:"ids"`
+	PolicyName string   `json:"policy_name"`
+}
+
 type CLUSCrdSecurityRule struct {
 	Name            string                 `json:"name"` // crd record name in the format {crd kind}-{ns}-{metadata.name}
 	MetadataName    string                 `json:"metadata_name"`
@@ -2233,6 +2245,7 @@ type CLUSCrdSecurityRule struct {
 	DlpGroupSensors []string               `json:"dlp_group_sensors,omitempty"` // dlp sensors associated with the target group
 	WafGroupSensors []string               `json:"waf_group_sensors,omitempty"` // waf sensors associated with the target group
 	AdmCtrlRules    map[string]uint32      `json:"admctrl_rules,omitempty"`     // map key is the generated name of admission control rule, valud is assigned rule id
+	ResponseRules   *CLUSCrdResponseRules  `json:"response_rule,omitempty"`     // response rule defined in this crd security rule
 	DlpSensor       string                 `json:"dlp_sensor,omitempty"`        // dlp sensor defined in this crd security rule
 	WafSensor       string                 `json:"waf_sensor,omitempty"`        // waf sensor defined in this crd security rule
 	VulnProfile     string                 `json:"vuln_profile,omitempty"`      // vulnerability profile defined in this crd security rule
@@ -2844,6 +2857,8 @@ const (
 	SecretRegular    string = "regular"    // in other regular files
 )
 
+const MaskSensitiveData string = "<redacted>"
+
 // CLUSSecretLog provides reports at scanner/enforcer layer
 type CLUSSecretLog struct {
 	Type       string `json:"type"`       // secret type
@@ -2943,6 +2958,7 @@ const (
 	PREFIX_IMPORT_CONFIG       = "import_"
 	PREFIX_IMPORT_GROUP_POLICY = "group_import_"
 	PREFIX_IMPORT_ADMCTRL      = "admctrl_import_"
+	PREFIX_IMPORT_RESPONSE     = "response_import_"
 	PREFIX_IMPORT_DLP          = "dlp_import_"
 	PREFIX_IMPORT_WAF          = "waf_import_"
 	PREFIX_IMPORT_VULN_PROFILE = "vul_profile_import_" // for vulnerability profile
@@ -2953,6 +2969,7 @@ const (
 	IMPORT_TYPE_CONFIG       = ""
 	IMPORT_TYPE_GROUP_POLICY = "group"
 	IMPORT_TYPE_ADMCTRL      = "admctrl"
+	IMPORT_TYPE_RESPONSE     = "response"
 	IMPORT_TYPE_DLP          = "dlp"
 	IMPORT_TYPE_WAF          = "waf"
 	IMPORT_TYPE_VULN_PROFILE = "vuln_profile" // for vulnerability profile
@@ -2978,6 +2995,7 @@ type CLUSImportTask struct {
 	CallerFullname string    `json:"caller_fullname"`
 	CallerRemote   string    `json:"caller_remote"`
 	CallerID       string    `json:"caller_id"`
+	Overwrite      string    `json:"overwrite"`
 }
 
 func CLUSNodeProfileStoreKey(nodeID string) string {
@@ -3010,6 +3028,7 @@ const (
 	ReviewTypeCRD               = iota + 1
 	ReviewTypeImportGroup       // interactive import
 	ReviewTypeImportAdmCtrl     // interactive import
+	ReviewTypeImportResponse    // interactive import
 	ReviewTypeImportDLP         // interactive import
 	ReviewTypeImportWAF         // interactive import
 	ReviewTypeImportVulnProfile // interactive import vulnerability profile
@@ -3018,12 +3037,13 @@ const (
 
 const (
 	ReviewTypeDisplayCRD         = "CRD"
-	ReviewTypeDisplayGroup       = "Group Policy"                     // interactive import
-	ReviewTypeDisplayAdmission   = "Admission Control Configurations" // interactive import
-	ReviewTypeDisplayDLP         = "DLP Configurations"               // interactive import
-	ReviewTypeDisplayWAF         = "WAF Configurations"               // interactive import
-	ReviewTypeDisplayVulnProfile = "Vulnerability Profile"            // interactive import
-	ReviewTypeDisplayCompProfile = "Compliance Profile"               // interactive import
+	ReviewTypeDisplayGroup       = "Group Policy"                       // interactive import
+	ReviewTypeDisplayAdmission   = "Admission Control Configurations"   // interactive import
+	ReviewTypeDisplayResponse    = "Non-group-dependent response rules" // interactive import
+	ReviewTypeDisplayDLP         = "DLP Configurations"                 // interactive import
+	ReviewTypeDisplayWAF         = "WAF Configurations"                 // interactive import
+	ReviewTypeDisplayVulnProfile = "Vulnerability Profile"              // interactive import
+	ReviewTypeDisplayCompProfile = "Compliance Profile"                 // interactive import
 )
 
 // Telemetry (upgrade responder)
