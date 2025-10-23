@@ -1,0 +1,55 @@
+name: Update neuvector dependency
+
+sources:
+scms:
+  scanner:
+    kind: github
+    spec:
+      user: "{{ .github.author }}"
+      email: "{{ .github.email }}"
+      directory: "/tmp/scanner"
+      owner: "{{ requiredEnv .github.owner }}"
+      repository: "scanner"
+      token: "{{ requiredEnv .github.token }}"
+      username: "{{ requiredEnv .github.user }}"
+      branch: "{{ .github.branch }}"
+      commitmessage:
+        type: "chore"
+        title: "Update neuvector dependency to main"
+        hidecredit: true
+        footers: "Signed-off-by: neuvector bot <neuvector-bot@users.noreply.github.com>"
+
+targets:
+  updateDependency:
+    name: Update neuvector dependency to main
+    scmid: scanner
+    kind: shell
+    spec:
+      command: |
+        go get github.com/neuvector/neuvector@main
+        go mod tidy
+        go mod vendor
+      changedif:
+        kind: file/checksum
+        spec:
+          files:
+            - go.mod
+            - go.sum
+            - vendor/modules.txt
+
+actions:
+  default:
+    kind: github/pullrequest
+    scmid: scanner
+    spec:
+      title: 'chore: update neuvector to main ({{ now | date "2006-01-02" }})'
+      description: |
+        This PR updates neuvector dependency to the latest main branch.
+
+        Changes:
+        - Updated github.com/neuvector/neuvector to main branch
+        - Ran go mod tidy
+        - Ran go mod vendor
+      labels:
+        - dependencies
+      automerge: false
