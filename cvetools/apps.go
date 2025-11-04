@@ -76,7 +76,8 @@ func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detecto
 	vuls := make([]vulFullReport, 0)
 	for _, v := range mv {
 		// should be good for all apps but focus on the golang now
-		if strings.HasPrefix(app.ModuleName, "go:") {
+		// Skip neuvector/neuvector for the version is using pseudo version
+		if strings.HasPrefix(app.ModuleName, "go:") && !strings.Contains(app.ModuleName, "neuvector/neuvector") {
 			for i := range v.AffectedVer {
 				v.AffectedVer[i].Version = getPrefixVersion(v.AffectedVer[i].Version)
 			}
