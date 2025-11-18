@@ -146,6 +146,7 @@ func moduleVer2FixVer(app detectors.AppFeatureVersion, mv common.AppModuleVul) c
 	ft := common.FeaFull{Name: mv.ModuleName}
 	for i, v := range mv.FixedVer {
 		s := strings.Replace(v.OpCode, "or", "||", -1)
+		s = strings.Replace(s, "andlt", "<", -1)
 		s = strings.Replace(s, "gt", ">", -1)
 		s = strings.Replace(s, "lt", "<", -1)
 		s = strings.Replace(s, "eq", "=", -1)
