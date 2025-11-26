@@ -317,7 +317,7 @@ github.com/hashicorp/go-rootcerts
 # github.com/hashicorp/go-version v1.7.0
 ## explicit
 github.com/hashicorp/go-version
-# github.com/jedib0t/go-pretty/v6 v6.6.7
+# github.com/jedib0t/go-pretty/v6 v6.7.5
 ## explicit; go 1.18
 github.com/jedib0t/go-pretty/v6/table
 github.com/jedib0t/go-pretty/v6/text
