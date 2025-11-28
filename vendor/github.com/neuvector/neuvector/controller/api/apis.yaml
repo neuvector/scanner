@@ -5,7 +5,7 @@ swagger: '2.0'
 ################################################################################
 info:
   description: Secure Docker and Kubernetes based container deployments with the NeuVector run-time security solution.
-  version: '5.4.3'
+  version: '5.4.8'
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
@@ -620,7 +620,9 @@ paths:
             $ref: '#/definitions/RESTCompProfilesExport'
       responses:
         '200':
-          description: Success. Get a yaml file.
+          description: Success. (1) Get a yaml file when export to local. (2) Get RESTRemoteExportData payload when export to remote repository.
+          schema:
+            $ref: '#/definitions/RESTRemoteExportData'
   /v1/file/compliance/profile/config:
     post:
       tags:
@@ -1199,7 +1201,7 @@ paths:
     post:
       tags:
         - File
-      summary: Export admission control configuration as a yaml format. The exported yaml file can be imported by CRD or REST API to update the admission control settings.
+      summary: Export admission control configuration as a yaml format. The exported yaml file can be imported by CRD (non-fed scope only) or REST API to update the admission control settings.
       security:
         - ApiKeyAuth: []
         - TokenAuth: []
@@ -1212,7 +1214,8 @@ paths:
           required: false
           enum:
             - local
-          description: "It exports the admission control rules & state configurations when the scope is local."
+            - fed
+          description: "It exports the federated admission control rules when the scope is fed. Otherwise it's for exporting local admission control rules & state configurations."
         - in: body
           name: body
           description: Configuration data
@@ -1221,7 +1224,9 @@ paths:
             $ref: '#/definitions/RESTAdmCtrlRulesExport'
       responses:
         '200':
-          description: Success. Get a yaml file.
+          description: Success. (1) Get a yaml file when export to local. (2) Get RESTRemoteExportData payload when export to remote repository.
+          schema:
+            $ref: '#/definitions/RESTRemoteExportData'
   /v1/file/admission/config:
     post:
       tags:
@@ -1239,6 +1244,14 @@ paths:
           name: X-Transaction-ID
           required: false
           type: string
+        - in: query
+          name: scope
+          type: string
+          required: false
+          enum:
+            - local
+            - fed
+          description: "It imports the federated admission control rules when the scope is fed. Otherwise it's for importing local admission control rules & state configurations."
         - in: body
           name: body
           description: admission config yaml file
@@ -1252,7 +1265,7 @@ paths:
     post:
       tags:
         - File
-      summary: Export non-group-dependent response rules as a yaml format. The exported yaml file can be imported by CRD or REST API to update the response rules.
+      summary: Export non-group-dependent (federated) response rules as a yaml format. The exported yaml file can be imported by CRD (non-fed scope only) or REST API to update the response rules.
       security:
         - ApiKeyAuth: []
         - TokenAuth: []
@@ -1265,7 +1278,8 @@ paths:
           required: false
           enum:
             - local
-          description: "It exports the non-group-dependent response rules when the scope is local."
+            - fed
+          description: "It exports the federated non-group-dependent response rules when the scope is fed. Otherwise it's for exporting local non-group-dependent response rules."
         - in: body
           name: body
           description: Non-group-dependent response rules yaml file
@@ -1274,7 +1288,9 @@ paths:
             $ref: '#/definitions/RESTResponseRulesExport'
       responses:
         '200':
-          description: Success. Get a yaml file.
+          description: Success. (1) Get a yaml file when export to local. (2) Get RESTRemoteExportData payload when export to remote repository.
+          schema:
+            $ref: '#/definitions/RESTRemoteExportData'
   /v1/file/response/rule/config:
     post:
       tags:
@@ -1292,6 +1308,14 @@ paths:
           name: X-Transaction-ID
           required: false
           type: string
+        - in: query
+          name: scope
+          type: string
+          required: false
+          enum:
+            - local
+            - fed
+          description: "It imports the federated non-group-dependent response rules when the scope is fed. Otherwise it's for importing local non-group-dependent response rules."
         - in: body
           name: body
           description: response rules yaml file
@@ -1328,6 +1352,14 @@ paths:
           name: X-Transaction-ID
           required: false
           type: string
+        - in: query
+          name: scope
+          type: string
+          required: false
+          enum:
+            - local
+            - fed
+          description: "It imports the federated configurations when the scope is fed. Otherwise it's for importing local configurations"
         - in: formData
           type: file
           name: configuration
@@ -1335,11 +1367,37 @@ paths:
       responses:
         '200':
           description: Success. Upload a configure file.
+  /v1/file/fed_config:
+    post:
+      tags:
+        - File
+      summary: Export federated webhooks configuration as a yaml format
+      security:
+        - ApiKeyAuth: []
+        - TokenAuth: []
+      consumes:
+        - application/json
+      parameters:
+        - in: header
+          name: X-Transaction-ID
+          required: false
+          type: string
+        - in: body
+          name: body
+          description: Configuration data
+          required: true
+          schema:
+            $ref: '#/definitions/RESTFedConfigExport'
+      responses:
+        '200':
+          description: Success. (1) Get a yaml file when export to local. (2) Get RESTRemoteExportData payload when export to remote repository.
+          schema:
+            $ref: '#/definitions/RESTRemoteExportData'
   /v1/file/dlp:
     post:
       tags:
         - File
-      summary: Export DLP configuration as a yaml format
+      summary: Export (federated) DLP configuration as a yaml format. The exported yaml file can be imported by CRD (non-fed scope only) or REST API to update the DLP configurations.
       security:
         - ApiKeyAuth: []
         - TokenAuth: []
@@ -1352,7 +1410,8 @@ paths:
           required: false
           enum:
             - local
-          description: "It exports the DLP configurations when the scope is local."
+            - fed
+          description: "It exports the federated DLP configurations when the scope is fed. Otherwise it's for exporting local DLP configurations"
         - in: body
           name: body
           description: Configuration data
@@ -1361,7 +1420,9 @@ paths:
             $ref: '#/definitions/RESTDlpSensorExport'
       responses:
         '200':
-          description: Success. Get a yaml file.
+          description: Success. (1) Get a yaml file when export to local. (2) Get RESTRemoteExportData payload when export to remote repository.
+          schema:
+            $ref: '#/definitions/RESTRemoteExportData'
   /v1/file/dlp/config:
     post:
       tags:
@@ -1379,6 +1440,14 @@ paths:
           name: X-Transaction-ID
           required: false
           type: string
+        - in: query
+          name: scope
+          type: string
+          required: false
+          enum:
+            - local
+            - fed
+          description: "It imports the federated DLP configurations when the scope is fed. Otherwise it's for importing local DLP configurations"
         - in: body
           name: body
           description: DLP config yaml file
@@ -1410,7 +1479,9 @@ paths:
             $ref: '#/definitions/RESTVulnProfilesExport'
       responses:
         '200':
-          description: Success. Get a yaml file.
+          description: Success. (1) Get a yaml file when export to local. (2) Get RESTRemoteExportData payload when export to remote repository.
+          schema:
+            $ref: '#/definitions/RESTRemoteExportData'
   /v1/file/vulnerability/profile/config:
     post:
       tags:
@@ -1444,7 +1515,7 @@ paths:
     post:
       tags:
         - File
-      summary: Export waf configuration as a yaml format
+      summary: Export (federated) WAF configuration as a yaml format. The exported yaml file can be imported by CRD (non-fed scope only) or REST API to update the WAF configurations.
       security:
         - ApiKeyAuth: []
         - TokenAuth: []
@@ -1457,7 +1528,8 @@ paths:
           required: false
           enum:
             - local
-          description: "It exports the waf configurations when the scope is local."
+            - fed
+          description: "It exports the federated WAF configurations when the scope is fed. Otherwise it's for exporting local WAF configurations."
         - in: body
           name: body
           description: Configuration data
@@ -1466,12 +1538,14 @@ paths:
             $ref: '#/definitions/RESTWafSensorExport'
       responses:
         '200':
-          description: Success. Get a yaml file.
+          description: Success. (1) Get a yaml file when export to local. (2) Get RESTRemoteExportData payload when export to remote repository.
+          schema:
+            $ref: '#/definitions/RESTRemoteExportData'
   /v1/file/waf/config:
     post:
       tags:
         - File
-      description: Importing waf config. The payload body is the content of the waf config yaml file.
+      description: Importing WAF config. The payload body is the content of the WAF config yaml file.
       summary: import waf config
       security:
         - ApiKeyAuth: []
@@ -1484,6 +1558,14 @@ paths:
           name: X-Transaction-ID
           required: false
           type: string
+        - in: query
+          name: scope
+          type: string
+          required: false
+          enum:
+            - local
+            - fed
+          description: "It imports the federated WAF configurations when the scope is fed. Otherwise it's for importing local WAF configurations."
         - in: body
           name: body
           description: waf config yaml file
@@ -1516,7 +1598,7 @@ paths:
     post:
       tags:
         - File
-      summary: Export configuration as the yaml format ( used for CRD or group policy )
+      summary: Export (federated) group configuration as a yaml format. The exported yaml file can be imported by CRD (non-fed scope only) or REST API to update the group policy.
       security:
         - ApiKeyAuth: []
         - TokenAuth: []
@@ -1529,9 +1611,19 @@ paths:
           required: true
           schema:
             $ref: '#/definitions/RESTGroupExport'
+        - in: query
+          name: scope
+          type: string
+          required: false
+          enum:
+            - local
+            - fed
+          description: "It exports the federated group configurations when the scope is fed. Otherwise it's for exporting local group configurations."
       responses:
         '200':
-          description: Success. Get a yaml file.
+          description: Success. (1) Get a yaml file when export to local. (2) Get RESTRemoteExportData payload when export to remote repository.
+          schema:
+            $ref: '#/definitions/RESTRemoteExportData'
   /v1/file/group/config:
     get:
       tags:
@@ -1569,7 +1661,8 @@ paths:
           required: false
           enum:
             - local
-          description: "When set the scope to be local, it will import local group policy. If there is no query string 'scope', it will use 'local' as the default value."
+            - fed
+          description: "It imports the federated group policy when the scope is fed. Otherwise it's for importing local group policy."
         - in: body
           name: body
           description: group policy yaml file
@@ -5293,6 +5386,12 @@ definitions:
       message:
         type: string
         example: "dns tunneling"
+  RESTRemoteExportData:
+    type: object
+    properties:
+      file_path:
+        type: string
+        description: the destination file path when exported to remote repository
   RESTAdmCatOptions:
     type: object
     properties:
@@ -12344,6 +12443,11 @@ definitions:
       fixed_version:
         type: string
         example: ""
+  RESTFedConfigExport:
+    type: object
+    properties:
+      remote_export_options:
+        $ref: '#/definitions/RESTRemoteExportOptions'
   RESTWafConfig:
     type: object
     required:
