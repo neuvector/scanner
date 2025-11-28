@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -186,6 +187,28 @@ func adjustContainerPod(selfID string, containers []*container.ContainerMeta) st
 		}
 	}
 	return selfID
+}
+
+// Reduce the flackiness of the continuse scanner process by cleaning up the db after a certain period of time.
+func cleanUpDB() {
+	cleanUpDBRetry := 10
+	if os.Getenv("CLEAN_UP_DB_RETRY") != "" {
+		cleanUpRetry, err := strconv.Atoi(os.Getenv("CLEAN_UP_DB_RETRY"))
+		if err != nil {
+			log.WithFields(log.Fields{"error": err}).Error("Failed to parse CLEAN_UP_DB_RETRY")
+		} else {
+			cleanUpDBRetry = cleanUpRetry
+		}
+	}
+
+	for i := 0; i < cleanUpDBRetry; i++ {
+		if err := os.RemoveAll(common.CveDBExpandPath); err != nil {
+			log.WithFields(log.Fields{"error": err, "dir": cveDB.ExpandPath}).Error("Failed to remove directory")
+		} else {
+			break
+		}
+		time.Sleep(time.Second * 1)
+	}
 }
 
 func main() {
@@ -385,6 +408,7 @@ func main() {
 		if dbData == nil {
 			return
 		}
+		defer cleanUpDB()
 
 		if *pid != 0 {
 			scanRunning(*pid, dbData, *show, *capCritical)
