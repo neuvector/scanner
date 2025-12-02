@@ -538,11 +538,36 @@ func LoadRawFile(path, name string) ([]byte, error) {
 	return data, nil
 }
 
+// Reduce the flackiness of the continuse scanner process by cleaning up the db after a certain period of time.
+func CleanUpDB(path string) error {
+	cleanUpDBRetry := 10
+	if os.Getenv("CLEAN_UP_DB_RETRY") != "" {
+		cleanUpRetry, err := strconv.Atoi(os.Getenv("CLEAN_UP_DB_RETRY"))
+		if err != nil {
+			log.WithFields(log.Fields{"error": err}).Error("Failed to parse CLEAN_UP_DB_RETRY")
+		} else {
+			cleanUpDBRetry = cleanUpRetry
+		}
+	}
+
+	var err error
+	for i := 0; i < cleanUpDBRetry; i++ {
+		if err = os.RemoveAll(path); err != nil {
+			log.WithFields(log.Fields{"error": err, "dir": path}).Error("Failed to remove directory")
+		} else {
+			break
+		}
+		time.Sleep(time.Second * 1)
+	}
+	return err
+}
+
 func LoadCveDb(path, desPath string, encryptKey []byte) (string, string, error) {
 	var latestVer string
 
-	if err := os.RemoveAll(desPath); err != nil {
-		log.WithFields(log.Fields{"error": err, "dir": desPath}).Error("Failed to remove directory")
+	if err := CleanUpDB(desPath); err != nil {
+		log.WithFields(log.Fields{"error": err, "dir": desPath}).Error("Failed to remove directory before loading new database")
+		return "", "", err
 	}
 
 	if _, err := os.Stat(desPath); os.IsNotExist(err) {
