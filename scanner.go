@@ -385,11 +385,6 @@ func main() {
 		if dbData == nil {
 			return
 		}
-		defer func() {
-			if err := common.CleanUpDB(common.CveDBExpandPath); err != nil {
-				log.WithFields(log.Fields{"error": err}).Error("Failed to clean up database")
-			}
-		}()
 
 		if *pid != 0 {
 			scanRunning(*pid, dbData, *show, *capCritical)
