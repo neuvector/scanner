@@ -50,11 +50,13 @@ var (
 	}
 	defaultVer = "1.000"
 	wrongKey   = []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31}
+	fakeTime   = time.Date(2025, 12, 12, 0, 0, 0, 0, time.UTC)
+	mockTime   = time.Date(2025, 12, 1, 0, 0, 0, 0, time.UTC)
 )
 
 // CreateMinimalFakeCveDb creates a minimal fake CVE database
-func CreateMinimalFakeCveDb(dbFile, version string, encryptKey []byte) error {
-	tarBuf, fileShas, err := createMinimalTarArchive()
+func CreateMinimalFakeCveDb(dbFile, version string, encryptKey []byte, timestamp time.Time) error {
+	tarBuf, fileShas, err := createMinimalTarArchive(timestamp)
 	if err != nil {
 		return fmt.Errorf("create tar archive: %v", err)
 	}
@@ -66,7 +68,7 @@ func CreateMinimalFakeCveDb(dbFile, version string, encryptKey []byte) error {
 
 	keyVer := KeyVersion{
 		Version:    version,
-		UpdateTime: time.Now().Format(time.RFC3339),
+		UpdateTime: timestamp.Format(time.RFC3339),
 		Keys:       map[string]string{},
 		Shas:       fileShas,
 	}
@@ -89,7 +91,7 @@ func CreateMinimalFakeCveDb(dbFile, version string, encryptKey []byte) error {
 	return os.WriteFile(dbFile, finalBuf.Bytes(), 0644)
 }
 
-func createMinimalTarArchive() (*bytes.Buffer, map[string]string, error) {
+func createMinimalTarArchive(timestamp time.Time) (*bytes.Buffer, map[string]string, error) {
 	var tarBuf bytes.Buffer
 	tw := tar.NewWriter(&tarBuf)
 	defer tw.Close()
@@ -111,7 +113,7 @@ func createMinimalTarArchive() (*bytes.Buffer, map[string]string, error) {
 			Name:    filename,
 			Mode:    0644,
 			Size:    int64(len(content)),
-			ModTime: time.Now(),
+			ModTime: timestamp,
 		}
 
 		if err := tw.WriteHeader(header); err != nil {
@@ -150,13 +152,13 @@ func encryptData(plaintext []byte, key []byte) ([]byte, error) {
 	return gcm.Seal(nonce, nonce, plaintext, nil), nil
 }
 
-func prepareMockDbPaths(t *testing.T, encryptKey []byte) (string, string) {
+func prepareMockDbPaths(t *testing.T, encryptKey []byte, timestamp time.Time) (string, string) {
 	t.Helper()
 	dbRoot := t.TempDir()
 	expandRoot := t.TempDir()
 	dbPath := dbRoot + string(filepath.Separator)
 	dbFile := filepath.Join(dbRoot, "cvedb")
-	require.NoError(t, CreateMinimalFakeCveDb(dbFile, defaultVer, encryptKey))
+	require.NoError(t, CreateMinimalFakeCveDb(dbFile, defaultVer, encryptKey, mockTime))
 	return dbPath, expandRoot
 }
 
@@ -166,6 +168,7 @@ func TestLoadCveDB(t *testing.T) {
 		setupFunc   func(t *testing.T) (dbPath, expandPath string)
 		expectErr   error
 		expectedVer string
+		timestamp   time.Time
 	}{
 		{
 			name: "db file not exist, expand path not exist",
@@ -177,20 +180,22 @@ func TestLoadCveDB(t *testing.T) {
 		{
 			name: "db file exist, expand path not exist (first load)",
 			setupFunc: func(t *testing.T) (string, string) {
-				return prepareMockDbPaths(t, GetCVEDBEncryptKey())
+				return prepareMockDbPaths(t, GetCVEDBEncryptKey(), mockTime)
 			},
 			expectedVer: defaultVer,
+			timestamp:   mockTime,
 		},
 		{
 			name: "db file exist, expand path exist with same version",
 			setupFunc: func(t *testing.T) (string, string) {
-				dbPath, expandPath := prepareMockDbPaths(t, GetCVEDBEncryptKey())
+				dbPath, expandPath := prepareMockDbPaths(t, GetCVEDBEncryptKey(), mockTime)
 				// First load to expand the DB
 				_, _, err := LoadCveDb(dbPath, expandPath, GetCVEDBEncryptKey())
 				require.NoError(t, err)
 				return dbPath, expandPath
 			},
 			expectedVer: defaultVer,
+			timestamp:   mockTime,
 		},
 		{
 			name: "db file exist with newer version",
@@ -200,7 +205,7 @@ func TestLoadCveDB(t *testing.T) {
 				expandPath := t.TempDir()
 				dbPath1 := dbRoot1 + string(filepath.Separator)
 				dbFile1 := filepath.Join(dbRoot1, "cvedb")
-				require.NoError(t, CreateMinimalFakeCveDb(dbFile1, defaultVer, GetCVEDBEncryptKey()))
+				require.NoError(t, CreateMinimalFakeCveDb(dbFile1, defaultVer, GetCVEDBEncryptKey(), mockTime))
 				_, _, err := LoadCveDb(dbPath1, expandPath, GetCVEDBEncryptKey())
 				require.NoError(t, err)
 
@@ -208,11 +213,12 @@ func TestLoadCveDB(t *testing.T) {
 				dbRoot2 := t.TempDir()
 				dbPath2 := dbRoot2 + string(filepath.Separator)
 				dbFile2 := filepath.Join(dbRoot2, "cvedb")
-				require.NoError(t, CreateMinimalFakeCveDb(dbFile2, "2.000", GetCVEDBEncryptKey()))
+				require.NoError(t, CreateMinimalFakeCveDb(dbFile2, "2.000", GetCVEDBEncryptKey(), mockTime))
 
 				return dbPath2, expandPath
 			},
 			expectedVer: "2.000",
+			timestamp:   mockTime,
 		},
 		{
 			name: "invalid expand path (permission error)",
@@ -220,7 +226,7 @@ func TestLoadCveDB(t *testing.T) {
 				dbRoot := t.TempDir()
 				dbPath := dbRoot + string(filepath.Separator)
 				dbFile := filepath.Join(dbRoot, "cvedb")
-				require.NoError(t, CreateMinimalFakeCveDb(dbFile, "1.000", GetCVEDBEncryptKey()))
+				require.NoError(t, CreateMinimalFakeCveDb(dbFile, "1.000", GetCVEDBEncryptKey(), mockTime))
 				return dbPath, "/dev/null/invalid"
 			},
 			expectErr: &fs.PathError{
@@ -228,13 +234,15 @@ func TestLoadCveDB(t *testing.T) {
 				Path: "/dev/null/invalidkeys",
 				Err:  syscall.ENOTDIR,
 			},
+			timestamp: mockTime,
 		},
 		{
 			name: "wrong encryption key",
 			setupFunc: func(t *testing.T) (string, string) {
-				return prepareMockDbPaths(t, wrongKey)
+				return prepareMockDbPaths(t, wrongKey, fakeTime)
 			},
 			expectErr: errors.New("cipher: message authentication failed"),
+			timestamp: fakeTime,
 		},
 		{
 			name: "db with older version than expanded (use newer version)",
@@ -244,7 +252,7 @@ func TestLoadCveDB(t *testing.T) {
 				expandPath := t.TempDir()
 				dbPath1 := dbRoot1 + string(filepath.Separator)
 				dbFile1 := filepath.Join(dbRoot1, "cvedb")
-				require.NoError(t, CreateMinimalFakeCveDb(dbFile1, "2.000", GetCVEDBEncryptKey()))
+				require.NoError(t, CreateMinimalFakeCveDb(dbFile1, "2.000", GetCVEDBEncryptKey(), mockTime))
 				_, _, err := LoadCveDb(dbPath1, expandPath, GetCVEDBEncryptKey())
 				require.NoError(t, err)
 
@@ -252,11 +260,12 @@ func TestLoadCveDB(t *testing.T) {
 				dbRoot2 := t.TempDir()
 				dbPath2 := dbRoot2 + string(filepath.Separator)
 				dbFile2 := filepath.Join(dbRoot2, "cvedb")
-				require.NoError(t, CreateMinimalFakeCveDb(dbFile2, defaultVer, GetCVEDBEncryptKey()))
+				require.NoError(t, CreateMinimalFakeCveDb(dbFile2, defaultVer, GetCVEDBEncryptKey(), mockTime))
 
 				return dbPath2, expandPath
 			},
 			expectedVer: "2.000",
+			timestamp:   mockTime,
 		},
 	}
 
@@ -269,8 +278,8 @@ func TestLoadCveDB(t *testing.T) {
 			require.Equal(t, tc.expectErr, err)
 
 			if tc.expectErr == nil {
-				require.NotEmpty(t, updateTime)
 				require.Equal(t, tc.expectedVer, version)
+				require.Equal(t, tc.timestamp.Format(time.RFC3339), updateTime)
 			}
 		})
 	}
