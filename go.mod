@@ -2,7 +2,7 @@ module github.com/neuvector/scanner
 
 go 1.24.0
 
-toolchain go1.24.6
+toolchain go1.25.5
 
 replace k8s.io/cri-api => k8s.io/cri-api v0.25.16
 
