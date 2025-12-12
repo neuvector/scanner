@@ -21,13 +21,11 @@ scms:
 sources:
   sigstoreLatestCommit:
     name: Get latest sigstore-interface commit
-    kind: git
+    kind: shell
     spec:
-      url: "https://github.com/neuvector/sigstore-interface.git"
-      branch: main
-      versionfilter:
-        kind: regex
-        pattern: "^[0-9a-f]{40}$"
+      command: |
+        set -eu
+        git ls-remote https://github.com/neuvector/sigstore-interface.git main | awk 'NR==1 {print $1}'
 
 targets:
   updateSigstoreVersion:
