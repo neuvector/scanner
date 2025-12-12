@@ -18,19 +18,16 @@ scms:
         hidecredit: true
         footers: "Signed-off-by: neuvector bot <neuvector-bot@users.noreply.github.com>"
 
-
 sources:
   sigstoreLatestCommit:
     name: Get latest sigstore-interface commit
-    kind: gitcommit
+    kind: git
     spec:
-      owner: neuvector
-      repository: sigstore-interface
+      url: "https://github.com/neuvector/sigstore-interface.git"
       branch: main
-      token: "{{ requiredEnv .github.token }}"
       versionfilter:
         kind: regex
-        pattern: ".*"
+        pattern: "^[0-9a-f]{40}$"
 
 targets:
   updateSigstoreVersion:
@@ -40,9 +37,8 @@ targets:
     kind: file
     spec:
       file: package/Dockerfile
-      line: 3
       matchpattern: 'ARG SIGSTORE_VERSION=.*'
-      replacepattern: 'ARG SIGSTORE_VERSION={{ .source.sigstoreLatestCommit.output }}'
+      replacepattern: 'ARG SIGSTORE_VERSION={{ source "sigstoreLatestCommit" }}'
 
 actions:
   default:
@@ -54,8 +50,7 @@ actions:
         This PR updates sigstore-interface to the latest commit from the main branch.
 
         Changes:
-        - Updated sigstore-interface to latest commit: {{ .source.sigstoreLatestCommit.output }}
+        - Updated sigstore-interface to latest commit: {{ source "sigstoreLatestCommit" }}
       labels:
         - dependencies
       automerge: false
-
