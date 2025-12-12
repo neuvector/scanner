@@ -1,0 +1,61 @@
+name: Update sigstore-interface dependency
+
+scms:
+  scanner:
+    kind: github
+    spec:
+      user: "{{ .github.author }}"
+      email: "{{ .github.email }}"
+      directory: "/tmp/scanner"
+      owner: "{{ requiredEnv .github.owner }}"
+      repository: "scanner"
+      token: "{{ requiredEnv .github.token }}"
+      username: "{{ requiredEnv .github.user }}"
+      branch: "{{ .github.branch }}"
+      commitmessage:
+        type: "chore"
+        title: "Update sigstore-interface to latest commit"
+        hidecredit: true
+        footers: "Signed-off-by: neuvector bot <neuvector-bot@users.noreply.github.com>"
+
+
+sources:
+  sigstoreLatestCommit:
+    name: Get latest sigstore-interface commit
+    kind: gitcommit
+    spec:
+      owner: neuvector
+      repository: sigstore-interface
+      branch: main
+      token: "{{ requiredEnv .github.token }}"
+      versionfilter:
+        kind: regex
+        pattern: ".*"
+
+targets:
+  updateSigstoreVersion:
+    name: Update sigstore-interface version in Dockerfile
+    scmid: scanner
+    sourceid: sigstoreLatestCommit
+    kind: file
+    spec:
+      file: package/Dockerfile
+      line: 3
+      matchpattern: 'ARG SIGSTORE_VERSION=.*'
+      replacepattern: 'ARG SIGSTORE_VERSION={{ .source.sigstoreLatestCommit.output }}'
+
+actions:
+  default:
+    kind: github/pullrequest
+    scmid: scanner
+    spec:
+      title: 'chore: update sigstore-interface to latest commit ({{ now | date "2006-01-02" }})'
+      description: |
+        This PR updates sigstore-interface to the latest commit from the main branch.
+
+        Changes:
+        - Updated sigstore-interface to latest commit: {{ .source.sigstoreLatestCommit.output }}
+      labels:
+        - dependencies
+      automerge: false
+
