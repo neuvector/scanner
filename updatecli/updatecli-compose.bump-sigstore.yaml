@@ -1,0 +1,7 @@
+policies:
+  - name: Update sigstore-interface dependency
+    config:
+      - "updatecli.bump-sigstore.d"
+    values:
+      - values.yaml
+

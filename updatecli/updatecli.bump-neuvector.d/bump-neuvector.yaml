@@ -1,6 +1,5 @@
 name: Update neuvector dependency
 
-sources:
 scms:
   scanner:
     kind: github
