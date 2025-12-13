@@ -2059,34 +2059,34 @@ type CLUSAdmissionStats struct { // see type RESTAdmissionStats
 }
 
 type CLUSAdmRuleCriterion struct { // see type RESTAdmRuleCriterion
-	Name        string                  `json:"name"`
-	Op          string                  `json:"op"`
-	Value       string                  `json:"value"`
-	ValueSlice  []string                `json:"value_slice"`
-	SubCriteria []*CLUSAdmRuleCriterion `json:"sub_criteria,omitempty"`
-	Type        string                  `json:"type,omitempty"`
-	Kind        string                  `json:"template_kind,omitempty"`
-	Path        string                  `json:"path,omitempty"`
-	ValueType   string                  `json:"value_type,omitempty"`
+	Name        string                  `json:"name" yaml:"name"`
+	Op          string                  `json:"op" yaml:"op"`
+	Value       string                  `json:"value" yaml:"value"`
+	ValueSlice  []string                `json:"value_slice" yaml:"value_slice"`
+	SubCriteria []*CLUSAdmRuleCriterion `json:"sub_criteria,omitempty" yaml:"sub_criteria,omitempty"`
+	Type        string                  `json:"type,omitempty" yaml:"type,omitempty"`
+	Kind        string                  `json:"template_kind,omitempty" yaml:"template_kind,omitempty"`
+	Path        string                  `json:"path,omitempty" yaml:"path,omitempty"`
+	ValueType   string                  `json:"value_type,omitempty" yaml:"value_type,omitempty"`
 }
 
 type CLUSAdmissionRule struct { // see type RESTAdmissionRule
-	ID                uint32                  `json:"id"`
-	Category          string                  `json:"category"`
-	Comment           string                  `json:"comment"`
-	Criteria          []*CLUSAdmRuleCriterion `json:"criteria"`
-	Disable           bool                    `json:"disable"`
-	Critical          bool                    `json:"critical"`
-	CfgType           TCfgType                `json:"cfg_type"`
-	RuleType          string                  `json:"rule_type"` // "exception", "deny"
-	UseAsRiskyRoleTag bool                    `json:"use_as_risky_role_tag"`
-	RuleMode          string                  `json:"rule_mode"`  // "", "monitor", "protect"
-	Containers        uint8                   `json:"containers"` // 0 for all containers, 1 for containers, 2 for initContainers, 4 for ephemeralContainers (OR of supported types)
+	ID                uint32                  `json:"id" yaml:"id"`
+	Category          string                  `json:"category" yaml:"category"`
+	Comment           string                  `json:"comment" yaml:"comment"`
+	Criteria          []*CLUSAdmRuleCriterion `json:"criteria" yaml:"criteria"`
+	Disable           bool                    `json:"disable" yaml:"disable"`
+	Critical          bool                    `json:"critical" yaml:"critical"`
+	CfgType           TCfgType                `json:"cfg_type" yaml:"cfg_type"`
+	RuleType          string                  `json:"rule_type" yaml:"rule_type"` // "exception", "deny"
+	UseAsRiskyRoleTag bool                    `json:"use_as_risky_role_tag" yaml:"use_as_risky_role_tag"`
+	RuleMode          string                  `json:"rule_mode" yaml:"rule_mode"`   // "", "monitor", "protect"
+	Containers        uint8                   `json:"containers" yaml:"containers"` // 0 for all containers, 1 for containers, 2 for initContainers, 4 for ephemeralContainers (OR of supported types)
 }
 
 type CLUSAdmissionRules struct {
-	RuleMap   map[uint32]*CLUSAdmissionRule `json:"rule_map"` // key is rule ID
-	RuleHeads []*CLUSRuleHead               `json:"rule_heads"`
+	RuleMap   map[uint32]*CLUSAdmissionRule `json:"rule_map" yaml:"rule_map"` // key is rule ID
+	RuleHeads []*CLUSRuleHead               `json:"rule_heads" yaml:"rule_heads"`
 }
 
 const (
@@ -2262,9 +2262,11 @@ type CLUSCrdSecurityRule struct {
 	WafSensor       string                 `json:"waf_sensor,omitempty"`        // waf sensor defined in this crd security rule
 	VulnProfile     string                 `json:"vuln_profile,omitempty"`      // vulnerability profile defined in this crd security rule
 	CompProfile     string                 `json:"comp_profile,omitempty"`      // compliance profile defined in this crd security rule
+	FedConfig       string                 `json:"fed_config,omitempty"`        // fed system config(webhooks) defined in this crd security rule
 	Uid             string                 `json:"uid"`                         // metadata.uid in admissionreview CREATE request
 	CrdHash         string                 `json:"crd_hash"`                    // hex(sha256) of k8s crd resource metadata's name/namespace only
 	UpdatedAt       time.Time              `json:"updated_at"`
+	CfgType         TCfgType               `json:"cfgType"`
 }
 
 // Multi-Clusters (Federation)
@@ -2971,6 +2973,7 @@ const (
 	PREFIX_IMPORT_GROUP_POLICY = "group_import_"
 	PREFIX_IMPORT_ADMCTRL      = "admctrl_import_"
 	PREFIX_IMPORT_RESPONSE     = "response_import_"
+	PREFIX_IMPORT_FED_CONFIG   = "fed_config_import_"
 	PREFIX_IMPORT_DLP          = "dlp_import_"
 	PREFIX_IMPORT_WAF          = "waf_import_"
 	PREFIX_IMPORT_VULN_PROFILE = "vul_profile_import_" // for vulnerability profile
@@ -2982,6 +2985,7 @@ const (
 	IMPORT_TYPE_GROUP_POLICY = "group"
 	IMPORT_TYPE_ADMCTRL      = "admctrl"
 	IMPORT_TYPE_RESPONSE     = "response"
+	IMPORT_TYPE_FED_CONFIG   = "fed_config" // for fed config only
 	IMPORT_TYPE_DLP          = "dlp"
 	IMPORT_TYPE_WAF          = "waf"
 	IMPORT_TYPE_VULN_PROFILE = "vuln_profile" // for vulnerability profile
@@ -2998,6 +3002,7 @@ func CLUSImportOpKey(name string) string {
 type CLUSImportTask struct {
 	TID                    string              `json:"tid"`
 	ImportType             string              `json:"import_type"`
+	Scope                  string              `json:"scope"`
 	CtrlerID               string              `json:"ctrler_id"`
 	TempFilename           string              `json:"temp_filename"`
 	Status                 string              `json:"status"`
@@ -3042,6 +3047,7 @@ const (
 	ReviewTypeImportGroup       // interactive import
 	ReviewTypeImportAdmCtrl     // interactive import
 	ReviewTypeImportResponse    // interactive import
+	ReviewTypeImportFedConfig   // interactive import
 	ReviewTypeImportDLP         // interactive import
 	ReviewTypeImportWAF         // interactive import
 	ReviewTypeImportVulnProfile // interactive import vulnerability profile
@@ -3053,6 +3059,7 @@ const (
 	ReviewTypeDisplayGroup       = "Group Policy"                       // interactive import
 	ReviewTypeDisplayAdmission   = "Admission Control Configurations"   // interactive import
 	ReviewTypeDisplayResponse    = "Non-group-dependent response rules" // interactive import
+	ReviewTypeDisplayFedConfig   = "Federal Config"                     // interactive import
 	ReviewTypeDisplayDLP         = "DLP Configurations"                 // interactive import
 	ReviewTypeDisplayWAF         = "WAF Configurations"                 // interactive import
 	ReviewTypeDisplayVulnProfile = "Vulnerability Profile"              // interactive import
