@@ -18,7 +18,7 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
     - name: Load Secrets from Vault
       uses: rancher-eio/read-vault-secrets@main
       with:
@@ -79,7 +79,7 @@ jobs:
       id-token: write
     steps:
     - name: Checkout code
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
     - name: Load Secrets from Vault
       uses: rancher-eio/read-vault-secrets@main
       with:
@@ -103,7 +103,7 @@ jobs:
         fi
     - name: Login to registry
       if: env.UPDATE_MUTABLE_TAG == 'True'
-      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
+      uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
       with:
         registry: docker.io
         username: ${{ env.DOCKER_USERNAME }}
@@ -114,7 +114,7 @@ jobs:
         docker buildx imagetools create --tag docker.io/${{ github.repository_owner }}/scanner:6 docker.io/${{ github.repository_owner }}/scanner:${TAG}
     - name: Login to registry
       if: env.UPDATE_MUTABLE_TAG == 'True'
-      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
+      uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
       with:
         registry: ${{ env.PRIME_REGISTRY }}
         username: ${{ env.PRIME_REGISTRY_USERNAME }}
@@ -125,7 +125,7 @@ jobs:
         docker buildx imagetools create --tag ${PRIME_REGISTRY}/rancher/neuvector-scanner:6 ${PRIME_REGISTRY}/rancher/neuvector-scanner:${TAG}
     - name: Login to registry
       if: env.UPDATE_MUTABLE_TAG == 'True'
-      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
+      uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
       with:
         registry: docker.io
         username: ${{ env.RANCHER_DOCKER_USERNAME }}
