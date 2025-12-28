@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"sort"
 	"strings"
@@ -298,22 +299,37 @@ func scanRunning(pid int, cvedb map[string]*share.ScanVulnerability, showOptions
 }
 
 // Normalize registry because we can supply registry via environment trough monitor (standalone).
-func normalizeRegistry(reg string) string {
+func normalizeRegistry(reg string) (string, error) {
+	reg = strings.TrimSpace(reg)
 	if reg == "" {
-		return reg
+		return reg, nil
 	}
-	if !strings.HasPrefix(reg, "http://") && !strings.HasPrefix(reg, "https://") {
-		reg = "https://" + reg
+
+	rawUrl := reg
+	if !strings.HasPrefix(rawUrl, "http://") && !strings.HasPrefix(rawUrl, "https://") {
+		rawUrl = "https://" + rawUrl
 	}
-	if normalizedReg, err := scanUtils.ParseRegistryURI(reg); err == nil {
-		return normalizedReg
+
+	u, err := url.Parse(rawUrl)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse registry URL %q: %w", reg, err)
+	}
+
+	if u.Host == "" {
+		return "", fmt.Errorf("invalid registry URL %q: missing host", reg)
+	}
+
+	normalizedReg, err := scanUtils.ParseRegistryURI(u.String())
+	if err != nil {
+		return "", fmt.Errorf("invalid registry URI %q: %w", reg, err)
 	}
 	// Fallback: ensure trailing slash if parsing failed, to prevent "image is not scanned" warning.
-	if !strings.HasSuffix(reg, "/") {
-		reg += "/"
+	if !strings.HasSuffix(normalizedReg, "/") {
+		normalizedReg += "/"
 	}
-	return reg
+	return normalizedReg, nil
 }
+
 func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulnerability, showOptions string, capCritical bool) *share.ScanResult {
 	var result *share.ScanResult
 	var err error
@@ -324,7 +340,11 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 		CVEDB:           cvedb,
 	}
 	scanUtils.SetScannerDB(newDB)
-	req.Registry = normalizeRegistry(req.Registry)
+	req.Registry, err = normalizeRegistry(req.Registry)
+	if err != nil {
+		log.WithFields(log.Fields{"registry": req.Registry, "error": err}).Error("Failed to normalize registry")
+		return nil
+	}
 	var dockerRegistries = utils.NewSet("https://docker.io/", "https://index.docker.io/", "https://registry.hub.docker.com/", "https://registry-1.docker.io/")
 	log.WithFields(log.Fields{"req.Registry": req.Registry, "req.Repository": req.Repository, "dockerRegistries.Contains(req.Registry)": dockerRegistries.Contains(req.Registry)}).Info("registry")
 	// Add "library" for dockerhub if not exist

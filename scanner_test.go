@@ -89,8 +89,9 @@ func TestNormalizeRegistry(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			got := normalizeRegistry(tt.input)
+			got, err := normalizeRegistry(tt.input)
 			require.Equal(t, tt.expected, got)
+			require.NoError(t, err)
 		})
 	}
 }
