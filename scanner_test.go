@@ -74,24 +74,33 @@ func TestParseTagOrDigest(t *testing.T) {
 }
 func TestNormalizeRegistry(t *testing.T) {
 	tests := []struct {
-		input    string
-		expected string
+		input       string
+		expected    string
+		expectError bool
 	}{
-		{"", ""},
-		{"example.com", "https://example.com/"},
-		{"http://example.com", "http://example.com/"},
-		{"https://example.com", "https://example.com/"},
-		{"https://example.com/", "https://example.com/"},
-		{"http://example.com:5000", "http://example.com:5000/"},
-		{"example.com:5000", "https://example.com:5000/"},
-		{"https://registry.example.com/", "https://registry.example.com/"},
+		{"", "", false},
+		{"example.com", "https://example.com/", false},
+		{"http://example.com", "http://example.com/", false},
+		{"https://example.com", "https://example.com/", false},
+		{"https://example.com/", "https://example.com/", false},
+		{"http://example.com:5000", "http://example.com:5000/", false},
+		{"example.com:5000", "https://example.com:5000/", false},
+		{"https://registry.example.com/", "https://registry.example.com/", false},
+		{"exa mple.com", "", true},
+		{"http://exa mple.com", "", true},
+		{"https://exa mple.com", "", true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
 			got, err := normalizeRegistry(tt.input)
-			require.Equal(t, tt.expected, got)
-			require.NoError(t, err)
+			if tt.expectError {
+				require.Error(t, err)
+				require.Empty(t, got)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.expected, got)
+			}
 		})
 	}
 }

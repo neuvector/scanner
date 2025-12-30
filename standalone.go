@@ -136,14 +136,19 @@ func writeResultToFile(req *share.ScanImageRequest, result *share.ScanResult, er
 	}
 
 	output := fmt.Sprintf("%s/%s", scanOutputDir, scanOutputFile)
-	if writeErr := os.WriteFile(output, data, 0o644); writeErr != nil {
-		log.WithFields(log.Fields{
-			"registry": req.Registry, "repo": req.Repository, "tag": req.Tag, "error": writeErr.Error(), "output": output,
-		}).Error("Failed to write scan result")
+	writeErr := os.WriteFile(output, data, 0o644)
+	logFields := log.Fields{
+		"registry": req.Registry,
+		"repo":     req.Repository,
+		"tag":      req.Tag,
+		"output":   output,
 	}
-	log.WithFields(log.Fields{
-		"registry": req.Registry, "repo": req.Repository, "tag": req.Tag, "output": output,
-	}).Debug("Write scan result to file")
+	if writeErr != nil {
+		logFields["error"] = writeErr.Error()
+		log.WithFields(logFields).Error("Failed to write scan result")
+	} else {
+		log.WithFields(logFields).Debug("Write scan result to file")
+	}
 }
 
 func writeResultToStdout(result *share.ScanResult, showOptions string) {
