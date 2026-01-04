@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -130,8 +131,14 @@ func (rs *rpcService) ScanImageData(ctx context.Context, data *share.ScanData) (
 }
 
 func (rs *rpcService) ScanImage(ctx context.Context, req *share.ScanImageRequest) (sr *share.ScanResult, err error) {
+	ref := req.Tag
+	sep := ":"
+	if strings.HasPrefix(ref, "sha256:") {
+		sep = "@"
+	}
+
 	log.WithFields(log.Fields{
-		"Registry": req.Registry, "image": fmt.Sprintf("%s:%s", req.Repository, req.Tag),
+		"Registry": req.Registry, "image": fmt.Sprintf("%s%s%s", req.Repository, sep, ref),
 	}).Debug()
 
 	if scanTasker != nil {
