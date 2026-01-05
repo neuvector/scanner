@@ -198,13 +198,13 @@ func main() {
 	joinPort := flag.Uint("join_port", 0, "Controller join port")
 	adv := flag.String("a", "", "Advertise address")
 	advPort := flag.Uint("adv_port", 0, "Advertise port")
-	rtSock := flag.String("u", dockerSocket, "Container socket URL") // used for scan local image
-	license := flag.String("license", "", "Scanner license")         // it means on-demand stand-alone scanner
-	image := flag.String("image", "", "Scan image")                  // overwrite registry, repository and tag
+	rtSock := flag.String("u", dockerSocket, "Container socket URL")                                                       // used for scan local image
+	license := flag.String("license", "", "Scanner license")                                                               // it means on-demand stand-alone scanner
+	image := flag.String("image", "", "Scan image (Docker/OCI ref: [registry/][namespace/]name[:tag] or name@sha256:...)") // overwrite registry, repository and tag
 	pid := flag.Int("pid", 0, "Scan host or container")
 	registry := flag.String("registry", "", "Scan image registry")
 	repository := flag.String("repository", "", "Scan image repository")
-	tag := flag.String("tag", "latest", "Scan image tag")
+	tag := flag.String("tag", "latest", "Scan image tag (or digest like sha256:...)")
 	regUser := flag.String("registry_username", "", "Registry username")
 	regPass := flag.String("registry_password", "", "Registry password")
 	scanLayers := flag.Bool("scan_layers", false, "Scan image layers")
