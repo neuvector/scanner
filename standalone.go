@@ -309,6 +309,8 @@ func normalizeRegistry(reg string) (string, error) {
 	if reg == "" {
 		return reg, nil
 	}
+	// Remove trailing slash if present, avoid double slashes in the URL.
+	reg = strings.TrimSuffix(reg, "/")
 
 	rawUrl := reg
 	if !strings.HasPrefix(rawUrl, "http://") && !strings.HasPrefix(rawUrl, "https://") {
@@ -324,15 +326,7 @@ func normalizeRegistry(reg string) (string, error) {
 		return "", fmt.Errorf("invalid registry URL %q: missing host", reg)
 	}
 
-	normalizedReg, err := scanUtils.ParseRegistryURI(u.String())
-	if err != nil {
-		return "", fmt.Errorf("invalid registry URI %q: %w", reg, err)
-	}
-	// Fallback: ensure trailing slash if parsing failed, to prevent "image is not scanned" warning.
-	if !strings.HasSuffix(normalizedReg, "/") {
-		normalizedReg += "/"
-	}
-	return normalizedReg, nil
+	return rawUrl, nil
 }
 
 func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulnerability, showOptions string, capCritical bool) *share.ScanResult {
