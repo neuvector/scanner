@@ -309,8 +309,6 @@ func normalizeRegistry(reg string) (string, error) {
 	if reg == "" {
 		return reg, nil
 	}
-	// Remove trailing slash if present, avoid double slashes in the URL.
-	reg = strings.TrimSuffix(reg, "/")
 
 	rawUrl := reg
 	if !strings.HasPrefix(rawUrl, "http://") && !strings.HasPrefix(rawUrl, "https://") {
@@ -407,11 +405,22 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 	if strings.HasPrefix(ref, "sha256:") {
 		sep = "@"
 	}
+
+	var imageRef string
 	if req.Registry != "" {
-		fmt.Printf("Image: %s/%s%s%s\n", req.Registry, req.Repository, sep, ref)
+		// Join registry and repository paths, then append tag/digest
+		basePath, err := url.JoinPath(req.Registry, req.Repository)
+		if err != nil {
+			log.WithFields(log.Fields{"error": err}).Error("Failed to join registry and repository")
+			return nil
+		}
+		imageRef = basePath + sep + ref
 	} else {
-		fmt.Printf("Image: %s%s%s\n", req.Repository, sep, ref)
+		// No registry: just repository + tag/digest
+		imageRef = req.Repository + sep + ref
 	}
+	fmt.Printf("Image: %s\n", imageRef)
+
 	writeResultToFile(req, result, err)
 	writeResultToStdout(result, showOptions)
 	return result
