@@ -40,7 +40,7 @@ func collectImageFileMap(rootPath string, fmap map[string]string) (int, []string
 	}
 	//
 	var opqDirs []string
-	var curfmap map[string]string = make(map[string]string)
+	curfmap := make(map[string]string)
 
 	rootLen := len(filepath.Clean(rootPath))
 	errorCnt := 0

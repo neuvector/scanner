@@ -282,7 +282,7 @@ func scannerRegisterStream(ctx context.Context, client share.ControllerScanServi
 	stream, err := client.ScannerRegisterStream(ctx)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to get stream")
-		return errors.New("Failed to  to controller")
+		return errors.New("failed to connect to controller")
 	}
 
 	// send a block without data to test if stream API is supported
@@ -295,7 +295,7 @@ func scannerRegisterStream(ctx context.Context, client share.ControllerScanServi
 	err = stream.Send(data)
 	if err == io.EOF {
 		log.Info("Stream register API is not supported")
-		return errors.New("Stream register API is not supported")
+		return errors.New("stream register API is not supported")
 	} else if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to send")
 		return err
@@ -334,7 +334,7 @@ func scannerRegisterStream(ctx context.Context, client share.ControllerScanServi
 		err = stream.Send(data)
 		if err == io.EOF {
 			log.Info("Stream register API is not supported")
-			return errors.New("Stream register API is not supported")
+			return errors.New("stream register API is not supported")
 		} else if err != nil {
 			log.WithFields(log.Fields{"error": err}).Error("Failed to send")
 			return err
@@ -417,7 +417,7 @@ func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegister
 	client, err := getControllerServiceClient(joinIP, joinPort, cb)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to find ctrl client")
-		return errors.New("Failed to connect to controller")
+		return errors.New("failed to connect to controller")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*180)
@@ -475,7 +475,7 @@ func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegister
 	_, err = client.ScannerRegister(ctx, data)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to register")
-		return errors.New("Failed to send register request")
+		return errors.New("failed to send register request")
 	}
 	return nil
 }
@@ -486,7 +486,7 @@ func scannerDeregister(joinIP string, joinPort uint16, id string) error {
 	client, err := getControllerServiceClient(joinIP, joinPort, nil)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to find ctrl client")
-		return errors.New("Failed to connect to controller")
+		return errors.New("failed to connect to controller")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
@@ -495,7 +495,7 @@ func scannerDeregister(joinIP string, joinPort uint16, id string) error {
 	_, err = client.ScannerDeregister(ctx, &share.ScannerDeregisterData{ID: id})
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to deregister")
-		return errors.New("Failed to send deregister request")
+		return errors.New("failed to send deregister request")
 	}
 	return nil
 }
@@ -504,7 +504,7 @@ func getScannerAvailable(joinIP string, joinPort uint16, data *share.ScannerRegi
 	client, err := getControllerServiceClient(joinIP, joinPort, cb)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to find ctrl client")
-		return &share.ScannerAvailable{Visible: false}, errors.New("Failed to connect to controller")
+		return &share.ScannerAvailable{Visible: false}, errors.New("failed to connect to controller")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)

@@ -19,7 +19,6 @@ import (
 
 	"github.com/neuvector/neuvector/controller/api"
 	"github.com/neuvector/neuvector/share"
-	"github.com/neuvector/neuvector/share/scan"
 	scanUtils "github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/system"
 	"github.com/neuvector/neuvector/share/utils"
@@ -269,7 +268,7 @@ func scanRunning(pid int, cvedb map[string]*share.ScanVulnerability, showOptions
 
 	sys := system.NewSystemTools()
 	sysInfo := sys.GetSystemInfo()
-	scanUtil := scan.NewScanUtil(sys)
+	scanUtil := scanUtils.NewScanUtil(sys)
 	cveTools := cvetools.NewScanTools("", sys, nil, "")
 
 	var data share.ScanData
@@ -465,7 +464,7 @@ func apiLogin(c *apiClient, myIP string, user, pass string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode/100 != 2 {
-		return fmt.Errorf("Login failed with status code %d", resp.StatusCode)
+		return fmt.Errorf("login failed with status code %d", resp.StatusCode)
 	}
 
 	body, err = io.ReadAll(resp.Body)
@@ -499,7 +498,7 @@ func apiLogout(c *apiClient) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode/100 != 2 {
-		return fmt.Errorf("Logout failed with status code %d", resp.StatusCode)
+		return fmt.Errorf("logout failed with status code %d", resp.StatusCode)
 	}
 
 	c.token = ""
@@ -526,7 +525,7 @@ func apiSubmitResult(c *apiClient, result *share.ScanResult) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode/100 != 2 {
-		return fmt.Errorf("Submit scan result failed with status code %d", resp.StatusCode)
+		return fmt.Errorf("submit scan result failed with status code %d", resp.StatusCode)
 	}
 
 	return nil

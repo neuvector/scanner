@@ -358,10 +358,10 @@ func readAppDbMeta(path string, fullDb map[string]*share.ScanVulnerability, outp
 
 					e.Packages = append(e.Packages, &OutputPackage{Package: v.ModuleName})
 					for _, fv := range v.FixedVer {
-						op := strings.Replace(fv.OpCode, "or", "||", -1)
-						op = strings.Replace(op, "gt", ">", -1)
-						op = strings.Replace(op, "lt", "<", -1)
-						op = strings.Replace(op, "eq", "=", -1)
+						op := strings.ReplaceAll(fv.OpCode, "or", "||")
+						op = strings.ReplaceAll(op, "gt", ">")
+						op = strings.ReplaceAll(op, "lt", "<")
+						op = strings.ReplaceAll(op, "eq", "=")
 						e.Packages[0].FixedVersion = fmt.Sprintf("%s%s;%s", op, fv.Version, e.Packages[0].FixedVersion)
 					}
 					ov.Entries = append(ov.Entries, e)
@@ -575,7 +575,7 @@ func LoadCveDb(path, desPath string, encryptKey []byte) (string, string, error) 
 		newVer, update, err = CheckExpandedDb(desPath, true)
 		if err != nil {
 			log.WithFields(log.Fields{"error": err}).Error("CVE database format error")
-			return "", "", errors.New("Invalid database format")
+			return "", "", errors.New("invalid database format")
 		}
 		latestVer = fmt.Sprintf("%.3f", newVer)
 	} else if oldErr == nil && err == nil && newVer > oldVer {
@@ -620,40 +620,40 @@ func LoadCveDb(path, desPath string, encryptKey []byte) (string, string, error) 
 func GetDbVersion(path string) (float64, string, error) {
 	f, err := os.Open(path + share.DefaultCVEDBName)
 	if err != nil {
-		return 0, "", fmt.Errorf("Read db file fail: %v", err)
+		return 0, "", fmt.Errorf("read db file fail: %v", err)
 	}
 	defer f.Close()
 
 	bhead := make([]byte, 4)
 	nlen, err := f.Read(bhead)
 	if err != nil || nlen != 4 {
-		return 0, "", fmt.Errorf("Read db file error: %v", err)
+		return 0, "", fmt.Errorf("read db file error: %v", err)
 	}
 	var headLen int32
 	err = binary.Read(bytes.NewReader(bhead), binary.BigEndian, &headLen)
 	if err != nil {
-		return 0, "", fmt.Errorf("Read header len error: %v", err)
+		return 0, "", fmt.Errorf("read header len error: %v", err)
 	}
 
 	if headLen > maxVersionHeader {
-		return 0, "", fmt.Errorf("Version Header too big: %v", headLen)
+		return 0, "", fmt.Errorf("version header too big: %v", headLen)
 	}
 
 	bhead = make([]byte, headLen)
 	nlen, err = f.Read(bhead)
 	if err != nil || nlen != int(headLen) {
-		return 0, "", fmt.Errorf("Read db file version error:%v", err)
+		return 0, "", fmt.Errorf("read db file version error: %v", err)
 	}
 
 	var keyVer KeyVersion
 
 	err = json.Unmarshal(bhead, &keyVer)
 	if err != nil {
-		return 0, "", fmt.Errorf("Unmarshal keys error:%v", err)
+		return 0, "", fmt.Errorf("unmarshal keys error: %v", err)
 	}
 	verFl, err := strconv.ParseFloat(keyVer.Version, 64)
 	if err != nil {
-		return 0, "", fmt.Errorf("Invalid version value:%v", err)
+		return 0, "", fmt.Errorf("invalid version value: %v", err)
 	}
 
 	return verFl, keyVer.UpdateTime, nil

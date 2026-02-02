@@ -214,7 +214,7 @@ func (lc *ImageLayerCacher) RecordName(id string, record interface{}) string {
 func (lc *ImageLayerCacher) ReadRecordCache(id string, record interface{}) (string, error) {
 	name := lc.RecordName(id, record)
 	if name == "" {
-		return "", errors.New("Invalid type")
+		return "", errors.New("invalid type")
 	}
 
 	// log.WithFields(log.Fields{"name": name}).Debug()
@@ -253,7 +253,7 @@ func (lc *ImageLayerCacher) ReadRecordCache(id string, record interface{}) (stri
 func (lc *ImageLayerCacher) WriteRecordCache(id string, record interface{}, keeper utils.Set) error {
 	name := lc.RecordName(id, record)
 	if name == "" {
-		return errors.New("Invalid type")
+		return errors.New("invalid type")
 	}
 
 	// log.WithFields(log.Fields{"name": name}).Debug()

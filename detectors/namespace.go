@@ -49,22 +49,22 @@ func detectOSRelease(data map[string]*FeatureFile) *Namespace {
 
 			r := osReleaseOSRegexp.FindStringSubmatch(line)
 			if len(r) == 2 {
-				OS = strings.Replace(strings.ToLower(r[1]), "\"", "", -1)
+				OS = strings.ReplaceAll(strings.ToLower(r[1]), "\"", "")
 			}
 
 			r = osReleaseVersionRegexp.FindStringSubmatch(line)
 			if len(r) == 2 {
-				version = strings.Replace(strings.ToLower(r[1]), "\"", "", -1)
+				version = strings.ReplaceAll(strings.ToLower(r[1]), "\"", "")
 			}
 
 			r = osReleaseCodenameRegexp.FindStringSubmatch(line)
 			if len(r) == 2 {
-				codename = strings.Replace(strings.ToLower(r[1]), "\"", "", -1)
+				codename = strings.ReplaceAll(strings.ToLower(r[1]), "\"", "")
 			}
 
 			r = osReleaseRHELVersionRegexp.FindStringSubmatch(line)
 			if len(r) == 2 {
-				rhelVer = strings.Replace(strings.ToLower(r[1]), "\"", "", -1)
+				rhelVer = strings.ReplaceAll(strings.ToLower(r[1]), "\"", "")
 			}
 
 			if OS == "rhel" {
@@ -106,12 +106,12 @@ func detectLSBRelease(data map[string]*FeatureFile) *Namespace {
 
 		r := lsbReleaseOSRegexp.FindStringSubmatch(line)
 		if len(r) == 2 {
-			OS = strings.Replace(strings.ToLower(r[1]), "\"", "", -1)
+			OS = strings.ReplaceAll(strings.ToLower(r[1]), "\"", "")
 		}
 
 		r = lsbReleaseVersionRegexp.FindStringSubmatch(line)
 		if len(r) == 2 {
-			version = strings.Replace(strings.ToLower(r[1]), "\"", "", -1)
+			version = strings.ReplaceAll(strings.ToLower(r[1]), "\"", "")
 
 			// We care about the .04 for Ubuntu but not for Debian / CentOS
 			if OS == "centos" || OS == "debian" {

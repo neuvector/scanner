@@ -82,7 +82,7 @@ func processRequest(tm *taskMain, scanType, infile, workingPath string) int {
 			return tm.doScanTask(req, workingPath)
 		}
 	default:
-		err = errors.New("Invalid type")
+		err = errors.New("invalid type")
 	}
 
 	log.WithFields(log.Fields{"type": scanType, "err": err}).Error("")

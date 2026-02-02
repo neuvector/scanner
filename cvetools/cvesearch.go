@@ -299,8 +299,8 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	}
 
 	var info *scan.ImageInfo
-	var baseLayers utils.Set = utils.NewSet()
-	var secret *share.ScanSecretResult = &share.ScanSecretResult{
+	baseLayers := utils.NewSet()
+	secret := &share.ScanSecretResult{
 		Error: share.ScanErrorCode_ScanErrNone,
 		Logs:  make([]*share.ScanSecretLog, 0),
 	}
@@ -1131,10 +1131,7 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 	}
 	featName := fmt.Sprintf("%s:%s", namespace, name)
 	vs := mv[featName]
-	skipEpoch := false
-	if strings.HasPrefix(namespace, "amzn") {
-		skipEpoch = true
-	}
+	skipEpoch := strings.HasPrefix(namespace, "amzn")
 
 	matchMap := make(map[string]share.ScanVulStatus)
 	moduleVuls := make([]detectors.ModuleVul, 0)
@@ -1182,11 +1179,12 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 						log.WithFields(log.Fields{"error": err, "version": window.max}).Error()
 						continue
 					}
-					if maxVer == utils.MaxVersion {
+					switch maxVer {
+					case utils.MaxVersion:
 						afStatus = share.ScanVulStatus_Unpatched
-					} else if maxVer == utils.MinVersion {
+					case utils.MinVersion:
 						afStatus = share.ScanVulStatus_Unaffected
-					} else {
+					default:
 						afStatus = share.ScanVulStatus_FixExists
 					}
 					//check if module is within version window.
@@ -1261,11 +1259,12 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 				log.WithFields(log.Fields{"error": err, "version": fixVer}).Error()
 				continue
 			}
-			if ver == utils.MaxVersion {
+			switch ver {
+			case utils.MaxVersion:
 				afStatus = share.ScanVulStatus_Unpatched
-			} else if ver == utils.MinVersion {
+			case utils.MinVersion:
 				afStatus = share.ScanVulStatus_Unaffected
-			} else {
+			default:
 				afStatus = share.ScanVulStatus_FixExists
 			}
 			if skipEpoch {
@@ -1492,7 +1491,7 @@ func getVulItemList(vuls []vulFullReport, dbPrefix string) []*share.ScanVulnerab
 			PackageNameDeprecated: featver.Package,
 			PackageName:           featver.Package,
 			PackageVersion:        packVer,
-			FixedVersion:          strings.Replace(fixedInVer, "||", " OR ", -1),
+			FixedVersion:          strings.ReplaceAll(fixedInVer, "||", " OR "),
 			PublishedDate:         fmt.Sprintf("%d", v.IssuedDate.Unix()),
 			LastModifiedDate:      fmt.Sprintf("%d", v.LastModDate.Unix()),
 			CPEs:                  cpes,
