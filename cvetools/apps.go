@@ -145,11 +145,11 @@ func appVul2FullVul(app detectors.AppFeatureVersion, mv common.AppModuleVul) vul
 func moduleVer2FixVer(app detectors.AppFeatureVersion, mv common.AppModuleVul) common.FeaFull {
 	ft := common.FeaFull{Name: mv.ModuleName}
 	for i, v := range mv.FixedVer {
-		s := strings.Replace(v.OpCode, "or", "||", -1)
-		s = strings.Replace(s, "andlt", "<", -1)
-		s = strings.Replace(s, "gt", ">", -1)
-		s = strings.Replace(s, "lt", "<", -1)
-		s = strings.Replace(s, "eq", "=", -1)
+		s := strings.ReplaceAll(v.OpCode, "or", "||")
+		s = strings.ReplaceAll(s, "andlt", "<")
+		s = strings.ReplaceAll(s, "gt", ">")
+		s = strings.ReplaceAll(s, "lt", "<")
+		s = strings.ReplaceAll(s, "eq", "=")
 		ft.Version += s + v.Version
 		if i < (len(mv.FixedVer) - 1) {
 			ft.Version += ";"

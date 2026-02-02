@@ -72,7 +72,7 @@ func (tm *taskMain) doScanTask(request interface{}, workingPath string) int {
 	case share.ScanAwsLambdaRequest:
 		res, err = tm.ScanAwsLambda(req, workingPath)
 	default:
-		err = errors.New("Invalid type")
+		err = errors.New("invalid type")
 	}
 
 	if err != nil {

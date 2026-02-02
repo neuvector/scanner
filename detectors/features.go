@@ -378,7 +378,7 @@ func detectRPM(namespace string, files map[string]*FeatureFile, path string) ([]
 			}
 
 			// Parse version
-			version, err := utils.NewVersion(strings.Replace(line[1], "(none):", "", -1))
+			version, err := utils.NewVersion(strings.ReplaceAll(line[1], "(none):", ""))
 			if err != nil {
 				log.Warningf("could not parse package version '%s': %s. skipping", line[1], err.Error())
 				continue

@@ -175,7 +175,7 @@ func TestLoadCveDB(t *testing.T) {
 			setupFunc: func(t *testing.T) (string, string) {
 				return "not_exist/", t.TempDir()
 			},
-			expectErr: errors.New("Read db file fail: open not_exist/cvedb: no such file or directory"),
+			expectErr: errors.New("read db file fail: open not_exist/cvedb: no such file or directory"),
 		},
 		{
 			name: "db file exist, expand path not exist (first load)",
