@@ -449,6 +449,9 @@ func getImageLayerIterate(
 			if scan.OSPkgFiles.Contains(path) || scan.IsAppsPkgFile(path, fullpath) {
 				return true
 			}
+			if isBitNami(path) {
+				return true
+			}
 			if strings.HasPrefix(path, scan.DpkgStatusDir) {
 				return true
 			}
@@ -491,6 +494,13 @@ func getImageLayerIterate(
 				}
 			} else if scan.IsAppsPkgFile(filename, fullpath) {
 				curLayerApps.ExtractAppPkg(filename, fullpath)
+				continue
+			} else if isBitNami(filename) {
+				pkgs, err := getBitNamiComponents(fullpath, filename)
+				if err != nil {
+					continue
+				}
+				curLayerApps.AddPkgs(pkgs)
 				continue
 			} else {
 				// Files have been selectively picked above.
