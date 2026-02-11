@@ -205,12 +205,8 @@ func main() {
 	registry := flag.String("registry", "", "Scan image registry")
 	repository := flag.String("repository", "", "Scan image repository")
 	tag := flag.String("tag", "latest", "Scan image tag (or digest like sha256:...)")
-	regUser := flag.String("registry_username", "", "Registry username")
-	regPass := flag.String("registry_password", "", "Registry password")
 	scanLayers := flag.Bool("scan_layers", false, "Scan image layers")
 	baseImage := flag.String("base_image", "", "Base image")
-	ctrlUser := flag.String("ctrl_username", "", "Controller REST API username")
-	ctrlPass := flag.String("ctrl_password", "", "Controller REST API password")
 	noWait := flag.Bool("no_wait", false, "No initial wait")
 	noTask := flag.Bool("no_task", false, "Not using scanner task")
 	verbose := flag.Bool("x", false, "more debug")
@@ -256,6 +252,11 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 		showTaskDebug = true
 	}
+
+	regUser := os.Getenv("SCANNER_REGISTRY_USERNAME")
+	regPass := os.Getenv("SCANNER_REGISTRY_PASSWORD")
+	ctrlUser := os.Getenv("SCANNER_CTRL_API_USERNAME")
+	ctrlPass := os.Getenv("SCANNER_CTRL_API_PASSWORD")
 
 	var grpcServer *cluster.GRPCServer
 	var ctx context.Context
@@ -404,8 +405,8 @@ func main() {
 				Registry:    reg,
 				Repository:  repo,
 				Tag:         tag,
-				Username:    *regUser,
-				Password:    *regPass,
+				Username:    regUser,
+				Password:    regPass,
 				ScanLayers:  *scanLayers,
 				ScanSecrets: false,
 				BaseImage:   *baseImage,
@@ -415,8 +416,8 @@ func main() {
 				Registry:    *registry,
 				Repository:  *repository,
 				Tag:         *tag,
-				Username:    *regUser,
-				Password:    *regPass,
+				Username:    regUser,
+				Password:    regPass,
 				ScanLayers:  *scanLayers,
 				ScanSecrets: true,
 				BaseImage:   *baseImage,
@@ -429,7 +430,7 @@ func main() {
 
 		// submit scan result if join address is given
 		if result != nil && result.Error == share.ScanErrorCode_ScanErrNone &&
-			*join != "" && *ctrlUser != "" && *ctrlPass != "" {
+			*join != "" && ctrlUser != "" && ctrlPass != "" {
 			if *adv == "" {
 				_, addr, err := cluster.ResolveJoinAndBindAddr(*join, sys)
 				if err != nil {
@@ -444,7 +445,7 @@ func main() {
 				joinPort = &port
 			}
 
-			err := scanSubmitResult(*join, (uint16)(*joinPort), *adv, *ctrlUser, *ctrlPass, result)
+			err := scanSubmitResult(*join, (uint16)(*joinPort), *adv, ctrlUser, ctrlPass, result)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err}).Error("Failed to sumit scan result")
 			} else {
