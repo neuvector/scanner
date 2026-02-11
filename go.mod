@@ -4,7 +4,7 @@ go 1.24.0
 
 toolchain go1.25.6
 
-replace k8s.io/cri-api => k8s.io/cri-api v0.25.16
+replace k8s.io/cri-api => k8s.io/cri-api v0.34.4
 
 require (
 	github.com/docker/docker v28.1.1+incompatible
