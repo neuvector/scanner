@@ -32,12 +32,8 @@
 #define ENV_SCANNER_REGISTRY           "SCANNER_REGISTRY"
 #define ENV_SCANNER_REPOSITORY         "SCANNER_REPOSITORY"
 #define ENV_SCANNER_TAG                "SCANNER_TAG"
-#define ENV_SCANNER_REG_USER           "SCANNER_REGISTRY_USERNAME"
-#define ENV_SCANNER_REG_PASS           "SCANNER_REGISTRY_PASSWORD"
 #define ENV_SCANNER_SCAN_LAYERS        "SCANNER_SCAN_LAYERS"
 #define ENV_SCANNER_BASE_IMAGE         "SCANNER_BASE_IMAGE"
-#define ENV_SCANNER_CTRL_USER          "SCANNER_CTRL_API_USERNAME"
-#define ENV_SCANNER_CTRL_PASS          "SCANNER_CTRL_API_PASSWORD"
 #define ENV_SCANNER_TLS_VERIFICATION   "SCANNER_STANDALONE_TLS_VERIFICATION"
 #define ENV_SCANNER_DEBUG_MODE         "SCANNER_DEBUG_MODE"
 #define ENV_SCANNER_PROXY_URL          "PROXY_URL"
@@ -135,7 +131,7 @@ static pid_t fork_exec(int i)
     pid_t pid;
     char *args[PROC_ARGS_MAX], *join, *adv, *url;
     char *join_port, *adv_port;
-    char *license, *registry, *repository, *tag, *user, *pass, *base, *api_user, *api_pass, *enable, *proxy_url;
+    char *license, *registry, *repository, *tag, *base, *enable, *proxy_url;
     char *on_demand, *cache_record_max;
     int a;
 
@@ -224,14 +220,6 @@ static pid_t fork_exec(int i)
         }
 
         // The following options apply to both standalone or non-standalone mode
-        if ((user = getenv(ENV_SCANNER_REG_USER)) != NULL) {
-            args[a ++] = "--registry_username";
-            args[a ++] = user;
-        }
-        if ((pass = getenv(ENV_SCANNER_REG_PASS)) != NULL) {
-            args[a ++] = "--registry_password";
-            args[a ++] = pass;
-        }
         if ((base = getenv(ENV_SCANNER_BASE_IMAGE)) != NULL) {
             args[a ++] = "--base_image";
             args[a ++] = base;
@@ -241,19 +229,11 @@ static pid_t fork_exec(int i)
                 args[a ++] = "--scan_layers";
             }
         }
-        if ((api_user = getenv(ENV_SCANNER_CTRL_USER)) != NULL) {
-            args[a ++] = "--ctrl_username";
-            args[a ++] = api_user;
-        }
-        if ((api_pass = getenv(ENV_SCANNER_CTRL_PASS)) != NULL) {
-            args[a ++] = "--ctrl_password";
-            args[a ++] = api_pass;
-        }
         if ((cache_record_max = getenv(ENV_SCANNER_CACHE_MAX)) != NULL) {
                args[a ++] = "-maxrec";
                args[a ++] = cache_record_max;
         }
-        if ((api_pass = getenv(ENV_SCANNER_TLS_VERIFICATION)) != NULL) {
+        if ((enable = getenv(ENV_SCANNER_TLS_VERIFICATION)) != NULL) {
             args[a ++] = "--enable-tls-verification";
         }
         if ((proxy_url = getenv(ENV_SCANNER_PROXY_URL)) != NULL) {
