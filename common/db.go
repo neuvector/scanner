@@ -499,7 +499,6 @@ func LoadAppVulsTb(path string) (map[string][]AppModuleVul, error) {
 	}
 
 	for _, mn := range mns {
-		colon := strings.LastIndex(mn, ":")
 		m := strings.ReplaceAll(mn, ":", ".")
 		vf := vul[mn]
 
@@ -507,14 +506,6 @@ func LoadAppVulsTb(path string) (map[string][]AppModuleVul, error) {
 			vul[m] = uniqueVulDb(append(vul[m], vf...))
 		} else {
 			vul[m] = vf
-		}
-		if m = mn[colon+1:]; len(m) > 0 {
-			key := fmt.Sprintf("jar:%s", m)
-			if _, ok := vul[key]; ok {
-				vul[key] = uniqueVulDb(append(vul[key], vf...))
-			} else {
-				vul[key] = vf
-			}
 		}
 	}
 	return vul, nil
