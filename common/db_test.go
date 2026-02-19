@@ -162,6 +162,50 @@ func prepareMockDbPaths(t *testing.T, encryptKey []byte, timestamp time.Time) (s
 	return dbPath, expandRoot
 }
 
+func writeAppsTb(t *testing.T, dir string, entries ...AppModuleVul) {
+	t.Helper()
+	var buf bytes.Buffer
+	for _, e := range entries {
+		data, err := json.Marshal(e)
+		require.NoError(t, err)
+		buf.Write(data)
+		buf.WriteByte('\n')
+	}
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "apps.tb"), buf.Bytes(), 0644))
+}
+
+func loadAppsTb(t *testing.T, entries ...AppModuleVul) map[string][]AppModuleVul {
+	t.Helper()
+	dir := t.TempDir()
+	writeAppsTb(t, dir, entries...)
+	vul, err := LoadAppVulsTb(dir)
+	require.NoError(t, err)
+	return vul
+}
+
+func newJarVul(cveName, moduleName, severity, fixedBefore string) AppModuleVul {
+	return AppModuleVul{
+		VulName:     cveName,
+		AppName:     "jar",
+		ModuleName:  moduleName,
+		Severity:    severity,
+		AffectedVer: []AppModuleVersion{{OpCode: "lt", Version: fixedBefore}},
+	}
+}
+
+func requireKeyExists(t *testing.T, vul map[string][]AppModuleVul, key string) []AppModuleVul {
+	t.Helper()
+	v, ok := vul[key]
+	require.True(t, ok, "expected key %q to exist", key)
+	return v
+}
+
+func requireKeyAbsent(t *testing.T, vul map[string][]AppModuleVul, key string) {
+	t.Helper()
+	_, ok := vul[key]
+	require.False(t, ok, "key %q must NOT exist", key)
+}
+
 func TestLoadCveDB(t *testing.T) {
 	testCases := []struct {
 		name        string
@@ -283,4 +327,64 @@ func TestLoadCveDB(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLoadAppVulsTb_NoJarShortcutKeys(t *testing.T) {
+	vul := loadAppsTb(t,
+		newJarVul("CVE-2021-0341", "com.squareup.okhttp3:okhttp", "High", "4.9.3"),
+		newJarVul("CVE-2022-20621", "org.jenkins-ci.plugins:metrics", "Medium", "4.2.0"),
+		newJarVul("CVE-2018-1000011", "org.jvnet.hudson.plugins:findbugs:library", "High", "4.72"),
+	)
+
+	// --- Verify original groupId:artifactId keys ARE present ---
+	okhttp := requireKeyExists(t, vul, "com.squareup.okhttp3:okhttp")
+	requireKeyExists(t, vul, "org.jenkins-ci.plugins:metrics")
+	requireKeyExists(t, vul, "org.jvnet.hudson.plugins:findbugs:library")
+
+	// --- Verify dot-separated backward-compat keys ARE present ---
+	okhttpDot := requireKeyExists(t, vul, "com.squareup.okhttp3.okhttp")
+	requireKeyExists(t, vul, "org.jenkins-ci.plugins.metrics")
+
+	// --- Verify jar: shortcut keys are NOT present ---
+	for _, key := range []string{"jar:okhttp", "jar:metrics", "jar:library", "jar:findbugs:library"} {
+		requireKeyAbsent(t, vul, key)
+	}
+
+	// --- Verify CVE data integrity for existing keys ---
+	require.Len(t, okhttp, 1)
+	require.Equal(t, "CVE-2021-0341", okhttp[0].VulName)
+
+	// Dot-separated key should have same data
+	require.Len(t, okhttpDot, 1)
+	require.Equal(t, "CVE-2021-0341", okhttpDot[0].VulName)
+}
+
+func TestLoadAppVulsTb_NoColonModuleName(t *testing.T) {
+	vul := loadAppsTb(t, AppModuleVul{
+		VulName:     "CVE-2099-0001",
+		AppName:     "npm",
+		ModuleName:  "lodash",
+		Severity:    "High",
+		AffectedVer: []AppModuleVersion{{OpCode: "lt", Version: "4.17.21"}},
+	})
+
+	requireKeyExists(t, vul, "lodash")
+	requireKeyAbsent(t, vul, "jar:lodash")
+	require.Len(t, vul, 1)
+}
+
+func TestLoadAppVulsTb_MultipleVulsSameModule(t *testing.T) {
+	vul := loadAppsTb(t,
+		newJarVul("CVE-2021-0341", "com.squareup.okhttp3:okhttp", "High", "4.9.3"),
+		newJarVul("CVE-2016-2402", "com.squareup.okhttp3:okhttp", "Medium", "3.1.2"),
+	)
+
+	// Both CVEs should be under the same key
+	require.Len(t, vul["com.squareup.okhttp3:okhttp"], 2)
+
+	// Dot-separated should also have both
+	require.Len(t, vul["com.squareup.okhttp3.okhttp"], 2)
+
+	// No jar: key
+	requireKeyAbsent(t, vul, "jar:okhttp")
 }
