@@ -12,7 +12,7 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.6.7
 	github.com/neuvector/neuvector v0.0.0-20260206120806-b67a34aecea4
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/quay/clair/v2 v2.1.8
+	github.com/quay/clair/v4 v4.9.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.74.2
