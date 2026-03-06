@@ -7,7 +7,7 @@ toolchain go1.25.7
 replace k8s.io/cri-api => k8s.io/cri-api v0.25.16
 
 require (
-	github.com/docker/docker v28.1.1+incompatible
+	github.com/docker/docker v28.5.2+incompatible
 	github.com/google/uuid v1.6.0
 	github.com/jedib0t/go-pretty/v6 v6.6.7
 	github.com/neuvector/neuvector v0.0.0-20260206120806-b67a34aecea4
