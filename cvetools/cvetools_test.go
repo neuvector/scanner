@@ -3,9 +3,11 @@ package cvetools
 import (
 	"testing"
 
+	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
 	"github.com/neuvector/scanner/detectors"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSelectDB(t *testing.T) {
@@ -74,6 +76,33 @@ OSTREE_VERSION="411.86.202212072103-0"
 	ns, db := os2DB(nss)
 	if ns != "centos:8" || db != common.DBCentos {
 		t.Errorf("Incorrect os: ns=%s db=%v\n", ns, db)
+	}
+}
+
+func TestGetOSScanStatus(t *testing.T) {
+	tests := map[string]struct {
+		ns             *detectors.Namespace
+		expectedStatus share.OSScanStatus
+	}{
+		"nil namespace is unsupported": {
+			ns:             nil,
+			expectedStatus: share.OSScanStatus_OSScanStatusUnsupported,
+		},
+		"recognized namespace is supported": {
+			ns:             &detectors.Namespace{Name: "ubuntu:22.04"},
+			expectedStatus: share.OSScanStatus_OSScanStatusSupported,
+		},
+		"unrecognized namespace is unsupported": {
+			ns:             &detectors.Namespace{Name: "busybox:1.36.1"},
+			expectedStatus: share.OSScanStatus_OSScanStatusUnsupported,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			status := getOSScanStatus(tt.ns)
+			assert.Equal(t, tt.expectedStatus, status)
+		})
 	}
 }
 

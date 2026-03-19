@@ -649,6 +649,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 	}
 
 	namespace, serr, vuls, features, apps := cv.doScan(&layerScanFiles{pkgs: mergedFiles, apps: appFVs}, nil)
+	result.OSScanStatus = getOSScanStatus(namespace)
 	if namespace != nil {
 		result.Namespace = namespace.Name
 		result.Modules = feature2Module(namespace.Name, features, apps)
@@ -934,6 +935,17 @@ func os2DB(ns *detectors.Namespace) (string, int) {
 		}
 	}
 	return nsName, db
+}
+
+func getOSScanStatus(ns *detectors.Namespace) share.OSScanStatus {
+	if ns == nil {
+		return share.OSScanStatus_OSScanStatusUnsupported
+	}
+	_, db := os2DB(ns)
+	if db == common.DBMax {
+		return share.OSScanStatus_OSScanStatusUnsupported
+	}
+	return share.OSScanStatus_OSScanStatusSupported
 }
 
 func (cv *ScanTools) startScan(features []detectors.FeatureVersion, ns *detectors.Namespace, appPkg []detectors.AppFeatureVersion) (share.ScanErrorCode, []*share.ScanVulnerability) {
