@@ -28,6 +28,8 @@ const (
 	retryMax = 3  // Number of retry
 )
 
+const scannerRegisterStreamCloseCompatErr = "cardinality violation: received no response message from non-server-streaming RPC"
+
 func createEnforcerScanServiceWrapper(conn *grpc.ClientConn) cluster.Service {
 	return share.NewEnforcerScanServiceClient(conn)
 }
@@ -347,11 +349,24 @@ func scannerRegisterStream(ctx context.Context, client share.ControllerScanServi
 
 	log.Info("Stream send done")
 	if _, err = stream.CloseAndRecv(); err != nil && err != io.EOF {
+		if isIgnorableScannerRegisterStreamCloseError(err) {
+			log.WithFields(log.Fields{"error": err}).Debug("Ignore stream close compatibility error")
+			return nil
+		}
 		log.WithFields(log.Fields{"error": err}).Error("Failed to close")
 		return err
 	}
 
 	return nil
+}
+
+func isIgnorableScannerRegisterStreamCloseError(err error) bool {
+	s, ok := status.FromError(err)
+	if !ok || s.Code() != codes.Internal {
+		return false
+	}
+
+	return strings.Contains(s.Message(), scannerRegisterStreamCloseCompatErr)
 }
 
 func downgradeCriticalSeverityInResult(sr *share.ScanResult) {
