@@ -2651,14 +2651,15 @@ type RESTScanMeta struct {
 }
 
 type RESTScanRepoReq struct {
-	Metadata   RESTScanMeta `json:"metadata"`
-	Registry   string       `json:"registry"`
-	Username   string       `json:"username,omitempty"`
-	Password   string       `json:"password,omitempty"`
-	Repository string       `json:"repository"`
-	Tag        string       `json:"tag"`
-	ScanLayers bool         `json:"scan_layers"`
-	BaseImage  string       `json:"base_image"`
+	Metadata    RESTScanMeta `json:"metadata"`
+	Registry    string       `json:"registry"`
+	Username    string       `json:"username,omitempty"`
+	Password    string       `json:"password,omitempty"`
+	Repository  string       `json:"repository"`
+	Tag         string       `json:"tag"`
+	ScanLayers  bool         `json:"scan_layers"`
+	BaseImage   string       `json:"base_image"`
+	IgnoreProxy *bool        `json:"ignore_proxy,omitempty"`
 }
 
 type RESTScanRepoReqData struct {
@@ -4305,19 +4306,20 @@ type RESTImageAssetView struct {
 }
 
 type RESTImageAssetViewV2 struct {
-	ID        string `json:"image_id"`
-	Name      string `json:"repository"`
-	Critical  int    `json:"critical,omitempty"`
-	High      int    `json:"high"`
-	Medium    int    `json:"medium"`
-	CreatedAt string `json:"created_at"`
-	ScannedAt string `json:"scanned_at"`
-	Digest    string `json:"digest"`
-	BaseOS    string `json:"base_os"`
-	RegName   string `json:"reg_name"`
-	Registry  string `json:"repo_url"`
-	Size      int    `json:"size"`
-	Tag       string `json:"tag"`
+	ID           string `json:"image_id"`
+	Name         string `json:"repository"`
+	Critical     int    `json:"critical,omitempty"`
+	High         int    `json:"high"`
+	Medium       int    `json:"medium"`
+	CreatedAt    string `json:"created_at"`
+	ScannedAt    string `json:"scanned_at"`
+	Digest       string `json:"digest"`
+	BaseOS       string `json:"base_os"`
+	OSScanStatus string `json:"os_scan_status,omitempty"`
+	RegName      string `json:"reg_name"`
+	Registry     string `json:"repo_url"`
+	Size         int    `json:"size"`
+	Tag          string `json:"tag"`
 }
 
 type RESTVulQueryStats struct {

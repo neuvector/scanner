@@ -28,7 +28,7 @@ import (
 	"os"
 	"unsafe"
 
-	dbi "github.com/neuvector/go-rpmdb/pkg/db"
+	dbi "github.com/knqyf263/go-rpmdb/pkg/db"
 	"golang.org/x/xerrors"
 )
 

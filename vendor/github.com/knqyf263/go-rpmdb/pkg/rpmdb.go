@@ -1,10 +1,10 @@
 package rpmdb
 
 import (
-	"github.com/neuvector/go-rpmdb/pkg/bdb"
-	dbi "github.com/neuvector/go-rpmdb/pkg/db"
-	"github.com/neuvector/go-rpmdb/pkg/ndb"
-	"github.com/neuvector/go-rpmdb/pkg/sqlite3"
+	"github.com/knqyf263/go-rpmdb/pkg/bdb"
+	dbi "github.com/knqyf263/go-rpmdb/pkg/db"
+	"github.com/knqyf263/go-rpmdb/pkg/ndb"
+	"github.com/knqyf263/go-rpmdb/pkg/sqlite3"
 	"golang.org/x/xerrors"
 )
 
