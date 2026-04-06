@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/docker/errdefs"
+	"github.com/containerd/errdefs"
 	goDigest "github.com/opencontainers/go-digest"
 	log "github.com/sirupsen/logrus"
 
@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	//max package file size
+	// max package file size
 	manifestJson = "manifest.json"
 	layerJson    = "/json"
 	dockerfile   = "root/buildinfo/Dockerfile-"
@@ -85,8 +85,8 @@ func (s *ScanTools) GetLocalImageMeta(ctx context.Context, repository, tag strin
 }
 
 func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath string, cacher *ImageLayerCacher) (
-	map[string]*LayerRecord, *scan.ImageInfo, []string, share.ScanErrorCode) {
-
+	map[string]*LayerRecord, *scan.ImageInfo, []string, share.ScanErrorCode,
+) {
 	sock, repo := parseSocketFromRepo(repository)
 	if sock == "" {
 		sock = s.RtSock
@@ -131,7 +131,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 
 	// create an image file and image layered folders
 	repoFolder := filepath.Join(imgPath, "repo")
-	if err := os.MkdirAll(repoFolder, 0755); err != nil {
+	if err := os.MkdirAll(repoFolder, 0o755); err != nil {
 		log.WithFields(log.Fields{"error": err}).Error()
 		return nil, nil, nil, share.ScanErrorCode_ScanErrContainerAPI
 	}
@@ -139,7 +139,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 
 	// save the image
 	imageFile := filepath.Join(repoFolder, "image.tar")
-	out, err := os.OpenFile(imageFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	out, err := os.OpenFile(imageFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
 	if err == nil {
 		_, err = io.Copy(out, file)
 		out.Close()
@@ -157,7 +157,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 		return nil, nil, nil, share.ScanErrorCode_ScanErrPackage
 	}
 
-	//log.WithFields(log.Fields{"layers": layers, "blobs": blobs}).Debug()
+	// log.WithFields(log.Fields{"layers": layers, "blobs": blobs}).Debug()
 
 	var downloads []string // download layer requests
 	cacheLayers := make(map[string]*LayerRecord)
@@ -333,7 +333,7 @@ func getImageLayers(tmpDir string, imageTar string) ([]string, map[string]string
 	}
 	defer reader.Close()
 
-	//get the manifest from the image tar
+	// get the manifest from the image tar
 	filenames := []string{manifestJson, layerJson, ociLayout}
 	files, err := tarutil.ExtractFiles(bufio.NewReader(reader), filenames)
 	if err != nil {
@@ -356,7 +356,7 @@ func getImageLayers(tmpDir string, imageTar string) ([]string, map[string]string
 		}
 	}
 
-	//extract all the layers to tar files
+	// extract all the layers to tar files
 	if _, err := reader.Seek(0, 0); err != nil {
 		log.WithFields(log.Fields{"error": err}).Error()
 	}
@@ -369,7 +369,6 @@ func getImageLayers(tmpDir string, imageTar string) ([]string, map[string]string
 		}
 		return false
 	}, tmpDir)
-
 	if err != nil {
 		return nil, nil, err
 	}
@@ -434,8 +433,8 @@ func getImageLayerIterate(
 		return nil, share.ScanErrorCode_ScanErrFileSystem
 	}
 
-	//for registry, download all the layers.
-	//for read all the layers.
+	// for registry, download all the layers.
+	// for read all the layers.
 	for _, layer := range layers {
 		log.WithFields(log.Fields{"layer": layer}).Debug()
 
@@ -466,7 +465,6 @@ func getImageLayerIterate(
 			}
 			return false
 		})
-
 		if err != nil {
 			return nil, share.ScanErrorCode_ScanErrPackage
 		}
@@ -556,8 +554,8 @@ func sortLayersBySize(layerMap map[string]int64) []layerSize {
 const downloadThrottlingVolume = 400 * 1024 * 1024 // the average could be around this level, decompressed size could be 4x more
 
 func downloadLayers(ctx context.Context, layers []string, sizes map[string]int64, imgPath string,
-	layerReader func(ctx context.Context, layer string) (interface{}, int64, error)) (map[string]*downloadLayerResult, error) {
-
+	layerReader func(ctx context.Context, layer string) (interface{}, int64, error),
+) (map[string]*downloadLayerResult, error) {
 	bHasSizeInfo := (len(sizes) > 0) // sizes data is from schema v2
 	results := make(map[string]*downloadLayerResult)
 
@@ -607,9 +605,9 @@ func downloadLayers(ctx context.Context, layers []string, sizes map[string]int64
 
 			layerPath := filepath.Join(imgPath, ml)
 			if bHasSizeInfo && sl == 0 {
-				//log.WithFields(log.Fields{"layer": ml}).Debug("skip")
+				// log.WithFields(log.Fields{"layer": ml}).Debug("skip")
 				// empty folder
-				if err := os.MkdirAll(layerPath, 0755); err != nil {
+				if err := os.MkdirAll(layerPath, 0o755); err != nil {
 					log.WithFields(log.Fields{"error": err}).Error()
 				}
 				done <- &downloadLayerResult{layer: ml, err: nil, Size: 0, TarSize: 0}
@@ -622,7 +620,7 @@ func downloadLayers(ctx context.Context, layers []string, sizes map[string]int64
 				if err == nil {
 					// unpack image data
 					if _, err = os.Stat(layerPath); os.IsNotExist(err) { // ignored if it was untarred before
-						err = os.MkdirAll(layerPath, 0755)
+						err = os.MkdirAll(layerPath, 0o755)
 						if err != nil {
 							log.WithFields(log.Fields{"error": err, "path": layerPath}).Error("Failed to make dir")
 							// local file error, no retry
@@ -681,8 +679,10 @@ func selectiveFilesFromPath(rootPath string, maxFileSize int64, selected func(st
 	return data, err
 }
 
-const dataTimeout = 10 * time.Minute
-const retryTimes = 3
+const (
+	dataTimeout = 10 * time.Minute
+	retryTimes  = 3
+)
 
 func layerURL(pathTemplate string, url string, args ...interface{}) string {
 	pathSuffix := fmt.Sprintf(pathTemplate, args...)
@@ -745,7 +745,7 @@ func DownloadRemoteImage(ctx context.Context, rc *scan.RegClient, name, imgPath 
 		lr := LayerRecord{}
 		keepers.Add(cacher.RecordName(layer, &lr)) // reference for write recor
 		if _, err := cacher.ReadRecordCache(layer, &lr); err == nil {
-			//log.WithFields(log.Fields{"layer": layer}).Debug("rec")
+			// log.WithFields(log.Fields{"layer": layer}).Debug("rec")
 			cacheLayers[layer] = &lr
 		} else {
 			downloads = append(downloads, layer)
