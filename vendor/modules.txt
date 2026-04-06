@@ -229,7 +229,7 @@ github.com/fxamacker/cbor/v2
 # github.com/glebarez/go-sqlite v1.20.3
 ## explicit; go 1.17
 github.com/glebarez/go-sqlite
-# github.com/go-jose/go-jose/v4 v4.1.3
+# github.com/go-jose/go-jose/v4 v4.1.4
 ## explicit; go 1.24.0
 github.com/go-jose/go-jose/v4
 github.com/go-jose/go-jose/v4/cipher
@@ -396,7 +396,7 @@ github.com/modern-go/reflect2
 # github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
 ## explicit
 github.com/munnerz/goautoneg
-# github.com/neuvector/neuvector v0.0.0-20260403185401-3c8cb104a14d
+# github.com/neuvector/neuvector v0.0.0-20260406013240-eba858444676
 ## explicit; go 1.25.0
 github.com/neuvector/neuvector/controller/api
 github.com/neuvector/neuvector/share
