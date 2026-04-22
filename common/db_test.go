@@ -24,30 +24,7 @@ import (
 )
 
 var (
-	files = []string{
-		"ubuntu_index.tb",
-		"ubuntu_full.tb",
-		"debian_index.tb",
-		"debian_full.tb",
-		"centos_index.tb",
-		"centos_full.tb",
-		"alpine_index.tb",
-		"alpine_full.tb",
-		"amazon_index.tb",
-		"amazon_full.tb",
-		"mariner_full.tb",
-		"mariner_index.tb",
-		"photon_full.tb",
-		"photon_index.tb",
-		"oracle_index.tb",
-		"oracle_full.tb",
-		"suse_index.tb",
-		"suse_full.tb",
-		"apps.tb",
-		"rhel-cpe.map",
-		"rocky_index.tb",
-		"rocky_full.tb",
-	}
+	files      = append([]string(nil), fileList[1:]...)
 	defaultVer = "1.000"
 	wrongKey   = []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31}
 	fakeTime   = time.Date(2025, 12, 12, 0, 0, 0, 0, time.UTC)

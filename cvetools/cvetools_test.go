@@ -17,18 +17,20 @@ func TestSelectDB(t *testing.T) {
 	}
 
 	tests := map[string]result{
-		"alpine:3.4.6":       {"alpine:3.4", common.DBAlpine},
-		"rhel:8.3":           {"centos:8", common.DBCentos},
-		"mariner:1.0":        {"mariner:1.0", common.DBMariner},
-		"opensuse-leap:15.2": {"sles:l15.2", common.DBSuse},
-		"ol:7.8.2":           {"oracle:7", common.DBOracle},
-		"ubuntu:7.1":         {"ubuntu:7.1", common.DBUbuntu},
-		"debian:3.1":         {"debian:3.1", common.DBDebian},
-		"server:5.4":         {"centos:5", common.DBCentos},
-		"centos:5.4":         {"centos:5", common.DBCentos},
-		"amzn:1.8":           {"amzn:1", common.DBAmazon},
-		"sles:2.7":           {"sles:2.7", common.DBSuse},
-		"opensuse-leap:2.7":  {"sles:l2.7", common.DBSuse},
+		"alpine:3.4.6":        {"alpine:3.4", common.DBAlpine},
+		"rhel:8.3":            {"centos:8", common.DBCentos},
+		"mariner:1.0":         {"mariner:1.0", common.DBMariner},
+		"opensuse-leap:15.2":  {"sles:l15.2", common.DBSuse},
+		"ol:7.8.2":            {"oracle:7", common.DBOracle},
+		"ubuntu:7.1":          {"ubuntu:7.1", common.DBUbuntu},
+		"debian:3.1":          {"debian:3.1", common.DBDebian},
+		"server:5.4":          {"centos:5", common.DBCentos},
+		"centos:5.4":          {"centos:5", common.DBCentos},
+		"amzn:1.8":            {"amzn:1", common.DBAmazon},
+		"sles:2.7":            {"sles:2.7", common.DBSuse},
+		"opensuse-leap:2.7":   {"sles:l2.7", common.DBSuse},
+		"wolfi:20230201":      {"wolfi:rolling", common.DBWolfi},
+		"chainguard:20230201": {"chainguard:rolling", common.DBChainguard},
 	}
 
 	for os, r := range tests {
