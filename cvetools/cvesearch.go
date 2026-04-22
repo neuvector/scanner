@@ -932,6 +932,12 @@ func os2DB(ns *detectors.Namespace) (string, int) {
 			majorVersion := majorVersion(r[2])
 			nsName = "rocky:" + majorVersion
 			db = common.DBRocky
+		case "wolfi":
+			nsName = "wolfi:rolling"
+			db = common.DBWolfi
+		case "chainguard":
+			nsName = "chainguard:rolling"
+			db = common.DBChainguard
 		}
 	}
 	return nsName, db

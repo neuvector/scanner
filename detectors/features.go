@@ -83,11 +83,17 @@ func DetectFeatures(namespace string, data map[string]*FeatureFile, path string)
 
 // -- apk
 
-const apkPackageFile = "lib/apk/db/installed"
-
 func detectAPK(namespace string, files map[string]*FeatureFile, path string) ([]FeatureVersion, error) {
-	f, hasFile := files[apkPackageFile]
-	if !hasFile {
+	var f *FeatureFile
+
+	for _, apkPath := range common.APKPackageFiles() {
+		if apkFile, exists := files[apkPath]; exists {
+			f = apkFile
+			break
+		}
+	}
+
+	if f == nil {
 		return []FeatureVersion{}, nil
 	}
 

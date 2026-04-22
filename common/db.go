@@ -50,6 +50,8 @@ const (
 	DBSuse
 	DBPhoton
 	DBRocky
+	DBWolfi
+	DBChainguard
 	DBMax
 )
 
@@ -67,16 +69,18 @@ type dbSpace struct {
 
 var DBS dbSpace = dbSpace{
 	Buffers: [DBMax]dbBuffer{
-		DBUbuntu:  {Name: "ubuntu"},
-		DBDebian:  {Name: "debian"},
-		DBCentos:  {Name: "centos"},
-		DBAlpine:  {Name: "alpine"},
-		DBAmazon:  {Name: "amazon"},
-		DBOracle:  {Name: "oracle"},
-		DBMariner: {Name: "mariner"},
-		DBPhoton:  {Name: "photon"},
-		DBSuse:    {Name: "suse"},
-		DBRocky:   {Name: "rocky"},
+		DBUbuntu:     {Name: "ubuntu"},
+		DBDebian:     {Name: "debian"},
+		DBCentos:     {Name: "centos"},
+		DBAlpine:     {Name: "alpine"},
+		DBAmazon:     {Name: "amazon"},
+		DBOracle:     {Name: "oracle"},
+		DBMariner:    {Name: "mariner"},
+		DBPhoton:     {Name: "photon"},
+		DBSuse:       {Name: "suse"},
+		DBRocky:      {Name: "rocky"},
+		DBWolfi:      {Name: "wolfi"},
+		DBChainguard: {Name: "chainguard"},
 	},
 }
 
@@ -765,6 +769,10 @@ var fileList = []string{
 	"oracle_full.tb",
 	"suse_index.tb",
 	"suse_full.tb",
+	"wolfi_index.tb",
+	"wolfi_full.tb",
+	"chainguard_index.tb",
+	"chainguard_full.tb",
 	"apps.tb",
 	RHELCpeMapFile,
 }

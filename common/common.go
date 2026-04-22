@@ -29,6 +29,29 @@ type CVSS struct {
 	Score   float64
 }
 
+const (
+	// APKPackageFile is the legacy APK installed database path.
+	APKPackageFile = "lib/apk/db/installed"
+	// APKPackageFileUsrmerge is the Wolfi/Chainguard path after usrmerge.
+	APKPackageFileUsrmerge = "usr/lib/apk/db/installed"
+)
+
+func APKPackageFiles() []string {
+	return []string{
+		APKPackageFile,
+		APKPackageFileUsrmerge,
+	}
+}
+
+func IsAPKPackageFile(filename string) bool {
+	switch filename {
+	case APKPackageFile, APKPackageFileUsrmerge:
+		return true
+	default:
+		return false
+	}
+}
+
 // database format
 
 type KeyVersion struct {

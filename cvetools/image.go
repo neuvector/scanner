@@ -24,6 +24,7 @@ import (
 	"github.com/neuvector/neuvector/share/scan/registry"
 	"github.com/neuvector/neuvector/share/scan/secrets"
 	"github.com/neuvector/neuvector/share/utils"
+	"github.com/neuvector/scanner/common"
 	"github.com/quay/clair/v2/pkg/tarutil"
 )
 
@@ -445,7 +446,7 @@ func getImageLayerIterate(
 		}
 
 		pathMap, err := selectiveFilesFromPath(layerPath, maxFileSize, func(path, fullpath string) bool {
-			if scan.OSPkgFiles.Contains(path) || scan.IsAppsPkgFile(path, fullpath) {
+			if scan.OSPkgFiles.Contains(path) || common.IsAPKPackageFile(path) || scan.IsAppsPkgFile(path, fullpath) {
 				return true
 			}
 			if isBitNami(path) {
@@ -485,7 +486,7 @@ func getImageLayerIterate(
 				if err != nil {
 					continue
 				}
-			} else if filename == "lib/apk/db/installed" {
+			} else if common.IsAPKPackageFile(filename) {
 				data, err = getApkPackages(fullpath)
 				if err != nil {
 					continue
