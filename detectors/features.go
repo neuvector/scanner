@@ -86,6 +86,9 @@ func DetectFeatures(namespace string, data map[string]*FeatureFile, path string)
 func detectAPK(namespace string, files map[string]*FeatureFile, path string) ([]FeatureVersion, error) {
 	var f *FeatureFile
 
+	// APK images expose an installed package database at a well-known path.
+	// APKPackageFiles() returns paths in priority order (lib/apk/db/installed before usr/lib/apk/db/installed),
+	// so we take the first match and stop.
 	for _, apkPath := range common.APKPackageFiles() {
 		if apkFile, exists := files[apkPath]; exists {
 			f = apkFile
