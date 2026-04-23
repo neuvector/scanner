@@ -446,25 +446,22 @@ func getImageLayerIterate(
 		}
 
 		pathMap, err := selectiveFilesFromPath(layerPath, maxFileSize, func(path, fullpath string) bool {
-			if scan.OSPkgFiles.Contains(path) || common.IsAPKPackageFile(path) || scan.IsAppsPkgFile(path, fullpath) {
+			switch {
+			case scan.OSPkgFiles.Contains(path), common.IsAPKPackageFile(path), scan.IsAppsPkgFile(path, fullpath):
 				return true
-			}
-			if isBitNami(path) {
+			case isBitNami(path):
 				return true
-			}
-			if strings.HasPrefix(path, scan.DpkgStatusDir) {
+			case strings.HasPrefix(path, scan.DpkgStatusDir):
 				return true
-			}
-			if strings.HasPrefix(path, contentManifest) && strings.HasSuffix(path, ".json") {
+			case strings.HasPrefix(path, contentManifest) && strings.HasSuffix(path, ".json"):
 				return true
-			}
-			if strings.HasPrefix(path, dockerfile) {
+			case strings.HasPrefix(path, dockerfile):
 				return true
-			}
-			if scan.IsRlangPackage(path) {
+			case scan.IsRlangPackage(path):
 				return true
+			default:
+				return false
 			}
-			return false
 		})
 		if err != nil {
 			return nil, share.ScanErrorCode_ScanErrPackage
