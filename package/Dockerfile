@@ -29,7 +29,7 @@ RUN make slsa_all
 #
 # Base images
 #
-FROM registry.suse.com/bci/bci-micro:15.7 AS micro
+FROM registry.suse.com/bci/bci-micro:16.1 AS micro
 FROM registry.suse.com/bci/bci-base:15.7 AS base
 
 COPY --from=micro / /chroot/
