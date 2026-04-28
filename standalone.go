@@ -150,16 +150,18 @@ func writeResultToFile(req *share.ScanImageRequest, result *share.ScanResult, er
 	}
 }
 
-func writeResultToStdout(result *share.ScanResult, showOptions string) {
+func writeResultToStdout(result *share.ScanResult, showOptions string, capCritical bool) {
 	if result == nil || result.Error != share.ScanErrorCode_ScanErrNone {
 		return
 	}
 
 	rpt := scanUtils.ScanRepoResult2REST(result, nil)
 
-	var high, med, low, unk int
+	var critical, high, med, low, unk int
 	for _, v := range rpt.Vuls {
 		switch v.Severity {
+		case share.VulnSeverityCritical:
+			critical++
 		case share.VulnSeverityHigh:
 			high++
 		case share.VulnSeverityMedium:
@@ -175,7 +177,11 @@ func writeResultToStdout(result *share.ScanResult, showOptions string) {
 	fmt.Printf("Created at: %s\n", rpt.CreatedAt)
 
 	// Print vulnerability
-	fmt.Printf("\nVulnerabilities: %d, HIGH: %d, MEDIUM: %d, LOW: %d, UNKNOWN: %d\n", len(rpt.Vuls), high, med, low, unk)
+	var strCritical string
+	if capCritical {
+		strCritical = fmt.Sprintf("CRITICAL: %d, ", critical)
+	}
+	fmt.Printf("\nVulnerabilities: %d, %sHIGH: %d, MEDIUM: %d, LOW: %d, UNKNOWN: %d\n", len(rpt.Vuls), strCritical, high, med, low, unk)
 
 	files := make([]string, 0)
 	fileMap := make(map[string][]*api.RESTVulnerability)
@@ -299,7 +305,7 @@ func scanRunning(pid int, cvedb map[string]*share.ScanVulnerability, showOptions
 	}
 
 	fmt.Printf("PID: %d\n", pid)
-	writeResultToStdout(result, showOptions)
+	writeResultToStdout(result, showOptions, capCritical)
 }
 
 // Normalize registry because we can supply registry via environment trough monitor (standalone).
@@ -421,7 +427,7 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 	fmt.Printf("Image: %s\n", imageRef)
 
 	writeResultToFile(req, result, err)
-	writeResultToStdout(result, showOptions)
+	writeResultToStdout(result, showOptions, capCritical)
 	return result
 }
 
