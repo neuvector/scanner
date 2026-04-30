@@ -105,17 +105,16 @@ gen_license:
 	cd vendor && ../genlic.sh > ../${STAGE_DIR}/licenses/neuvector-license.txt
 
 copy_scan_slsa:
-    GOVULNDB_DIR=${STAGE_DIR}/etc/neuvector/govulndb
 	mkdir -p ${STAGE_DIR}/usr/local/bin/
 	mkdir -p ${STAGE_DIR}/etc/neuvector/db
-	mkdir -p ${GOVULNDB_DIR}
+	mkdir -p ${STAGE_DIR}/etc/neuvector/govulndb
 	#
 	cp monitor/monitor ${STAGE_DIR}/usr/local/bin/
 	cp scanner ${STAGE_DIR}/usr/local/bin/
 	cp task/scannerTask ${STAGE_DIR}/usr/local/bin/
 	cp sigstore-interface/sigstore-interface ${STAGE_DIR}/usr/local/bin/sigstore-interface
 	cp data/cvedb.regular ${STAGE_DIR}/etc/neuvector/db/cvedb
-	cp -r $(GOVULNDB_DIR)/. ${STAGE_DIR}/etc/neuvector/govulndb/
+	cp data/govulndb.zip ${STAGE_DIR}/etc/neuvector/
 
 buildx-machine:
 	docker buildx ls

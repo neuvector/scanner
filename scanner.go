@@ -193,6 +193,11 @@ func main() {
 	log.SetLevel(log.InfoLevel)
 	log.SetFormatter(&utils.LogFormatter{Module: "SCN"})
 
+	if err := common.ExtractGovulnDB(); err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("Failed to extract govulndb")
+		os.Exit(1)
+	}
+
 	dbPath := flag.String("d", "./dbgen/", "cve database file directory")
 	join := flag.String("j", "", "Controller join address")
 	joinPort := flag.Uint("join_port", 0, "Controller join port")

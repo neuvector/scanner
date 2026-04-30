@@ -1,5 +1,6 @@
 ARG VULNDB_VERSION=4.148
 ARG VULNDB_CHECKSUM=8781ee7a9c80db7f945d915584be5dcc7bb4e4440e49a3e21b77a6d77da83505
+ARG GOVULNDB_CHECKSUM=be132d3a8f0405e0720e83c7b5921fb96b23b0478fda27761bf13a25198e8736
 ARG SIGSTORE_VERSION=426a5b0c9dff026dbc1961c81e232509a7c335cb
 #
 # Builder
@@ -7,6 +8,7 @@ ARG SIGSTORE_VERSION=426a5b0c9dff026dbc1961c81e232509a7c335cb
 FROM registry.suse.com/bci/golang:1.26.2 AS builder
 ARG VERSION
 ARG VULNDB_CHECKSUM
+ARG GOVULNDB_CHECKSUM
 ARG SIGSTORE_VERSION
 
 RUN zypper in -y wget
@@ -24,6 +26,7 @@ COPY Makefile go.mod go.sum *.go genlic.sh /src/
 WORKDIR /src
 RUN git clone https://github.com/neuvector/sigstore-interface --single-branch sigstore-interface && cd sigstore-interface && git checkout ${SIGSTORE_VERSION} && make
 RUN if [ -f "data/cvedb.regular" ]; then echo "using cvedb.regular"; echo "$VULNDB_CHECKSUM data/cvedb.regular" | sha256sum --check --status; else echo "using cvedb"; cp "data/cvedb" "data/cvedb.regular"; fi
+RUN if [ -f "data/govulndb.zip" ]; then echo "using govulndb.zip"; echo "$GOVULNDB_CHECKSUM data/govulndb.zip" | sha256sum --check --status; else echo "using govulndb.zip.local"; cp "data/govulndb.zip.local" "data/govulndb.zip"; fi
 RUN make slsa_all
 
 #
