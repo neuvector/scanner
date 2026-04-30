@@ -3,8 +3,10 @@ package cvetools
 import (
 	"testing"
 
+	"github.com/neuvector/neuvector/share/scan"
 	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
+	"github.com/neuvector/scanner/detectors"
 )
 
 type versionTestCase struct {
@@ -65,5 +67,86 @@ func TestFixedVersion(t *testing.T) {
 		if ret != c.result {
 			t.Errorf("package %v, fixed %v => %v", c.version, c.dbVer, ret)
 		}
+	}
+}
+
+func TestIsGovulncheckFalsePositive(t *testing.T) {
+	app := detectors.AppFeatureVersion{
+		AppPackage: scan.AppPackage{
+			AppName:    "golang",
+			ModuleName: "go:github.com/docker/docker",
+			Version:    "28.5.2+incompatible",
+			GovulncheckFindings: []scan.GovulnFinding{
+				{
+					OSV:     "GO-2026-4883",
+					Aliases: []string{"CVE-2026-33997", "GHSA-pxq6-2prw-chj9"},
+				},
+			},
+		},
+	}
+
+	if isGovulncheckFalsePositive(app, "GO-2026-4883") {
+		t.Fatal("OSV should not be treated as false positive")
+	}
+	if isGovulncheckFalsePositive(app, "CVE-2026-33997") {
+		t.Fatal("CVE alias should not be treated as false positive")
+	}
+	if isGovulncheckFalsePositive(app, "GHSA-pxq6-2prw-chj9") {
+		t.Fatal("GHSA alias should not be treated as false positive")
+	}
+	if !isGovulncheckFalsePositive(app, "CVE-2015-3627") {
+		t.Fatal("unexpected vuln should be treated as false positive")
+	}
+}
+
+func TestCheckForVulnsFilteredByGovulncheck(t *testing.T) {
+	apps := []detectors.AppFeatureVersion{
+		{
+			AppPackage: scan.AppPackage{
+				AppName:    "golang",
+				ModuleName: "go:github.com/docker/docker",
+				Version:    "28.5.2+incompatible",
+				FileName:   "usr/bin/example",
+				GovulncheckFindings: []scan.GovulnFinding{
+					{
+						OSV:     "GO-2026-4883",
+						Aliases: []string{"CVE-2026-33997"},
+					},
+				},
+			},
+		},
+	}
+
+	dbVuls := []common.AppModuleVul{
+		{
+			VulName:     "CVE-2026-33997",
+			ModuleName:  "go:github.com/docker/docker",
+			Severity:    "High",
+			Description: "kept",
+			AffectedVer: []common.AppModuleVersion{{OpCode: "", Version: "28.5.2+incompatible"}},
+			FixedVer:    []common.AppModuleVersion{{OpCode: "", Version: "28.5.3"}},
+		},
+		{
+			VulName:     "CVE-2015-3627",
+			ModuleName:  "go:github.com/docker/docker",
+			Severity:    "High",
+			Description: "filtered",
+			AffectedVer: []common.AppModuleVersion{{OpCode: "", Version: "28.5.2+incompatible"}},
+			FixedVer:    []common.AppModuleVersion{{OpCode: "", Version: "28.5.3"}},
+		},
+	}
+
+	got := checkForVulns(apps[0], 0, apps, dbVuls)
+	if len(got) != 1 {
+		t.Fatalf("checkForVulns() count = %d, want 1", len(got))
+	}
+	if got[0].Vf.Name != "CVE-2026-33997" {
+		t.Fatalf("kept vuln = %q, want CVE-2026-33997", got[0].Vf.Name)
+	}
+	if len(apps[0].ModuleVuls) != 1 {
+		t.Fatalf("ModuleVuls count = %d, want 1", len(apps[0].ModuleVuls))
+	}
+	if apps[0].ModuleVuls[0].Name != "CVE-2026-33997" {
+		t.Fatalf("ModuleVuls[0] = %q, want CVE-2026-33997", apps[0].ModuleVuls[0].Name)
 	}
 }

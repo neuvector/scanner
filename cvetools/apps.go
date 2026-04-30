@@ -63,6 +63,9 @@ func (cv *ScanTools) DetectAppVul(path string, apps []detectors.AppFeatureVersio
 func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detectors.AppFeatureVersion, mv []common.AppModuleVul) []vulFullReport {
 	vuls := make([]vulFullReport, 0)
 	for _, v := range mv {
+		if isGovulncheckFalsePositive(app, v.VulName) {
+			continue
+		}
 
 		if common.Debugs.Enabled {
 			if common.Debugs.CVEs.Contains(v.VulName) && common.Debugs.Features.Contains(app.AppName) {
@@ -118,6 +121,25 @@ func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detecto
 		}
 	}
 	return vuls
+}
+
+func isGovulncheckFalsePositive(app detectors.AppFeatureVersion, vulName string) bool {
+	if app.AppName != "golang" {
+		return false
+	}
+
+	for _, finding := range app.GovulncheckFindings {
+		if finding.OSV == vulName {
+			return false
+		}
+		for _, alias := range finding.Aliases {
+			if alias == vulName {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 func appVul2FullVul(app detectors.AppFeatureVersion, mv common.AppModuleVul) vulFullReport {

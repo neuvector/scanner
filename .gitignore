@@ -30,4 +30,5 @@ _testmain.go
 
 /scanner
 data/cvedb.regular
+data/govulndb
 /task/scannerTask_test1.go
