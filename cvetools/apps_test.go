@@ -76,7 +76,7 @@ func TestIsGovulncheckFalsePositive(t *testing.T) {
 			AppName:    "golang",
 			ModuleName: "go:github.com/docker/docker",
 			Version:    "28.5.2+incompatible",
-			GovulnVulns: []scan.GovulnFinding{
+			GovulncheckFindings: []scan.GovulnFinding{
 				{
 					OSV:     "GO-2026-4883",
 					Aliases: []string{"CVE-2026-33997", "GHSA-pxq6-2prw-chj9"},
@@ -107,7 +107,7 @@ func TestCheckForVulnsFilteredByGovulncheck(t *testing.T) {
 				ModuleName: "go:github.com/docker/docker",
 				Version:    "28.5.2+incompatible",
 				FileName:   "usr/bin/example",
-				GovulnVulns: []scan.GovulnFinding{
+				GovulncheckFindings: []scan.GovulnFinding{
 					{
 						OSV:     "GO-2026-4883",
 						Aliases: []string{"CVE-2026-33997"},

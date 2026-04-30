@@ -128,7 +128,7 @@ func isGovulncheckFalsePositive(app detectors.AppFeatureVersion, vulName string)
 		return false
 	}
 
-	for _, finding := range app.GovulnVulns {
+	for _, finding := range app.GovulncheckFindings {
 		if finding.OSV == vulName {
 			return false
 		}
