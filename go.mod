@@ -8,7 +8,7 @@ require (
 	github.com/containerd/errdefs v1.0.0
 	github.com/google/uuid v1.6.0
 	github.com/jedib0t/go-pretty/v6 v6.6.7
-	github.com/neuvector/neuvector v0.0.0-20260406013240-eba858444676
+	github.com/neuvector/neuvector v0.0.0-20260429155357-2b11d827ef63
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/quay/clair/v2 v2.1.8
 	github.com/sirupsen/logrus v1.9.3
@@ -98,9 +98,9 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.60.0 // indirect
-	go.opentelemetry.io/otel v1.39.0 // indirect
-	go.opentelemetry.io/otel/metric v1.39.0 // indirect
-	go.opentelemetry.io/otel/trace v1.39.0 // indirect
+	go.opentelemetry.io/otel v1.41.0 // indirect
+	go.opentelemetry.io/otel/metric v1.41.0 // indirect
+	go.opentelemetry.io/otel/trace v1.41.0 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/net v0.51.0 // indirect
 	golang.org/x/oauth2 v0.34.0 // indirect
