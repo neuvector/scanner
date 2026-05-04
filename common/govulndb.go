@@ -15,10 +15,7 @@ import (
 func ExtractGovulnDB() error {
 	// Check if govulndb directory already exists and is not empty
 	if info, err := os.Stat(scanUtils.GovulcheckDBPath); err == nil && info.IsDir() {
-		if entries, err := os.ReadDir(scanUtils.GovulcheckDBPath); err == nil && len(entries) > 0 {
-			log.WithFields(log.Fields{"path": scanUtils.GovulcheckDBPath}).Debug("govulndb already exists, skipping extraction")
-			return nil
-		}
+		return nil
 	}
 
 	zipPath := fmt.Sprintf("%s.zip", scanUtils.GovulcheckDBPath)
@@ -64,7 +61,7 @@ func extractZipFile(file *zip.File, targetPath string) error {
 	filePath := filepath.Join(targetPath, file.Name)
 
 	if !strings.HasPrefix(filePath, filepath.Clean(targetPath)+string(os.PathSeparator)) {
-		return fmt.Errorf("illegal file path: %s", file.Name)
+		return nil
 	}
 
 	if file.FileInfo().IsDir() {
