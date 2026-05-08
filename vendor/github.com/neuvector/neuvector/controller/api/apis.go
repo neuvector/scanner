@@ -948,7 +948,6 @@ type RESTWorkloadBrief struct { // obsolete, use v2 instead
 	HostID             string               `json:"host_id"`
 	Image              string               `json:"image"`
 	ImageID            string               `json:"image_id"`
-	ImageDigest        []string             `json:"image_digest"`
 	ImgCreateAt        string               `json:"image_created_at"`
 	ImgRegScand        bool                 `json:"image_reg_scanned"`
 	PlatformRole       string               `json:"platform_role"`
@@ -1007,21 +1006,20 @@ type RESTWorkloadsData struct {
 }
 
 type RESTWorkloadBriefV2 struct {
-	ID           string   `json:"id"`
-	Name         string   `json:"name"`
-	DisplayName  string   `json:"display_name"`
-	HostName     string   `json:"host_name"`
-	HostID       string   `json:"host_id"`
-	Image        string   `json:"image"`
-	ImageID      string   `json:"image_id"`
-	ImageDigest  []string `json:"image_digest"`
-	ImgCreateAt  string   `json:"image_created_at"`
-	ImgRegScand  bool     `json:"image_reg_scanned"`
-	Domain       string   `json:"domain"`
-	State        string   `json:"state"`
-	Service      string   `json:"service"`
-	Author       string   `json:"author"`
-	ServiceGroup string   `json:"service_group"`
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	DisplayName  string `json:"display_name"`
+	HostName     string `json:"host_name"`
+	HostID       string `json:"host_id"`
+	Image        string `json:"image"`
+	ImageID      string `json:"image_id"`
+	ImgCreateAt  string `json:"image_created_at"`
+	ImgRegScand  bool   `json:"image_reg_scanned"`
+	Domain       string `json:"domain"`
+	State        string `json:"state"`
+	Service      string `json:"service"`
+	Author       string `json:"author"`
+	ServiceGroup string `json:"service_group"`
 }
 
 type RESTWorkloadSecurityV2 struct {
@@ -2531,7 +2529,6 @@ type RESTImageAsset struct {
 	ID          string `json:"id"`
 	DisplayName string `json:"display_name"`
 	PolicyMode  string `json:"policy_mode"`
-	Digest      string `json:"digest"`
 }
 
 type RESTScanReportData struct {
@@ -2572,12 +2569,11 @@ type RESTAssetsScanReportQuery struct {
 }
 
 type RESTAssetScanData struct {
-	HostName            string   `json:"host_name"`
-	WorkloadName        string   `json:"workload_name"`
-	WorkloadDomain      string   `json:"workload_domain"`
-	WorkloadImage       string   `json:"workload_image"`
-	WorkloadImageID     string   `json:"workload_image_id"`
-	WorkloadImageDigest []string `json:"workload_image_digest"`
+	HostName        string `json:"host_name"`
+	WorkloadName    string `json:"workload_name"`
+	WorkloadDomain  string `json:"workload_domain"`
+	WorkloadImage   string `json:"workload_image"`
+	WorkloadImageID string `json:"workload_image_id"`
 	RESTVulnerability
 }
 
@@ -4216,9 +4212,8 @@ type VulQueryFilterViewModel struct {
 	ViewType      string `json:"viewType"`
 
 	//specific for /v1/assetvul
-	LastModifiedTime   int64  `json:"last_modified_timestamp"`
-	DebugCVEName       string `json:"debugcve"`
-	IncludeNoVulAssets bool   `json:"include_no_vul_assets"`
+	LastModifiedTime int64  `json:"last_modified_timestamp"`
+	DebugCVEName     string `json:"debugcve"`
 }
 
 type AssetQueryFilterViewModel struct {
@@ -4251,13 +4246,12 @@ type QuerySessionRequest struct {
 }
 
 type RESTAssetView struct {
-	Workloads   []*RESTWorkloadAssetView    `json:"workloads"`
-	Nodes       []*RESTHostAssetView        `json:"nodes"`
-	Platforms   []*RESTPlatformAssetView    `json:"platforms"`
-	Images      []*RESTImageAssetView       `json:"images"`
-	NoVulImages []*RESTNoVulImageAsset      `json:"no_vul_images"`
-	Vuls        []*RESTVulnerabilityAssetV2 `json:"vulnerabilities"`
-	QueryStat   *RESTVulQueryStats          `json:"summary"`
+	Workloads []*RESTWorkloadAssetView    `json:"workloads"`
+	Nodes     []*RESTHostAssetView        `json:"nodes"`
+	Platforms []*RESTPlatformAssetView    `json:"platforms"`
+	Images    []*RESTImageAssetView       `json:"images"`
+	Vuls      []*RESTVulnerabilityAssetV2 `json:"vulnerabilities"`
+	QueryStat *RESTVulQueryStats          `json:"summary"`
 }
 
 type RESTWorkloadAssetView struct {
@@ -4268,7 +4262,6 @@ type RESTWorkloadAssetView struct {
 	Applications    []string `json:"applications"`
 	PolicyMode      string   `json:"policy_mode"`
 	ServiceGroup    string   `json:"service_group"`
-	Critical        int      `json:"critical"`
 	High            int      `json:"high"`
 	Medium          int      `json:"medium"`
 	Low             int      `json:"low"`
@@ -4285,7 +4278,6 @@ type RESTHostAssetView struct {
 	CPUs            int      `json:"cpus"`
 	Memory          int64    `json:"memory"`
 	Containers      int      `json:"containers"`
-	Critical        int      `json:"critical"`
 	High            int      `json:"high"`
 	Medium          int      `json:"medium"`
 	Low             int      `json:"low"`
@@ -4298,7 +4290,6 @@ type RESTPlatformAssetView struct {
 	Name            string   `json:"name"`
 	Version         string   `json:"version"`
 	BaseOS          string   `json:"base_os"`
-	Critical        int      `json:"critical"`
 	High            int      `json:"high"`
 	Medium          int      `json:"medium"`
 	Low             int      `json:"low"`
@@ -4308,41 +4299,27 @@ type RESTPlatformAssetView struct {
 type RESTImageAssetView struct {
 	ID              string   `json:"id"`
 	Name            string   `json:"name"`
-	Digest          string   `json:"digest"`
-	Critical        int      `json:"critical"`
 	High            int      `json:"high"`
 	Medium          int      `json:"medium"`
 	Low             int      `json:"low"`
 	Vulnerabilities []string `json:"vulnerabilities"`
-	CVEDBVersion    string   `json:"cvedb_version"`
-	CVEDBCreateTime string   `json:"cvedb_create_time"`
-}
-
-type RESTNoVulImageAsset struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	Digest          string `json:"digest"`
-	CVEDBVersion    string `json:"cvedb_version"`
-	CVEDBCreateTime string `json:"cvedb_create_time"`
 }
 
 type RESTImageAssetViewV2 struct {
-	ID              string `json:"image_id"`
-	Name            string `json:"repository"`
-	Critical        int    `json:"critical,omitempty"`
-	High            int    `json:"high"`
-	Medium          int    `json:"medium"`
-	CreatedAt       string `json:"created_at"`
-	ScannedAt       string `json:"scanned_at"`
-	Digest          string `json:"digest"`
-	BaseOS          string `json:"base_os"`
-	OSScanStatus    string `json:"os_scan_status,omitempty"`
-	RegName         string `json:"reg_name"`
-	Registry        string `json:"repo_url"`
-	Size            int    `json:"size"`
-	Tag             string `json:"tag"`
-	CVEDBVersion    string `json:"cvedb_version"`
-	CVEDBCreateTime string `json:"cvedb_create_time"`
+	ID           string `json:"image_id"`
+	Name         string `json:"repository"`
+	Critical     int    `json:"critical,omitempty"`
+	High         int    `json:"high"`
+	Medium       int    `json:"medium"`
+	CreatedAt    string `json:"created_at"`
+	ScannedAt    string `json:"scanned_at"`
+	Digest       string `json:"digest"`
+	BaseOS       string `json:"base_os"`
+	OSScanStatus string `json:"os_scan_status,omitempty"`
+	RegName      string `json:"reg_name"`
+	Registry     string `json:"repo_url"`
+	Size         int    `json:"size"`
+	Tag          string `json:"tag"`
 }
 
 type RESTVulQueryStats struct {
@@ -4416,12 +4393,11 @@ func (a *RESTWorkload) GetCursor() RESTScanReportCursor {
 
 func (a *RESTWorkload) GetScanData() RESTAssetScanData {
 	return RESTAssetScanData{
-		HostName:            a.HostName,
-		WorkloadName:        a.Name,
-		WorkloadDomain:      a.Domain,
-		WorkloadImage:       a.Image,
-		WorkloadImageID:     a.ImageID,
-		WorkloadImageDigest: a.ImageDigest,
+		HostName:        a.HostName,
+		WorkloadName:    a.Name,
+		WorkloadDomain:  a.Domain,
+		WorkloadImage:   a.Image,
+		WorkloadImageID: a.ImageID,
 	}
 }
 
