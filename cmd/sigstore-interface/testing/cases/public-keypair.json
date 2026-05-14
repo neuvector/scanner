@@ -1,0 +1,28 @@
+{
+    "ImageDigest": "sha256:c2ced31c5dda37cb805f481e3fa34b742cc8980f439b20af3111b08e66cff8e1",
+    "RootsOfTrust": [
+        {
+            "Name": "public-root-of-trust",
+            "RootlessKeypairsOnly": false,
+            "Verifiers": [
+                {
+                    "Name": "esther-keypair",
+                    "Type": "keypair",
+                    "KeyPairOptions": {
+                        "PublicKey": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEbAOAuM6OwpU/buX7td4VvyKUGyI6\nwXPSUQjeQwc2wzr4wNveeQ4LbZbtH8bAohoOwfgeHUiVFwpgGIB6d+J3hw==\n-----END PUBLIC KEY-----"
+                    },
+                    "KeylessOptions": {
+                        "CertIssuer": "",
+                        "CertSubject": ""
+                    }
+                }
+            ]
+        }
+    ],
+    "SignatureData": {
+        "Manifest": "{\"schemaVersion\":2,\"mediaType\":\"application/vnd.oci.image.manifest.v1+json\",\"config\":{\"mediaType\":\"application/vnd.oci.image.config.v1+json\",\"size\":243,\"digest\":\"sha256:ff9575f3be16905499996bc3f8045d86ce9d9f8aabdd192c47eb3824f7df30da\"},\"layers\":[{\"mediaType\":\"application/vnd.dev.cosign.simplesigning.v1+json\",\"size\":243,\"digest\":\"sha256:19cf962d284f30ff6d6b5744e61f8f200311c35aac53e5f50019aea690582e4b\",\"annotations\":{\"dev.cosignproject.cosign/signature\":\"MEYCIQCz8Hg3Ad/d5Pe5/I+jWlgIpKsRyY8YKvwiuqYPrQK2DgIhAMe/lJN08Ylieb22rJ9D7LEP5QJHruAX6GGgQ+RZyi5N\",\"dev.sigstore.cosign/bundle\":\"{\\\"SignedEntryTimestamp\\\":\\\"MEUCIHol8ZGEFFDNSIDL36wuBwOwRmqzLMcUxHVDbFB0jkW7AiEAsI1nquIgcg6/jvDOt2Tj6dMJdvIR4/dgyrUgG3VgNd0=\\\",\\\"Payload\\\":{\\\"body\\\":\\\"eyJhcGlWZXJzaW9uIjoiMC4wLjEiLCJraW5kIjoiaGFzaGVkcmVrb3JkIiwic3BlYyI6eyJkYXRhIjp7Imhhc2giOnsiYWxnb3JpdGhtIjoic2hhMjU2IiwidmFsdWUiOiIxOWNmOTYyZDI4NGYzMGZmNmQ2YjU3NDRlNjFmOGYyMDAzMTFjMzVhYWM1M2U1ZjUwMDE5YWVhNjkwNTgyZTRiIn19LCJzaWduYXR1cmUiOnsiY29udGVudCI6Ik1FWUNJUUN6OEhnM0FkL2Q1UGU1L0kraldsZ0lwS3NSeVk4WUt2d2l1cVlQclFLMkRnSWhBTWUvbEpOMDhZbGllYjIycko5RDdMRVA1UUpIcnVBWDZHR2dRK1JaeWk1TiIsInB1YmxpY0tleSI6eyJjb250ZW50IjoiTFMwdExTMUNSVWRKVGlCUVZVSk1TVU1nUzBWWkxTMHRMUzBLVFVacmQwVjNXVWhMYjFwSmVtb3dRMEZSV1VsTGIxcEplbW93UkVGUlkwUlJaMEZGWWtGUFFYVk5OazkzY0ZVdlluVllOM1JrTkZaMmVVdFZSM2xKTmdwM1dGQlRWVkZxWlZGM1l6SjNlbkkwZDA1MlpXVlJORXhpV21KMFNEaGlRVzlvYjA5M1ptZGxTRlZwVmtaM2NHZEhTVUkyWkN0S00yaDNQVDBLTFMwdExTMUZUa1FnVUZWQ1RFbERJRXRGV1MwdExTMHRDZz09In19fX0=\\\",\\\"integratedTime\\\":1685639122,\\\"logIndex\\\":22394206,\\\"logID\\\":\\\"c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d\\\"}}\"}}]}",
+        "Payloads": {
+            "sha256:19cf962d284f30ff6d6b5744e61f8f200311c35aac53e5f50019aea690582e4b": "{\"critical\":{\"identity\":{\"docker-reference\":\"quay.io/nvlab/cosign-esther\"},\"image\":{\"docker-manifest-digest\":\"sha256:c2ced31c5dda37cb805f481e3fa34b742cc8980f439b20af3111b08e66cff8e1\"},\"type\":\"cosign container image signature\"},\"optional\":null}"
+        }
+    }
+}

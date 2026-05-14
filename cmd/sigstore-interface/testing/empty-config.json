@@ -1,0 +1,29 @@
+{
+    "ImageDigest": "",
+    "RootsOfTrust": [
+        {
+            "RekorPublicKey": "",
+            "RootCert": "",
+            "SCTPublicKey": "",
+            "Verifiers": [
+                {
+                    "Name": "",
+                    "Type": "",
+                    "IgnoreTLog": false,
+                    "IgnoreSCT": true,
+                    "KeyPairOptions": {
+                        "PublicKey": ""
+                    },
+                    "KeylessOptions": {
+                        "CertIssuer": "",
+                        "CertSubject": ""
+                    }
+                }
+            ]
+        }
+    ],
+    "SignatureData": {
+        "Manifest": "",
+        "Payloads": {}
+    }
+}
