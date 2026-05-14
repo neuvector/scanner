@@ -1,0 +1,24 @@
+{
+    "ImageDigest": "sha256:30e637c70f75c9f22ee0f2b4d0c3471ad3ed2f153f994ec5fe1031ab27d4282c",
+    "RootsOfTrust": [
+        {
+            "Name": "public-root",
+            "Verifiers": [
+                {
+                    "Name": "suse-app-collection-key",
+                    "Type": "keypair",
+                    "KeypairOptions": {
+                        "PublicKey": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA02FtEt5gBywiyxbmkVsb\nCujcBg5lur0kpEbfDk10gCcs9shVEqEO3ZsOXHursgoaDAWqdPtsYhsgczGeJz9w\nAw+r6BuRV8YOkE37A8s/7IOQUW0tlqtnt11OKhIiZ9+e5l3ed2H1ymKQO3dgreSy\nrShqYdA3hrItswyp41ApF6zhjSPlR6lAmq3X4wMYLAPptmzfxigTnR4hxB5UNPhs\ni2qA4vLrUM/i+NohECuLr1EAymvupH26HLEdM+eZnlQn+WbhIP5Grc4ba7XrBv7K\nkywgTC7CxkiJZR0mUcUD2wTX/Je8Ewj6oPSalx09e2jtzvmU5Kr9XUyMF7Zsj5CA\nIwIDAQAB\n-----END PUBLIC KEY-----"
+                    },
+                    "KeylessOptions": {}
+                }
+            ]
+        }
+    ],
+    "SignatureData": {
+        "Manifest": "{\"schemaVersion\":2,\"mediaType\":\"application/vnd.oci.image.manifest.v1+json\",\"config\":{\"mediaType\":\"application/vnd.oci.image.config.v1+json\",\"size\":233,\"digest\":\"sha256:d68903a35c7e4df921427de185d2fb6238c26fbe98e87151b3245900732ba626\"},\"layers\":[{\"mediaType\":\"application/vnd.dev.cosign.simplesigning.v1+json\",\"size\":266,\"digest\":\"sha256:f29eb2be43ee8b54274fcf03e548e3029e96c3babaad27dcdd39a7e13ff82ddb\",\"annotations\":{\"dev.cosignproject.cosign/signature\":\"gj5seEtnOF6Ct4aBkHT/axoiG5rvcJ1zcUv06pnwWCELpRpg7Tp8PFfSP5wjCfO24B1joWpljU16vFKgebYO/yumcNYGy4z7b8tls46QG9dEmMDgwg/bhYk6/r9avVqpdTvcsyEWyR6ewcT9Pk6E3c3BKUytlz14utwFK3rULvZRX+3MrNYH0DL7Kmc3x/FYAzzrz4ewjOAHF1lc77nxgn2u22lWo+h+9a68AquLhuyV+MUP4PD5uNP+ty+NZTa4zdwgVohNk5gEzD/ZugKVonRRMH0ACniQdm/x5A2oMF0Nw0kBBsiOwhIElLlQGpfW6joarqEZB2wSAhJbhe+rsQ==\",\"org.open-build-service.cosign.cookie\":\"a5e6be82775da3e0f4ea85e70fd6024a7d03ecee62536e0ecb179a40ae750b31\"}}]}",
+        "Payloads": {
+            "sha256:f29eb2be43ee8b54274fcf03e548e3029e96c3babaad27dcdd39a7e13ff82ddb": "{\"critical\":{\"identity\":{\"docker-reference\":\"dp.apps.rancher.io/containers/openjdk\"},\"image\":{\"docker-manifest-digest\":\"sha256:30e637c70f75c9f22ee0f2b4d0c3471ad3ed2f153f994ec5fe1031ab27d4282c\"},\"type\":\"cosign container image signature\"},\"optional\":{\"creator\":\"OBS\"}}"
+        }
+    }
+}
