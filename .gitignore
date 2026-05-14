@@ -29,5 +29,6 @@ _testmain.go
 *.bak
 
 /scanner
+/sigstore-interface
 data/cvedb.regular
 /task/scannerTask_test1.go

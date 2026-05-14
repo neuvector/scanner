@@ -1,17 +1,16 @@
 ARG VULNDB_VERSION=4.170
 ARG VULNDB_CHECKSUM=77e9d0b69e6cd3d866cbb3b4b7fe8c5f2864c47fc13fa629baee9d5c13613aa8
-ARG SIGSTORE_VERSION=426a5b0c9dff026dbc1961c81e232509a7c335cb
 #
 # Builder
 #
 FROM registry.suse.com/bci/golang:1.26.2 AS builder
 ARG VERSION
 ARG VULNDB_CHECKSUM
-ARG SIGSTORE_VERSION
 
 RUN zypper in -y wget
 
 # Build controller
+COPY cmd/ /src/cmd
 COPY common/ /src/common
 COPY cvetools/ /src/cvetools
 COPY data/ /src/data
@@ -19,12 +18,11 @@ COPY detectors/ /src/detectors
 COPY monitor/ /src/monitor
 COPY task/ /src/task
 COPY vendor/ /src/vendor
-COPY Makefile go.mod go.sum *.go genlic.sh /src/
+COPY Makefile go.mod go.sum genlic.sh /src/
 
 WORKDIR /src
-RUN git clone https://github.com/neuvector/sigstore-interface --single-branch sigstore-interface && cd sigstore-interface && git checkout ${SIGSTORE_VERSION} && make
 RUN if [ -f "data/cvedb.regular" ]; then echo "using cvedb.regular"; echo "$VULNDB_CHECKSUM data/cvedb.regular" | sha256sum --check --status; else echo "using cvedb"; cp "data/cvedb" "data/cvedb.regular"; fi
-RUN make slsa_all
+RUN make all
 
 #
 # Base images
@@ -54,7 +52,6 @@ COPY --from=builder /src/stage /
 ARG COMMIT
 ARG VERSION
 ARG VULNDB_VERSION
-ARG SIGSTORE_VERSION
 
 LABEL name="scanner" \
   vendor="SUSE Security" \
@@ -64,7 +61,6 @@ LABEL name="scanner" \
   neuvector.role="scanner" \
   neuvector.rev="${COMMIT}" \
   neuvector.vuln_db="${VULNDB_VERSION}" \
-  neuvector.sigstore="${SIGSTORE_VERSION}" \
   "io.artifacthub.package.logo-url"=https://avatars2.githubusercontent.com/u/19367275 \
   "io.artifacthub.package.readme-url"="https://raw.githubusercontent.com/neuvector/scanner/${VERSION}/README.md" \
   "org.opencontainers.image.description"="SUSE Security Scanner" \
