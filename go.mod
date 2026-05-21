@@ -14,7 +14,7 @@ require (
 	github.com/quay/clair/v2 v2.1.8
 	github.com/sigstore/cosign/v3 v3.0.6
 	github.com/sigstore/rekor v1.5.1
-	github.com/sigstore/sigstore v1.10.5
+	github.com/sigstore/sigstore v1.10.6
 	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
 	github.com/theupdateframework/go-tuf v0.7.0
