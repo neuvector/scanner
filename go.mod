@@ -11,7 +11,7 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.6.7
 	github.com/neuvector/neuvector v0.0.0-20260406013240-eba858444676
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/quay/clair/v2 v2.1.8
+	github.com/quay/clair/v4 v4.9.0
 	github.com/sigstore/cosign/v3 v3.0.6
 	github.com/sigstore/rekor v1.5.1
 	github.com/sigstore/sigstore v1.10.5
