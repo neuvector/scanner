@@ -5,5 +5,34 @@
   "baseBranchPatterns": [
     "main"
   ],
-  "prHourlyLimit": 2
+  "prHourlyLimit": 2,
+  "postUpdateOptions": [
+    "gomodTidy",
+    "gomodUpdateImportPaths",
+    "gomodVendor"
+  ],
+  "ignorePaths": [
+    "vendor/**/Dockerfile",
+    "vendor/**/requirements.txt"
+  ],
+  "packageRules": [
+    {
+      "description": "Enable update on indirect imports in gomod",
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["indirect"],
+      "enabled": true
+    },
+    {
+      "description": "Enable updates from neuvector/neuvector",
+      "matchPackageNames": [
+        "github.com/neuvector/neuvector"
+      ], 
+      "enabled": true,
+      "ignoreUnstable": false
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
+  "osvVulnerabilityAlerts": true
 }
