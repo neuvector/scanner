@@ -13,7 +13,10 @@
   ],
   "ignorePaths": [
     "vendor/**/Dockerfile",
-    "vendor/**/requirements.txt"
+    "vendor/**/requirements.txt",
+    "vendor/github.com/theupdateframework/go-tuf/requirements-test.txt",
+    "vendor/github.com/transparency-dev/merkle/cloudbuild.yaml",
+    "vendor/gitlab.com/gitlab-org/api/client-go/.gitlab-ci.yml"
   ],
   "packageRules": [
     {
