@@ -24,9 +24,16 @@
   ],
   "packageRules": [
     {
-      "description": "Enable update on indirect imports in gomod",
+      "description": "Disable update on indirect imports in gomod",
       "matchManagers": ["gomod"],
       "matchDepTypes": ["indirect"],
+      "enabled": false
+    },
+    {
+      "description": "Enable vulnerability patch on indirect imports in gomod",
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["indirect"],
+      "matchVulnerabilities": ["*"],
       "enabled": true
     },
     {
