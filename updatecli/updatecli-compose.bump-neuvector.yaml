@@ -1,6 +1,0 @@
-policies:
-  - name: Update neuvector dependency
-    config:
-      - "updatecli.bump-neuvector.d"
-    values:
-      - values.yaml
