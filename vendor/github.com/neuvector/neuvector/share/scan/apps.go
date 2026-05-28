@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -49,6 +51,7 @@ const (
 	javaMnfstBundleVersion = "Bundle-Version:"
 	javaMnfstBundleSymName = "Bundle-SymbolicName:"
 	javaMnfstBundleName    = "Bundle-Name:"
+	javaMnfstAutoModName   = "Automatic-Module-Name:"
 
 	python            = "python"
 	ruby              = "ruby"
@@ -62,6 +65,9 @@ const (
 	rDefaultPath2   = "usr/local/lib/R/library/"
 	rRepositoryPath = "usr/local/lib/R/site-library/"
 	rDescFileName   = "DESCRIPTION"
+
+	// govulncheck
+	govulncheckTimeout = 30 * time.Second
 )
 
 // var verRegexp = regexp.MustCompile(`<([a-zA-Z0-9\.]+)>([0-9\.]+)</([a-zA-Z0-9\.]+)>`)
@@ -88,6 +94,9 @@ type AppPackage struct {
 	ModuleName string `json:"module_name"`
 	Version    string `json:"version"`
 	FileName   string `json:"file_name"`
+	// GovulncheckFindings stores govulncheck findings for Go binaries, used as a filter
+	// to confirm vulnerabilities. Severity information comes from the existing matching mechanism.
+	GovulncheckFindings []GovulnFinding `json:"govulncheck_findings,omitempty"`
 }
 
 /*
@@ -233,6 +242,16 @@ func (s *ScanApps) DerivePkg(data map[string][]byte) []AppPackage {
 	return pkgs
 }
 
+// cutLast cuts s at the last occurrence of sep.
+// This function will be replaced by strings.CutLast once it's available in Go stdlib.
+// See: https://github.com/golang/go/issues/46336
+func cutLast(s, sep string) (first, last string, ok bool) {
+	if i := strings.LastIndex(s, sep); i > 0 {
+		return s[:i], s[i+len(sep):], true
+	}
+	return "", "", false
+}
+
 func isExe(info os.FileInfo) bool {
 	return info.Mode().IsRegular() && (info.Mode()&0111) != 0
 }
@@ -272,17 +291,29 @@ func (s *ScanApps) parseGolangPackage(filename, fullpath string) {
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), govulncheckTimeout)
+	defer cancel()
+
+	govulnByModule, govulnErr := runGovulncheckBinary(ctx, fullpath)
+	if govulnErr != nil {
+		log.WithFields(log.Fields{"file": filename, "error": govulnErr.Error()}).Error("govulncheck failed")
+		return
+	}
+
 	pkgs := make([]AppPackage, len(bi.Deps))
 	for i, m := range bi.Deps {
 		if m.Replace != nil {
 			m = m.Replace
 		}
 
+		moduleName := fmt.Sprintf("go:%s", m.Path)
+		version := strings.TrimPrefix(m.Version, "v")
 		pkg := AppPackage{
-			AppName:    golang,
-			ModuleName: fmt.Sprintf("go:%s", m.Path),
-			Version:    strings.TrimPrefix(m.Version, "v"),
-			FileName:   filename,
+			AppName:             golang,
+			ModuleName:          moduleName,
+			Version:             version,
+			FileName:            filename,
+			GovulncheckFindings: lookupGovulnFindings(govulnByModule, moduleName, version),
 		}
 		pkgs[i] = pkg
 	}
@@ -290,10 +321,11 @@ func (s *ScanApps) parseGolangPackage(filename, fullpath string) {
 	if goVersion != "" {
 		goVersion := strings.TrimPrefix(goVersion, "go")
 		stdLibPkg := AppPackage{
-			AppName:    golang,
-			ModuleName: "go:stdlib",
-			Version:    goVersion,
-			FileName:   filename,
+			AppName:             golang,
+			ModuleName:          "go:stdlib",
+			Version:             goVersion,
+			FileName:            filename,
+			GovulncheckFindings: lookupGovulnFindings(govulnByModule, "go:stdlib", goVersion),
 		}
 		pkgs = append(pkgs, stdLibPkg)
 	}
@@ -341,8 +373,12 @@ func IsJava(filename string) bool {
 		strings.HasSuffix(filename, ".ear")
 }
 
+func isUnresolvedField(s string) bool {
+	return len(s) == 0 || s[0] == '%'
+}
+
 func parseJarManifestFile(path string, rc io.Reader) (*AppPackage, error) {
-	var vendorId, version, title, symName string
+	var vendorId, version, title, symName, autoModName string
 	var vendorSet, titleSet bool
 	var lineCount int
 
@@ -386,6 +422,8 @@ func parseJarManifestFile(path string, rc io.Reader) (*AppPackage, error) {
 				title = strings.TrimSpace(strings.TrimPrefix(line, javaMnfstBundleName))
 				title = strings.Split(title, ";")[0]
 			}
+		case strings.HasPrefix(line, javaMnfstAutoModName):
+			autoModName = strings.TrimSpace(strings.TrimPrefix(line, javaMnfstAutoModName))
 		}
 
 		if len(version) > 0 && titleSet && vendorSet {
@@ -406,16 +444,24 @@ func parseJarManifestFile(path string, rc io.Reader) (*AppPackage, error) {
 			// NVSHAS-8757
 			vendorId = "org.postgresql"
 			title = "postgresql"
-		} else if len(vendorId) == 0 || vendorId[0] == '%' || len(title) == 0 || title[0] == '%' {
-			if dot := strings.LastIndex(symName, "."); dot > 0 {
-				vendorId = symName[:dot]
-				title = symName[dot+1:]
+		} else if isUnresolvedField(vendorId) || isUnresolvedField(title) {
+			if first, last, ok := cutLast(symName, "."); ok {
+				vendorId = first
+				title = last
 			}
 		}
 	}
 
-	if len(vendorId) == 0 || vendorId[0] == '%' {
-		vendorId = "jar"
+	if isUnresolvedField(vendorId) {
+		switch {
+		case autoModName == "spring.boot":
+			// spring.boot maps to org.springframework.boot in the DB
+			vendorId = "org.springframework.boot"
+		case autoModName != "":
+			vendorId = autoModName
+		default:
+			vendorId = "jar"
+		}
 	}
 
 	// NVSHAS-9942
