@@ -17,7 +17,7 @@ require (
 	github.com/sigstore/sigstore v1.10.5
 	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
-	github.com/theupdateframework/go-tuf v0.7.0
+	github.com/theupdateframework/go-tuf/v2 v2.4.2
 	google.golang.org/grpc v1.81.1
 )
 
