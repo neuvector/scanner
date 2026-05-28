@@ -16,7 +16,11 @@
     "vendor/**/requirements.txt",
     "vendor/github.com/theupdateframework/go-tuf/requirements-test.txt",
     "vendor/github.com/transparency-dev/merkle/cloudbuild.yaml",
-    "vendor/gitlab.com/gitlab-org/api/client-go/.gitlab-ci.yml"
+    "vendor/gitlab.com/gitlab-org/api/client-go/.gitlab-ci.yml",
+    "vendor/github.com/transparency-dev/merkle/cloudbuild.yaml",
+    "vendor/gitlab.com/gitlab-org/api/client-go/.gitlab-ci.yml",
+    "vendor/gitlab.com/gitlab-org/api/client-go/.tool-versions",
+    "vendor/go.opentelemetry.io/otel/dependencies.Dockerfile"
   ],
   "packageRules": [
     {
