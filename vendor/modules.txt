@@ -466,8 +466,8 @@ github.com/hashicorp/go-rootcerts
 # github.com/hashicorp/go-version v1.7.0
 ## explicit
 github.com/hashicorp/go-version
-# github.com/in-toto/attestation v1.1.2
-## explicit; go 1.22
+# github.com/in-toto/attestation v1.2.0
+## explicit; go 1.23
 github.com/in-toto/attestation/go/predicates/provenance/v02
 github.com/in-toto/attestation/go/predicates/provenance/v1
 github.com/in-toto/attestation/go/v1
