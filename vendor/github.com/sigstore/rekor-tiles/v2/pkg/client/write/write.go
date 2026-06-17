@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"time"
 
 	pbs "github.com/sigstore/protobuf-specs/gen/pb-go/rekor/v1"
 	"github.com/sigstore/rekor-tiles/v2/pkg/client"
@@ -31,7 +32,9 @@ import (
 )
 
 const (
-	addPath = "/api/v2/log/entries"
+	addPath         = "/api/v2/log/entries"
+	maxResponseSize = 10 * 1024 * 1024 // 10MB
+	defaultTimeout  = 30 * time.Second
 )
 
 // Client writes entries to rekor.
@@ -60,9 +63,13 @@ func NewWriter(writeURL string, opts ...client.Option) (Client, error) {
 			TLSClientConfig: cfg.TLSConfig,
 		}
 	}
+	timeout := cfg.Timeout
+	if timeout == 0 {
+		timeout = defaultTimeout
+	}
 	httpClient := &http.Client{
 		Transport: client.CreateRoundTripper(transport, cfg.UserAgent),
-		Timeout:   cfg.Timeout,
+		Timeout:   timeout,
 	}
 	return &writeClient{
 		baseURL: baseURL,
@@ -70,7 +77,7 @@ func NewWriter(writeURL string, opts ...client.Option) (Client, error) {
 	}, nil
 }
 
-// Add uploads a hashedrekord or DSSE log entry and returns the TransparencyLogEntry proving the entry's inclusion in the log.
+// Add uploads a hashedrekord log entry and returns the TransparencyLogEntry proving the entry's inclusion in the log.
 func (w *writeClient) Add(ctx context.Context, entry any) (*pbs.TransparencyLogEntry, error) {
 	cer, err := createRequest(entry)
 	if err != nil {
@@ -93,7 +100,7 @@ func (w *writeClient) Add(ctx context.Context, entry any) (*pbs.TransparencyLogE
 		return nil, fmt.Errorf("getting response: %w", err)
 	}
 	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 	if err != nil {
 		return nil, fmt.Errorf("reading response: %w", err)
 	}
@@ -112,8 +119,6 @@ func createRequest(entry any) (*pb.CreateEntryRequest, error) {
 	switch e := entry.(type) {
 	case *pb.HashedRekordRequestV002:
 		return createHashedRekordRequest(e), nil
-	case *pb.DSSERequestV002:
-		return createDSSERequest(e), nil
 	default:
 		return nil, fmt.Errorf("unsupported entry type: %T", entry)
 	}
@@ -123,14 +128,6 @@ func createHashedRekordRequest(h *pb.HashedRekordRequestV002) *pb.CreateEntryReq
 	return &pb.CreateEntryRequest{
 		Spec: &pb.CreateEntryRequest_HashedRekordRequestV002{
 			HashedRekordRequestV002: h,
-		},
-	}
-}
-
-func createDSSERequest(d *pb.DSSERequestV002) *pb.CreateEntryRequest {
-	return &pb.CreateEntryRequest{
-		Spec: &pb.CreateEntryRequest_DsseRequestV002{
-			DsseRequestV002: d,
 		},
 	}
 }
