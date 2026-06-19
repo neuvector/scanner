@@ -220,8 +220,8 @@ github.com/go-openapi/swag/conv v0.25.5 h1:wAXBYEXJjoKwE5+vc9YHhpQOFj2JYBMF2DUi+
 github.com/go-openapi/swag/conv v0.25.5/go.mod h1:CuJ1eWvh1c4ORKx7unQnFGyvBbNlRKbnRyAvDvzWA4k=
 github.com/go-openapi/swag/fileutils v0.25.5 h1:B6JTdOcs2c0dBIs9HnkyTW+5gC+8NIhVBUwERkFhMWk=
 github.com/go-openapi/swag/fileutils v0.25.5/go.mod h1:V3cT9UdMQIaH4WiTrUc9EPtVA4txS0TOmRURmhGF4kc=
-github.com/go-openapi/swag/jsonname v0.25.5 h1:8p150i44rv/Drip4vWI3kGi9+4W9TdI3US3uUYSFhSo=
-github.com/go-openapi/swag/jsonname v0.25.5/go.mod h1:jNqqikyiAK56uS7n8sLkdaNY/uq6+D2m2LANat09pKU=
+github.com/go-openapi/swag/jsonname v0.26.1 h1:VReupaV6WxlAsCn0e4DUfgV6bPmINnPpyJDLqSfNPcE=
+github.com/go-openapi/swag/jsonname v0.26.1/go.mod h1:OvdW6BoWoj33pTfi7x9vFrgmT+fk7aw0BRwvCE0YOuc=
 github.com/go-openapi/swag/jsonutils v0.25.5 h1:XUZF8awQr75MXeC+/iaw5usY/iM7nXPDwdG3Jbl9vYo=
 github.com/go-openapi/swag/jsonutils v0.25.5/go.mod h1:48FXUaz8YsDAA9s5AnaUvAmry1UcLcNVWUjY42XkrN4=
 github.com/go-openapi/swag/jsonutils/fixtures_test v0.25.5 h1:SX6sE4FrGb4sEnnxbFL/25yZBb5Hcg1inLeErd86Y1U=
@@ -240,8 +240,8 @@ github.com/go-openapi/swag/yamlutils v0.25.5 h1:kASCIS+oIeoc55j28T4o8KwlV2S4ZLPT
 github.com/go-openapi/swag/yamlutils v0.25.5/go.mod h1:Gek1/SjjfbYvM+Iq4QGwa/2lEXde9n2j4a3wI3pNuOQ=
 github.com/go-openapi/testify/enable/yaml/v2 v2.4.1 h1:NZOrZmIb6PTv5LTFxr5/mKV/FjbUzGE7E6gLz7vFoOQ=
 github.com/go-openapi/testify/enable/yaml/v2 v2.4.1/go.mod h1:r7dwsujEHawapMsxA69i+XMGZrQ5tRauhLAjV/sxg3Q=
-github.com/go-openapi/testify/v2 v2.4.1 h1:zB34HDKj4tHwyUQHrUkpV0Q0iXQ6dUCOQtIqn8hE6Iw=
-github.com/go-openapi/testify/v2 v2.4.1/go.mod h1:HCPmvFFnheKK2BuwSA0TbbdxJ3I16pjwMkYkP4Ywn54=
+github.com/go-openapi/testify/v2 v2.5.1 h1:TMdhCaw8fUNraVSf3Omoob1dO/AzBfhtFAPW0an6sBo=
+github.com/go-openapi/testify/v2 v2.5.1/go.mod h1:SgsVHtfooshd0tublTtJ50FPKhujf47YRqauXXOUxfw=
 github.com/go-openapi/validate v0.25.2 h1:12NsfLAwGegqbGWr2CnvT65X/Q2USJipmJ9b7xDJZz0=
 github.com/go-openapi/validate v0.25.2/go.mod h1:Pgl1LpPPGFnZ+ys4/hTlDiRYQdI1ocKypgE+8Q8BLfY=
 github.com/go-rod/rod v0.116.2 h1:A5t2Ky2A+5eD/ZJQr1EfsQSe5rms5Xof/qj296e+ZqA=
