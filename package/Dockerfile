@@ -28,7 +28,7 @@ RUN make all
 # Base images
 #
 FROM registry.suse.com/bci/bci-micro:15.7 AS micro
-FROM registry.suse.com/bci/bci-base:15.7 AS base
+FROM registry.suse.com/bci/bci-base:16.1 AS base
 
 COPY --from=micro / /chroot/
 RUN zypper refresh && zypper --installroot /chroot -n in --no-recommends \
