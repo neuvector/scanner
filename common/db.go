@@ -1,8 +1,10 @@
 package common
 
 import (
+	"archive/tar"
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/json"
@@ -35,7 +37,6 @@ func NewCveDB() *CveDB {
 	}
 }
 
-const maxExtractSize = 0 // No extract limit
 const maxVersionHeader = 100 * 1024
 const maxBufferSize = 1024 * 1024
 
@@ -206,18 +207,12 @@ func readCveDbMeta(path, osname string, fullDb map[string]*share.ScanVulnerabili
 	}
 	defer fvul.Close()
 
-	data, err := io.ReadAll(fvul)
-	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("Read file error")
-		return nil, err
-	}
-
 	if output {
 		outCVEs = make(map[string]*OutputCVEVul, 0)
 	}
 
 	buf := make([]byte, maxBufferSize)
-	scanner := bufio.NewScanner(bytes.NewReader(data))
+	scanner := bufio.NewScanner(fvul)
 	scanner.Buffer(buf, maxBufferSize)
 	for scanner.Scan() {
 		var v VulFull
@@ -301,18 +296,12 @@ func readAppDbMeta(path string, fullDb map[string]*share.ScanVulnerability, outp
 	}
 	defer fvul.Close()
 
-	data, err := io.ReadAll(fvul)
-	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("Read file error")
-		return nil, err
-	}
-
 	if output {
 		outCVEs = make(map[string]*OutputCVEVul)
 	}
 
 	buf := make([]byte, maxBufferSize)
-	scanner := bufio.NewScanner(bytes.NewReader(data))
+	scanner := bufio.NewScanner(fvul)
 	scanner.Buffer(buf, maxBufferSize)
 	for scanner.Scan() {
 		var v AppModuleVul
@@ -456,7 +445,9 @@ func CountCveDbEntries(path string) (int, error) {
 			return nil
 		},
 		func(raw []byte) error {
-			var v struct{ VulName string `json:"VN"` }
+			var v struct {
+				VulName string `json:"VN"`
+			}
 			if json.Unmarshal(raw, &v) != nil || v.VulName == "" {
 				return nil
 			}
@@ -565,16 +556,10 @@ func LoadVulnerabilityIndex(path, osname string) ([]VulShort, error) {
 	}
 	defer fvul.Close()
 
-	data, err := io.ReadAll(fvul)
-	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("Read file error")
-		return nil, err
-	}
-
 	vul := make([]VulShort, 0)
 
 	buf := make([]byte, maxBufferSize)
-	scanner := bufio.NewScanner(bytes.NewReader(data))
+	scanner := bufio.NewScanner(fvul)
 	scanner.Buffer(buf, maxBufferSize)
 	for scanner.Scan() {
 		var v VulShort
@@ -599,16 +584,10 @@ func LoadFullVulnerabilities(path, osname string) (map[string]VulFull, error) {
 	}
 	defer fvul.Close()
 
-	data, err := io.ReadAll(fvul)
-	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("Read file error")
-		return nil, err
-	}
-
 	fullDb := make(map[string]VulFull, 0)
 
 	buf := make([]byte, maxBufferSize)
-	scanner := bufio.NewScanner(bytes.NewReader(data))
+	scanner := bufio.NewScanner(fvul)
 	scanner.Buffer(buf, maxBufferSize)
 	for scanner.Scan() {
 		var v VulFull
@@ -643,16 +622,10 @@ func LoadAppVulsTb(path string) (map[string][]AppModuleVul, error) {
 	}
 	defer fvul.Close()
 
-	data, err := io.ReadAll(fvul)
-	if err != nil {
-		log.WithFields(log.Fields{"filename": filename, "error": err}).Error("Read file error")
-		return nil, err
-	}
-
 	vul := make(map[string][]AppModuleVul, 0)
 
 	buf := make([]byte, maxBufferSize)
-	scanner := bufio.NewScanner(bytes.NewReader(data))
+	scanner := bufio.NewScanner(fvul)
 	scanner.Buffer(buf, maxBufferSize)
 	for scanner.Scan() {
 		var v AppModuleVul
@@ -841,6 +814,54 @@ func GetDbVersion(path string) (float64, string, error) {
 	return verFl, keyVer.UpdateTime, nil
 }
 
+// extractTar streams entries from a tar reader to desPath using io.Copy per entry.
+func extractTar(desPath string, r io.Reader) error {
+	tr := tar.NewReader(r)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("extractDbArchive: %w", err)
+		}
+		if !hdr.FileInfo().Mode().IsRegular() {
+			continue
+		}
+		if err := func() error {
+			f, err := os.OpenFile(desPath+strings.TrimPrefix(hdr.Name, "./"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0400)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			_, err = io.Copy(f, tr)
+			return err
+		}(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// extractDbArchive extracts a tar archive (plain or gzip-compressed) to desPath,
+// streaming each entry directly to disk without buffering file contents in memory.
+func extractDbArchive(desPath string, data []byte) error {
+	r := bytes.NewReader(data)
+	gr, err := gzip.NewReader(r)
+	if err == nil {
+		// it's a tar.gz file
+		defer gr.Close()
+		return extractTar(desPath, gr)
+	}
+
+	// it's a tar file
+	_, err = r.Seek(0, io.SeekStart)
+	if err != nil {
+		return err
+	}
+	return extractTar(desPath, r)
+}
+
 func unzipDb(path, desPath string, encryptKey []byte) error {
 	f, err := os.Open(path + share.DefaultCVEDBName)
 	if err != nil {
@@ -885,8 +906,16 @@ func unzipDb(path, desPath string, encryptKey []byte) error {
 	}
 
 	// Read the rest of DB
-	cipherData, err := io.ReadAll(f)
+	pos, err := f.Seek(0, io.SeekCurrent)
 	if err != nil {
+		return err
+	}
+	fi, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	cipherData := make([]byte, fi.Size()-pos)
+	if _, err := io.ReadFull(f, cipherData); err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Read db file tar part error")
 		return err
 	}
@@ -898,9 +927,7 @@ func unzipDb(path, desPath string, encryptKey []byte) error {
 		return err
 	}
 
-	tarFile := bytes.NewReader(plainData)
-	err = utils.ExtractAllArchiveToFiles(desPath, tarFile, maxExtractSize, nil)
-	if err != nil {
+	if err = extractDbArchive(desPath, plainData); err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Extract db file error")
 		return err
 	}
@@ -909,20 +936,23 @@ func unzipDb(path, desPath string, encryptKey []byte) error {
 }
 
 func checkDbHash(filename, hash string) bool {
-	data, err := os.ReadFile(filename)
+	f, err := os.Open(filename)
 	if err != nil {
 		log.WithFields(log.Fields{"file": filename, "error": err}).Info("Read file error")
 		return false
 	}
+	defer f.Close()
 
-	sha := sha256.Sum256(data)
-	ss := fmt.Sprintf("%x", sha)
-	if hash == ss {
-		return true
-	} else {
-		log.WithFields(log.Fields{"file": filename}).Error("Hash not match")
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		log.WithFields(log.Fields{"file": filename, "error": err}).Error("Hash file error")
 		return false
 	}
+	if fmt.Sprintf("%x", h.Sum(nil)) == hash {
+		return true
+	}
+	log.WithFields(log.Fields{"file": filename}).Error("Hash not match")
+	return false
 }
 
 const RHELCpeMapFile = "rhel-cpe.map"

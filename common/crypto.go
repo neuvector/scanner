@@ -44,5 +44,5 @@ func decrypt(ciphertext []byte, key []byte) ([]byte, error) {
 	}
 
 	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
-	return gcm.Open(nil, nonce, ciphertext, nil)
+	return gcm.Open(ciphertext[:0], nonce, ciphertext, nil)
 }
