@@ -438,7 +438,12 @@ func CountCveDbEntries(path string) (int, error) {
 	err := iterateCveDb(path,
 		func(osname string, raw []byte) error {
 			var v cveNameNS
-			if json.Unmarshal(raw, &v) != nil || v.Name == "" {
+			if err := json.Unmarshal(raw, &v); err != nil {
+				log.WithError(err).Debug("failed to unmarshal cve item")
+				return nil
+			}
+			if v.Name == "" {
+				log.Debug("empty cve name")
 				return nil
 			}
 			seen[osVulKey(osname, v.Namespace, v.Name)] = struct{}{}
@@ -448,7 +453,12 @@ func CountCveDbEntries(path string) (int, error) {
 			var v struct {
 				VulName string `json:"VN"`
 			}
-			if json.Unmarshal(raw, &v) != nil || v.VulName == "" {
+			if err := json.Unmarshal(raw, &v); err != nil {
+				log.WithError(err).Debug("failed to unmarshal cve item")
+				return nil
+			}
+			if v.VulName == "" {
+				log.Debug("empty cve name")
 				return nil
 			}
 			seen[DBAppName+":"+v.VulName] = struct{}{}
@@ -493,7 +503,12 @@ func StreamCveDbBatches(path string, batchSize int, fn func(batch map[string]*sh
 	if err := iterateCveDb(path,
 		func(osname string, raw []byte) error {
 			var v VulFull
-			if json.Unmarshal(raw, &v) != nil || v.Name == "" {
+			if err := json.Unmarshal(raw, &v); err != nil {
+				log.WithError(err).Debug("failed to unmarshal cve item")
+				return nil
+			}
+			if v.Name == "" {
+				log.Debug("empty cve name")
 				return nil
 			}
 			sv := &share.ScanVulnerability{
@@ -512,7 +527,12 @@ func StreamCveDbBatches(path string, batchSize int, fn func(batch map[string]*sh
 		},
 		func(raw []byte) error {
 			var v AppModuleVul
-			if json.Unmarshal(raw, &v) != nil || v.VulName == "" {
+			if err := json.Unmarshal(raw, &v); err != nil {
+				log.WithError(err).Debug("failed to unmarshal cve item")
+				return nil
+			}
+			if v.VulName == "" {
+				log.Debug("empty cve name")
 				return nil
 			}
 			sv := &share.ScanVulnerability{
