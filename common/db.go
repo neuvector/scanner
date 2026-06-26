@@ -378,6 +378,184 @@ func readAppDbMeta(path string, fullDb map[string]*share.ScanVulnerability, outp
 	return outCVEs, nil
 }
 
+// cveNameNS is a minimal struct used by CountCveDbEntries to avoid allocating full VulFull objects.
+type cveNameNS struct {
+	Name      string `json:"N"`
+	Namespace string `json:"NS"`
+}
+
+// iterateCveDb opens each OS full vulnerability file and apps.tb under path, calling onOSLine
+// for each OS entry and onAppLine for each app entry. Missing files are silently skipped.
+func iterateCveDb(path string, onOSLine func(osname string, raw []byte) error, onAppLine func(raw []byte) error) error {
+	for i := 0; i < DBMax; i++ {
+		osname := DBS.Buffers[i].Name
+		if err := func() error {
+			f, err := os.Open(fmt.Sprintf("%s%s_full.tb", path, osname))
+			if err != nil {
+				if os.IsNotExist(err) {
+					return nil
+				}
+				return err
+			}
+			defer f.Close()
+			buf := make([]byte, maxBufferSize)
+			sc := bufio.NewScanner(f)
+			sc.Buffer(buf, maxBufferSize)
+			for sc.Scan() {
+				if err := onOSLine(osname, sc.Bytes()); err != nil {
+					return err
+				}
+			}
+			return sc.Err()
+		}(); err != nil {
+			return err
+		}
+	}
+	return func() error {
+		f, err := os.Open(fmt.Sprintf("%s/apps.tb", path))
+		if err != nil {
+			if os.IsNotExist(err) {
+				return nil
+			}
+			return err
+		}
+		defer f.Close()
+		buf := make([]byte, maxBufferSize)
+		sc := bufio.NewScanner(f)
+		sc.Buffer(buf, maxBufferSize)
+		for sc.Scan() {
+			if err := onAppLine(sc.Bytes()); err != nil {
+				return err
+			}
+		}
+		return sc.Err()
+	}()
+}
+
+// osVulKey returns the deduplication key for an OS vulnerability entry.
+// Ubuntu upstream entries use a shared key across OS files; all others are scoped to osname.
+func osVulKey(osname, namespace, name string) string {
+	if namespace == "ubuntu:upstream" {
+		return "upstream:" + name
+	}
+	return osname + ":" + name
+}
+
+// CountCveDbEntries returns the number of unique CVE entries across all OS and app database files.
+// It uses the same deduplication key logic as ReadCveDbMeta so the count exactly matches what
+// StreamCveDbBatches will send, making it safe to use as CVEDBTotal in the V3 initial message.
+func CountCveDbEntries(path string) (int, error) {
+	seen := make(map[string]struct{})
+	err := iterateCveDb(path,
+		func(osname string, raw []byte) error {
+			var v cveNameNS
+			if json.Unmarshal(raw, &v) != nil || v.Name == "" {
+				return nil
+			}
+			seen[osVulKey(osname, v.Namespace, v.Name)] = struct{}{}
+			return nil
+		},
+		func(raw []byte) error {
+			var v struct{ VulName string `json:"VN"` }
+			if json.Unmarshal(raw, &v) != nil || v.VulName == "" {
+				return nil
+			}
+			seen[DBAppName+":"+v.VulName] = struct{}{}
+			return nil
+		},
+	)
+	return len(seen), err
+}
+
+// StreamCveDbBatches reads CVE entries from all database files and delivers them to fn in
+// batches of at most batchSize entries. fn receives isLast=true on the final call.
+// Uses a one-batch lookahead so isLast is set correctly without a second disk pass.
+// The seen map ensures cross-file deduplication identical to ReadCveDbMeta.
+func StreamCveDbBatches(path string, batchSize int, fn func(batch map[string]*share.ScanVulnerability, isLast bool) error) error {
+	seen := make(map[string]struct{})
+	var pending map[string]*share.ScanVulnerability
+	current := make(map[string]*share.ScanVulnerability, batchSize)
+
+	flush := func(batch map[string]*share.ScanVulnerability, isLast bool) error {
+		return fn(batch, isLast)
+	}
+
+	addEntry := func(key string, sv *share.ScanVulnerability) error {
+		if _, exists := seen[key]; exists {
+			return nil
+		}
+		seen[key] = struct{}{}
+		current[key] = sv
+
+		if len(current) >= batchSize {
+			if pending != nil {
+				if err := flush(pending, false); err != nil {
+					return err
+				}
+			}
+			pending = current
+			current = make(map[string]*share.ScanVulnerability, batchSize)
+		}
+		return nil
+	}
+
+	if err := iterateCveDb(path,
+		func(osname string, raw []byte) error {
+			var v VulFull
+			if json.Unmarshal(raw, &v) != nil || v.Name == "" {
+				return nil
+			}
+			sv := &share.ScanVulnerability{
+				Description:      v.Description,
+				Link:             v.Link,
+				Severity:         v.Severity,
+				Score:            float32(v.CVSSv2.Score),
+				Vectors:          v.CVSSv2.Vectors,
+				ScoreV3:          float32(v.CVSSv3.Score),
+				VectorsV3:        v.CVSSv3.Vectors,
+				PublishedDate:    v.IssuedDate.Format(time.RFC3339),
+				LastModifiedDate: v.LastModDate.Format(time.RFC3339),
+				FeedRating:       v.FeedRating,
+			}
+			return addEntry(osVulKey(osname, v.Namespace, v.Name), sv)
+		},
+		func(raw []byte) error {
+			var v AppModuleVul
+			if json.Unmarshal(raw, &v) != nil || v.VulName == "" {
+				return nil
+			}
+			sv := &share.ScanVulnerability{
+				Description:      v.Description,
+				Link:             v.Link,
+				Severity:         v.Severity,
+				Score:            float32(v.Score),
+				Vectors:          v.Vectors,
+				ScoreV3:          float32(v.ScoreV3),
+				VectorsV3:        v.VectorsV3,
+				PublishedDate:    v.IssuedDate.Format(time.RFC3339),
+				LastModifiedDate: v.LastModDate.Format(time.RFC3339),
+				FeedRating:       v.Severity,
+			}
+			return addEntry(DBAppName+":"+v.VulName, sv)
+		},
+	); err != nil {
+		return err
+	}
+
+	// Flush remaining batches. pending holds the second-to-last full batch (or the only batch);
+	// current holds any trailing entries that didn't fill a full batch.
+	if pending != nil && len(current) > 0 {
+		if err := flush(pending, false); err != nil {
+			return err
+		}
+		return flush(current, true)
+	}
+	if pending != nil {
+		return flush(pending, true)
+	}
+	return flush(current, true)
+}
+
 func LoadVulnerabilityIndex(path, osname string) ([]VulShort, error) {
 	filename := fmt.Sprintf("%s/%s_index.tb", path, osname)
 	fvul, err := os.Open(filename)

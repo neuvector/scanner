@@ -73,53 +73,63 @@ var scanTasker *Tasker
 var selfID string
 var isGetCapsActivate bool
 
-func dbRead(path string, maxRetry int, output string) map[string]*share.ScanVulnerability {
+// loadDb retries stat+decrypt+extract of the CVE archive until onLoad returns true or maxRetry is hit.
+// onLoad is called with the resolved version and createTime after each successful LoadCveDb.
+// Returns true when onLoad succeeds, false after exhausting retries.
+func loadDb(path string, maxRetry int, onLoad func(ver, createTime string) bool) bool {
 	dbFile := path + share.DefaultCVEDBName
 	encryptKey := common.GetCVEDBEncryptKey()
 
 	var retry int
-	var dbReady bool
-	var dbData map[string]*share.ScanVulnerability
-	var outCVEs []*common.OutputCVEVul
-
 	for {
 		if _, err := os.Stat(dbFile); err != nil {
 			log.WithFields(log.Fields{"file": dbFile}).Error("cannot find scanner db")
-		} else {
-			if verNew, createTime, err := common.LoadCveDb(path, cveDB.ExpandPath, encryptKey); err == nil {
-				cveDB.CveDBVersion = verNew
-				cveDB.CveDBCreateTime = createTime
-				if dbData, outCVEs, err = common.ReadCveDbMeta(cveDB.ExpandPath, output != ""); err != nil {
-					log.WithFields(log.Fields{"error": err}).Error("Failed to load scanner db")
-				} else {
-					dbReady = true
-
-					if output != "" {
-						out := outputCVE{
-							Version:    verNew,
-							CreateTime: createTime,
-							CVEs:       outCVEs,
-						}
-						file, _ := json.MarshalIndent(out, "", "    ")
-						if err := os.WriteFile(output, file, 0644); err != nil {
-							log.WithFields(log.Fields{"error": err}).Error()
-						}
-					}
-				}
-			}
+		} else if verNew, createTime, err := common.LoadCveDb(path, cveDB.ExpandPath, encryptKey); err != nil {
+			log.WithFields(log.Fields{"error": err}).Error("Failed to load scanner db")
+		} else if onLoad(verNew, createTime) {
+			return true
 		}
 
-		if !dbReady {
-			retry++
-			if maxRetry != 0 && retry == maxRetry {
-				return nil
-			}
-
-			time.Sleep(time.Second * 4)
-		} else {
-			return dbData
+		retry++
+		if maxRetry != 0 && retry == maxRetry {
+			return false
 		}
+		time.Sleep(time.Second * 4)
 	}
+}
+
+// dbExtract decrypts and extracts the CVE database archive to cveDB.ExpandPath without loading
+// vulnerability data into memory. Use this instead of dbRead when streaming to a controller that
+// supports V3 registration. dbRead is preserved for the --output CLI mode.
+func dbExtract(path string, maxRetry int) bool {
+	return loadDb(path, maxRetry, func(ver, createTime string) bool {
+		cveDB.CveDBVersion = ver
+		cveDB.CveDBCreateTime = createTime
+		return true
+	})
+}
+
+func dbRead(path string, maxRetry int, output string) map[string]*share.ScanVulnerability {
+	var dbData map[string]*share.ScanVulnerability
+	loadDb(path, maxRetry, func(ver, createTime string) bool {
+		cveDB.CveDBVersion = ver
+		cveDB.CveDBCreateTime = createTime
+		var outCVEs []*common.OutputCVEVul
+		var err error
+		if dbData, outCVEs, err = common.ReadCveDbMeta(cveDB.ExpandPath, output != ""); err != nil {
+			log.WithFields(log.Fields{"error": err}).Error("Failed to load scanner db")
+			return false
+		}
+		if output != "" {
+			out := outputCVE{Version: ver, CreateTime: createTime, CVEs: outCVEs}
+			file, _ := json.MarshalIndent(out, "", "    ")
+			if err := os.WriteFile(output, file, 0644); err != nil {
+				log.WithFields(log.Fields{"error": err}).Error()
+			}
+		}
+		return true
+	})
+	return dbData
 }
 
 func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinPort uint16, doneCh chan bool) {
@@ -129,26 +139,25 @@ func connectController(path, advIP, joinIP, selfID string, advPort uint32, joinP
 	}
 
 	var healthCheckCh chan struct{}
-	var dbData map[string]*share.ScanVulnerability
 	for {
-		// forever retry
-		dbData = dbRead(path, 0, "")
+		// Extract the CVE database to disk without loading it into memory.
+		// V3 registration streams directly from cveDB.ExpandPath; V2 fallback loads lazily inside scannerRegister.
+		dbExtract(path, 0)
 		scanner := share.ScannerRegisterData{
 			CVEDBVersion:    cveDB.CveDBVersion,
 			CVEDBCreateTime: cveDB.CveDBCreateTime,
-			CVEDB:           dbData,
+			CVEDB:           nil,
 			RPCServer:       advIP,
 			RPCServerPort:   advPort,
 			ID:              selfID,
 		}
 
 		for scannerRegister(joinIP, joinPort, &scanner, cb) != nil {
+			scanner.CVEDB = nil // free V2 fallback data before retry
 			time.Sleep(registerWaitTime)
 		}
 
-		// tagging it as a released-memory
-		scanner.CVEDB = nil
-		clear(dbData) // zero size
+		scanner.CVEDB = nil // free V2 fallback data on success
 
 		if healthCheckCh != nil {
 			close(healthCheckCh)
