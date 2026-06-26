@@ -360,6 +360,87 @@ func scannerRegisterStream(ctx context.Context, client share.ControllerScanServi
 	return nil
 }
 
+func scannerRegisterV3(ctx context.Context, client share.ControllerScanServiceClient, data *share.ScannerRegisterData) error {
+	stream, err := client.ScannerRegisterV3(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err = stream.CloseSend(); err != nil {
+			log.WithError(err).Debug("failed to close stream")
+		}
+	}()
+
+	// Count unique entries without loading them; the total is sent upfront so the controller
+	// can size its Consul slots before the first batch arrives.
+	total, err := common.CountCveDbEntries(cveDB.ExpandPath)
+	if err != nil {
+		return fmt.Errorf("counting CVE DB entries: %w", err)
+	}
+
+	if err := stream.Send(&share.ScannerRegisterV3Request{
+		CVEDBVersion:    data.CVEDBVersion,
+		CVEDBCreateTime: data.CVEDBCreateTime,
+		RPCServer:       data.RPCServer,
+		RPCServerPort:   data.RPCServerPort,
+		ID:              data.ID,
+		CVEDBTotal:      uint32(total),
+	}); err != nil {
+		return err
+	}
+
+	resp, err := stream.Recv()
+	if err != nil {
+		return err
+	}
+
+	switch resp.Action {
+	case share.ScannerRegisterV3Response_REGISTERED:
+		log.Info("V3 register: CVEDB already current, registered without upload")
+		return nil
+
+	case share.ScannerRegisterV3Response_SEND_CVEDB:
+		batchSize := int(resp.CVEDBPageSize)
+		if batchSize <= 0 {
+			batchSize = 5000
+		}
+
+		log.WithFields(log.Fields{"entries": total, "batchSize": batchSize}).Info("V3 register: streaming CVEDB from disk")
+
+		var sent int
+		if err := common.StreamCveDbBatches(cveDB.ExpandPath, batchSize, func(batch map[string]*share.ScanVulnerability, isLast bool) error {
+			log.WithFields(log.Fields{"sent": sent, "total": total}).Info("sending cvedb batch")
+			if err := stream.Send(&share.ScannerRegisterV3Request{
+				CVEDB:     batch,
+				CVEDBLast: isLast,
+			}); err != nil {
+				return err
+			}
+			sent += len(batch)
+			return nil
+		}); err != nil {
+			return err
+		}
+
+		log.Info("V3 register: all batches sent, awaiting REGISTERED")
+		resp, err = stream.Recv()
+		if err != nil {
+			return err
+		}
+		if resp.Action != share.ScannerRegisterV3Response_REGISTERED {
+			return fmt.Errorf("expected REGISTERED after upload, got %v: %s", resp.Action, resp.Message)
+		}
+		log.Info("V3 register: CVEDB uploaded and registered")
+		return nil
+
+	case share.ScannerRegisterV3Response_ERROR:
+		return errors.New(resp.Message)
+	default:
+		return fmt.Errorf("unknown registration action: %v", resp.Action)
+	}
+}
+
 func isIgnorableScannerRegisterStreamCloseError(err error) bool {
 	s, ok := status.FromError(err)
 	if !ok || s.Code() != codes.Internal {
@@ -426,7 +507,7 @@ func ScannerSettingUpdate(settings *share.ScannerSettings) error {
 
 func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegisterData, cb cluster.GRPCCallback) error {
 	log.WithFields(log.Fields{
-		"join": fmt.Sprintf("%s:%d", joinIP, joinPort), "version": data.CVEDBVersion, "entries": len(data.CVEDB),
+		"join": fmt.Sprintf("%s:%d", joinIP, joinPort), "version": data.CVEDBVersion,
 	}).Debug()
 
 	client, err := getControllerServiceClient(joinIP, joinPort, cb)
@@ -435,20 +516,23 @@ func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegister
 		return errors.New("failed to connect to controller")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*180)
+	// Timeout must be long enough for the CVEDB upload lock wait (up to 3 minutes)
+	// plus the actual upload and write time.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*10)
 	defer cancel()
 
 	caps, err := client.GetCaps(ctx, &share.RPCVoid{})
 	if err != nil {
+		if status.Code(err) != codes.Unimplemented {
+			log.WithError(err).Error("failed to get controller caps")
+			return fmt.Errorf("failed to get controller caps: %w", err)
+		}
+		// Server is old and doesn't implement GetCaps — treat as no capabilities.
 		isGetCapsActivate = false
-		downgradeCriticalSeverityInCVEDB(data)
 	} else {
 		isGetCapsActivate = true
 		log.WithField("cap", caps).Info("controller capabilities")
 		ctrlCaps = *caps
-		if !caps.CriticalVul {
-			downgradeCriticalSeverityInCVEDB(data)
-		}
 	}
 
 	haveControllerSetting := false
@@ -483,16 +567,34 @@ func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegister
 		}
 	}
 
-	if err = scannerRegisterStream(ctx, client, data); err == nil {
+	// V3: push model — scanner streams CVEDB from disk batch by batch.
+	// Controllers that support V3 always support CriticalVul, so no severity downgrade is needed.
+	// Only attempt V3 if caps are available; caps == nil means an old controller without GetCaps.
+	if caps != nil && caps.SupportScannerRegisterV3 {
+		if err = scannerRegisterV3(ctx, client, data); err != nil {
+			log.WithFields(log.Fields{"error": err}).Error("V3 register failed")
+			return err
+		}
 		return nil
 	}
 
-	_, err = client.ScannerRegister(ctx, data)
-	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("Failed to register")
-		return errors.New("failed to send register request")
+	// V2 fallback: load the full CVEDB into memory for streaming to an old controller.
+	if data.CVEDB == nil {
+		data.CVEDB, _, err = common.ReadCveDbMeta(cveDB.ExpandPath, false)
+		if err != nil {
+			log.WithError(err).Error("failed to load CVEDB for V2 registration")
+			return err
+		}
 	}
-	return nil
+	if caps == nil || !caps.CriticalVul {
+		downgradeCriticalSeverityInCVEDB(data)
+	}
+
+	if err = scannerRegisterStream(ctx, client, data); err == nil {
+		return nil
+	}
+	log.WithFields(log.Fields{"error": err}).Error("V2 register stream failed")
+	return errors.New("failed to send register request")
 }
 
 func scannerDeregister(joinIP string, joinPort uint16, id string) error {
