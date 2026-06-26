@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	v1 "github.com/neuvector/neuvector/controller/k8sapi/v1"
 	log "github.com/sirupsen/logrus"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 )
@@ -33,6 +34,7 @@ const CLUSLockRestoreKey string = CLUSLockStore + "restore"
 const CLUSLockAdmCtrlKey string = CLUSLockStore + "adm_ctrl"
 const CLUSLockFedKey string = CLUSLockStore + "federation"
 const CLUSLockScannerKey string = CLUSLockStore + "scanner"
+const CLUSLockScannerDBUploadKey string = CLUSLockStore + "scanner_db_upload"
 const CLUSLockCrdQueueKey string = CLUSLockStore + "crd_queue"
 const CLUSLockCloudKey string = CLUSLockStore + "cloud"
 const CLUSLockFedScanDataKey string = CLUSLockStore + "fed_scan_data"
@@ -56,7 +58,6 @@ const (
 	CFGEndpointServer               = "server"
 	CFGEndpointGroup                = "group"
 	CFGEndpointPolicy               = "policy"
-	CFGEndpointLicense              = "license"
 	CFGEndpointResponseRule         = "response_rule"
 	CFGEndpointProcessProfile       = "process_profile"
 	CFGEndpointRegistry             = "registry"
@@ -89,7 +90,6 @@ const CLUSConfigUserStore string = CLUSConfigStore + CFGEndpointUser + "/"
 const CLUSConfigServerStore string = CLUSConfigStore + CFGEndpointServer + "/"
 const CLUSConfigGroupStore string = CLUSConfigStore + CFGEndpointGroup + "/"
 const CLUSConfigPolicyStore string = CLUSConfigStore + CFGEndpointPolicy + "/"
-const CLUSConfigLicenseKey string = CLUSConfigStore + CFGEndpointLicense
 const CLUSConfigResponseRuleStore string = CLUSConfigStore + CFGEndpointResponseRule + "/"
 const CLUSConfigProcessProfileStore string = CLUSConfigStore + CFGEndpointProcessProfile + "/"
 const CLUSConfigRegistryStore string = CLUSConfigStore + CFGEndpointRegistry + "/"
@@ -131,7 +131,6 @@ const CLUSAuditLogStore string = CLUSObjectStore + "auditlog/"
 const CLUSCloudStore string = CLUSObjectStore + "cloud/"
 const CLUSCrdProcStore string = "crdcontent/"
 const CLUSCertStore string = CLUSObjectStore + "cert/"
-const CLUSLicenseStore string = CLUSObjectStore + "license/"
 const CLUSTelemetryStore string = CLUSObjectStore + "telemetry/"
 const CLUSThrottledEventStore string = CLUSObjectStore + "throttled/"
 
@@ -582,7 +581,10 @@ func CLUSWafGroupKey2Name(key string) string {
 
 func CLUSPolicyRuleKey2ID(key string) uint32 {
 	s := keyLastToken(key)
-	id, _ := strconv.Atoi(s)
+	id, err := strconv.Atoi(s)
+	if err != nil {
+		log.WithError(err).Debug("failed to parse policy rule ID from cluster key")
+	}
 	return uint32(id)
 }
 
@@ -1155,43 +1157,45 @@ type CLUSNetPolicyMetric struct {
 }
 
 type CLUSWorkload struct {
-	ID           string                    `json:"id"`
-	Name         string                    `json:"name"`
-	AgentID      string                    `json:"agent_id"`
-	SelfHostname string                    `json:"self_hostname"`
-	HostName     string                    `json:"host_name"`
-	HostID       string                    `json:"host_id"`
-	Image        string                    `json:"image"`
-	ImageID      string                    `json:"image_id"`
-	ImgCreateAt  time.Time                 `json:"image_created_at"`
-	Privileged   bool                      `json:"privileged"`
-	RunAsRoot    bool                      `json:"run_as_root"`
-	NetworkMode  string                    `json:"network_mode"`
-	ShareNetNS   string                    `json:"share_netns"`
-	Service      string                    `json:"service"`
-	Domain       string                    `json:"domain"`
-	Author       string                    `json:"author"`
-	PlatformRole string                    `json:"platform_role"`
-	CreatedAt    time.Time                 `json:"created_at"`
-	StartedAt    time.Time                 `json:"started_at"`
-	FinishedAt   time.Time                 `json:"finished_at"`
-	Running      bool                      `json:"running"`
-	CapIntcp     bool                      `json:"cap_intcp"`
-	CapSniff     bool                      `json:"cap_sniff"`
-	HasDatapath  bool                      `json:"has_datapath"`
-	Inline       bool                      `json:"inline"`
-	Quarantine   bool                      `json:"quarantine"`
-	SecuredAt    time.Time                 `json:"secured_at"`
-	ExitCode     int                       `json:"exit_code"`
-	Pid          int                       `json:"pid"`
-	Ifaces       map[string][]CLUSIPAddr   `json:"interfaces"`
-	Ports        map[string]CLUSMappedPort `json:"ports"`
-	Labels       map[string]string         `json:"labels"`
-	Apps         map[string]CLUSApp        `json:"apps"`
-	MemoryLimit  int64                     `json:"memory_limit"`
-	CPUs         string                    `json:"cpus"`
-	ProxyMesh    bool                      `json:"proxymesh"`
-	Sidecar      bool                      `json:"sidecar"`
+	ID               string                    `json:"id"`
+	Name             string                    `json:"name"`
+	AgentID          string                    `json:"agent_id"`
+	SelfHostname     string                    `json:"self_hostname"`
+	HostName         string                    `json:"host_name"`
+	HostID           string                    `json:"host_id"`
+	Image            string                    `json:"image"`
+	ImageID          string                    `json:"image_id"`
+	ImageDigest      string                    `json:"image_digest"`
+	ImageRepoDigests []string                  `json:"image_repo_digests"`
+	ImgCreateAt      time.Time                 `json:"image_created_at"`
+	Privileged       bool                      `json:"privileged"`
+	RunAsRoot        bool                      `json:"run_as_root"`
+	NetworkMode      string                    `json:"network_mode"`
+	ShareNetNS       string                    `json:"share_netns"`
+	Service          string                    `json:"service"`
+	Domain           string                    `json:"domain"`
+	Author           string                    `json:"author"`
+	PlatformRole     string                    `json:"platform_role"`
+	CreatedAt        time.Time                 `json:"created_at"`
+	StartedAt        time.Time                 `json:"started_at"`
+	FinishedAt       time.Time                 `json:"finished_at"`
+	Running          bool                      `json:"running"`
+	CapIntcp         bool                      `json:"cap_intcp"`
+	CapSniff         bool                      `json:"cap_sniff"`
+	HasDatapath      bool                      `json:"has_datapath"`
+	Inline           bool                      `json:"inline"`
+	Quarantine       bool                      `json:"quarantine"`
+	SecuredAt        time.Time                 `json:"secured_at"`
+	ExitCode         int                       `json:"exit_code"`
+	Pid              int                       `json:"pid"`
+	Ifaces           map[string][]CLUSIPAddr   `json:"interfaces"`
+	Ports            map[string]CLUSMappedPort `json:"ports"`
+	Labels           map[string]string         `json:"labels"`
+	Apps             map[string]CLUSApp        `json:"apps"`
+	MemoryLimit      int64                     `json:"memory_limit"`
+	CPUs             string                    `json:"cpus"`
+	ProxyMesh        bool                      `json:"proxymesh"`
+	Sidecar          bool                      `json:"sidecar"`
 }
 
 type CLUSDomain struct {
@@ -1545,7 +1549,6 @@ type CLUSEventLog struct {
 	RESTRequest    string                   `json:"rest_request,omitempty"`
 	RESTBody       string                   `json:"rest_body,omitempty"`
 	EnforcerLimit  int                      `json:"enforcer_limit,omitempty"`
-	LicenseExpire  time.Time                `json:"license_expire,omitempty"`
 	GroupName      string                   `json:"group_name"`
 	Msg            string                   `json:"message"`
 }
@@ -1783,21 +1786,16 @@ type CLUSCustomCheckGroup struct {
 	Scripts []*CLUSCustomCheck `json:"scripts"`
 }
 
-type CLUSEventCondition struct {
-	CondType  string `json:"type,omitempty"`
-	CondValue string `json:"value,omitempty"`
-}
-
 type CLUSResponseRule struct {
-	ID         uint32               `json:"id"`
-	Event      string               `json:"event"`
-	Comment    string               `json:"comment,omitempty"`
-	Group      string               `json:"group,omitempty"`
-	Conditions []CLUSEventCondition `json:"conditions,omitempty"`
-	Actions    []string             `json:"actions"`
-	Webhooks   []string             `json:"webhooks"`
-	Disable    bool                 `json:"disable,omitempty"`
-	CfgType    TCfgType             `json:"cfg_type"`
+	ID         uint32              `json:"id"`
+	Event      string              `json:"event"`
+	Comment    string              `json:"comment,omitempty"`
+	Group      string              `json:"group,omitempty"`
+	Conditions []v1.EventCondition `json:"conditions,omitempty"`
+	Actions    []string            `json:"actions"`
+	Webhooks   []string            `json:"webhooks"`
+	Disable    bool                `json:"disable,omitempty"`
+	CfgType    TCfgType            `json:"cfg_type"`
 }
 
 func CLUSResponseRuleKey(policyName string, id uint32) string {

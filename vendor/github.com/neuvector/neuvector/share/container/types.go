@@ -141,21 +141,22 @@ type ContainerMeta struct {
 
 type ContainerMetaExtra struct {
 	ContainerMeta
-	ImageID     string
-	ImageDigest string
-	ImgCreateAt time.Time
-	Author      string
-	Privileged  bool
-	ExitCode    int
-	Running     bool
-	CreatedAt   time.Time
-	StartedAt   time.Time
-	FinishedAt  time.Time
-	MemoryLimit int64
-	CPUs        string
-	ProxyMesh   bool
-	Sidecar     bool
-	RunAsRoot   bool
+	ImageID          string
+	ImageDigest      string
+	ImageRepoDigests []string // on docker runtime env, there is no guarantee we we only get one digest for an image. so store all the repoDigests
+	ImgCreateAt      time.Time
+	Author           string
+	Privileged       bool
+	ExitCode         int
+	Running          bool
+	CreatedAt        time.Time
+	StartedAt        time.Time
+	FinishedAt       time.Time
+	MemoryLimit      int64
+	CPUs             string
+	ProxyMesh        bool
+	Sidecar          bool
+	RunAsRoot        bool
 	// network
 	IPAddress   string
 	IPPrefixLen int
@@ -490,11 +491,13 @@ func obtainRtEndpointFromKubelet(sys *system.SystemTools) (string, string, bool)
 		if files, err := d.Readdir(-1); err != nil {
 			log.WithFields(log.Fields{"err": err}).Error("read")
 		} else {
-			var pid int
 			for _, file := range files {
 				if file.IsDir() {
 					// get all the process
-					pid, _ = strconv.Atoi(file.Name())
+					pid, err := strconv.Atoi(file.Name())
+					if err != nil {
+						continue // not a numeric PID directory
+					}
 					if cmds, err := sys.ReadCmdLine(pid); err == nil && len(cmds) > 0 {
 						if endpt, ok := isK3sLikely(cmds); ok {
 							return defaultK3sContainerdSock, endpt, true
@@ -554,7 +557,10 @@ func obtainRtEndpointFromKubelet(sys *system.SystemTools) (string, string, bool)
 }
 
 func IsPidHost() bool { // pid host, pid-1 is the Linux bootup process
-	name, _ := os.Readlink("/proc/1/exe")
+	name, err := os.Readlink("/proc/1/exe")
+	if err != nil {
+		log.WithError(err).Debug("failed to read /proc/1/exe symlink")
+	}
 	// nv containers: "monitor" is for the controller
 	return name != "/usr/local/bin/monitor"
 }

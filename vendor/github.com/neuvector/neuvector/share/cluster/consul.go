@@ -122,7 +122,10 @@ func createPeerFileV3(cc *ClusterConfig) error {
 	}
 
 	// peers := []peerInfoV3{peerInfoV3{ID: nodeID, Address: fmt.Sprintf("%s:%d", cc.AdvertiseAddr, cc.RPCPort), NonVoter: false}}
-	data, _ := json.Marshal(peers)
+	data, err := json.Marshal(peers)
+	if err != nil {
+		return fmt.Errorf("failed to marshal consul peers: %w", err)
+	}
 
 	_, err = f.WriteString(string(data[:]))
 	if err != nil {
@@ -179,7 +182,9 @@ func createConfigFile(cc *ClusterConfig) error {
 		Performance             tConsulConfigPerformance `json:"performance"`
 	}
 
-	_ = os.MkdirAll(consulDataDir, os.ModePerm)
+	if err := os.MkdirAll(consulDataDir, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create consul data directory: %w", err)
+	}
 	f, err := os.Create(consulConf)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to create consul config file")
@@ -222,7 +227,10 @@ func createConfigFile(cc *ClusterConfig) error {
 	} else {
 		cfg.Log_level = "ERROR"
 	}
-	value, _ := json.MarshalIndent(&cfg, "", "    ")
+	value, err := json.MarshalIndent(&cfg, "", "    ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal consul config: %w", err)
+	}
 	if _, err := f.WriteString(string(value)); err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to write consul config file")
 		return err
@@ -238,8 +246,7 @@ func isBootstrap(cc *ClusterConfig) bool {
 func (m *consulMethod) stopRunningInstance() error {
 	if m.pid > 0 {
 		if err := syscall.Kill((-1)*m.pid, syscall.SIGKILL); err != nil {
-			log.WithFields(log.Fields{"pid": m.pid, "error": err}).Error("can not signal")
-			return err
+			return fmt.Errorf("failed to signal consul pid %d: %w", m.pid, err)
 		}
 
 		// it should be very soon but we add some buffering time
@@ -253,8 +260,7 @@ func (m *consulMethod) stopRunningInstance() error {
 		}
 
 		if nWaitCnt == 0 {
-			log.WithFields(log.Fields{"pid": m.pid}).Error("can not stop")
-			return errors.New("Can not stop consul")
+			return fmt.Errorf("timed out stopping consul pid %d", m.pid)
 		}
 		m.pid = 0
 	}
@@ -271,7 +277,10 @@ func (m *consulMethod) getClient() (*api.Client, error) {
 }
 
 func (m *consulMethod) Start(cc *ClusterConfig, eCh chan error, recover bool) {
-	_ = m.stopRunningInstance()
+	if err := m.stopRunningInstance(); err != nil {
+		// Log error: stale consul process may still hold ports; starting a new one risks split-brain
+		log.WithError(err).Error("Failed to stop running consul instance")
+	}
 
 	args := []string{"agent", "-datacenter", cc.DataCenter, "-data-dir", consulDataDir}
 
@@ -357,7 +366,9 @@ func (m *consulMethod) Start(cc *ClusterConfig, eCh chan error, recover bool) {
 		eCh <- err
 	}
 	if recover {
-		_ = createPeerFileV3(cc)
+		if err := createPeerFileV3(cc); err != nil {
+			log.WithError(err).Warn("failed to create consul peer file")
+		}
 	}
 	m.rpcPort = cc.RPCPort
 
@@ -407,7 +418,9 @@ func (m *consulMethod) Leave(server bool) error {
 	log.Info("Consul process exit")
 
 	if server {
-		_ = m.leaveRaft(m.clusterIP)
+		if err := m.leaveRaft(m.clusterIP); err != nil {
+			log.WithError(err).Warn("Failed to remove local node from raft")
+		}
 	}
 
 	cmd := exec.Command(consulExe, "leave")
@@ -425,7 +438,9 @@ func (m *consulMethod) Leave(server bool) error {
 func (m *consulMethod) ForceLeave(node string, server bool) error {
 
 	if server {
-		_ = m.leaveRaft(node)
+		if err := m.leaveRaft(node); err != nil {
+			log.WithError(err).Warn("Failed to remove node from raft")
+		}
 	}
 
 	c, err := m.getClient()
@@ -568,19 +583,23 @@ func (l *lockMethod) Key() string {
 	return l.key
 }
 
-func (m *consulMethod) NewLock(key string, wait time.Duration) (LockInterface, error) {
+func (m *consulMethod) NewLock(key string, wait time.Duration, opts ...LockOptions) (LockInterface, error) {
 	c, err := m.getClient()
 	if err != nil {
 		return nil, err
 	}
 
-	opts := &api.LockOptions{Key: key}
+	// Only one argument is supported.
+	lockOpts := &api.LockOptions{Key: key}
+	if len(opts) > 0 && opts[0].SessionTTL != "" {
+		lockOpts.SessionTTL = opts[0].SessionTTL
+	}
 	if wait > 0 {
-		opts.LockTryOnce = true
-		opts.LockWaitTime = wait
+		lockOpts.LockTryOnce = true
+		lockOpts.LockWaitTime = wait
 	}
 
-	l, err := c.LockOpts(opts)
+	l, err := c.LockOpts(lockOpts)
 	if err != nil {
 		return nil, err
 	}
