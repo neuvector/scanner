@@ -19,7 +19,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/neuvector/neuvector/share"
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -258,6 +260,219 @@ func TestLoadCveDB(t *testing.T) {
 				require.Equal(t, tc.expectedVer, version)
 				require.Equal(t, tc.timestamp.Format(time.RFC3339), updateTime)
 			}
+		})
+	}
+}
+
+// writeTBLines writes NDJSON lines to path/name for use as a _full.tb or apps.tb fixture.
+func writeTBLines(t *testing.T, dir, name string, lines []string) {
+	t.Helper()
+	f, err := os.Create(filepath.Join(dir, name))
+	require.NoError(t, err)
+	defer f.Close()
+	for _, line := range lines {
+		_, err := fmt.Fprintln(f, line)
+		require.NoError(t, err)
+	}
+}
+
+func vulLine(name, ns, sev string) string {
+	v := VulFull{Name: name, Namespace: ns, Severity: sev}
+	b, _ := json.Marshal(v)
+	return string(b)
+}
+
+func appLine(vulName, severity string) string {
+	v := AppModuleVul{VulName: vulName, Severity: severity}
+	b, _ := json.Marshal(v)
+	return string(b)
+}
+
+func TestCountCveDbEntries(t *testing.T) {
+	cases := []struct {
+		name  string
+		setup func(dir string)
+		want  int
+	}{
+		{
+			name:  "empty directory",
+			setup: func(dir string) {},
+			want:  0,
+		},
+		{
+			name: "single OS file two entries",
+			setup: func(dir string) {
+				writeTBLines(t, dir, "ubuntu_full.tb", []string{
+					vulLine("CVE-1", "ubuntu:22.04", "High"),
+					vulLine("CVE-2", "ubuntu:22.04", "Medium"),
+				})
+			},
+			want: 2,
+		},
+		{
+			name: "same name in same OS file is deduplicated",
+			setup: func(dir string) {
+				writeTBLines(t, dir, "ubuntu_full.tb", []string{
+					vulLine("CVE-1", "ubuntu:22.04", "High"),
+					vulLine("CVE-1", "ubuntu:focal", "Low"), // different namespace, same osname key
+				})
+			},
+			want: 1,
+		},
+		{
+			name: "ubuntu upstream uses shared key across files",
+			setup: func(dir string) {
+				writeTBLines(t, dir, "ubuntu_full.tb", []string{
+					vulLine("CVE-1", "ubuntu:upstream", "High"),
+				})
+				writeTBLines(t, dir, "debian_full.tb", []string{
+					vulLine("CVE-1", "ubuntu:upstream", "High"), // same upstream key, deduplicated
+					vulLine("CVE-2", "debian:11", "Low"),
+				})
+			},
+			want: 2, // upstream:CVE-1, debian:CVE-2
+		},
+		{
+			name: "apps entries counted",
+			setup: func(dir string) {
+				writeTBLines(t, dir, "apps.tb", []string{
+					appLine("CVE-A", "High"),
+					appLine("CVE-B", "Low"),
+				})
+			},
+			want: 2,
+		},
+		{
+			name: "mixed OS and apps",
+			setup: func(dir string) {
+				writeTBLines(t, dir, "ubuntu_full.tb", []string{
+					vulLine("CVE-1", "ubuntu:22.04", "High"),
+				})
+				writeTBLines(t, dir, "debian_full.tb", []string{
+					vulLine("CVE-2", "debian:11", "Medium"),
+				})
+				writeTBLines(t, dir, "apps.tb", []string{
+					appLine("CVE-A", "Low"),
+				})
+			},
+			want: 3,
+		},
+		{
+			name: "invalid JSON lines skipped",
+			setup: func(dir string) {
+				writeTBLines(t, dir, "ubuntu_full.tb", []string{
+					vulLine("CVE-1", "ubuntu:22.04", "High"),
+					"not-valid-json",
+					vulLine("CVE-2", "ubuntu:22.04", "Low"),
+				})
+			},
+			want: 2,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			dir := t.TempDir()
+			c.setup(dir)
+			got, err := CountCveDbEntries(dir + "/")
+			require.NoError(t, err)
+			assert.Equal(t, c.want, got)
+		})
+	}
+}
+
+func TestStreamCveDbBatches(t *testing.T) {
+	cases := []struct {
+		name      string
+		setup     func(dir string)
+		batchSize int
+		wantCount int
+	}{
+		{
+			name:      "empty directory calls fn once with isLast",
+			setup:     func(dir string) {},
+			batchSize: 10,
+			wantCount: 0,
+		},
+		{
+			name: "fewer entries than batch size",
+			setup: func(dir string) {
+				writeTBLines(t, dir, "ubuntu_full.tb", []string{
+					vulLine("CVE-1", "ubuntu:22.04", "High"),
+				})
+			},
+			batchSize: 10,
+			wantCount: 1,
+		},
+		{
+			name: "multiple full batches plus remainder",
+			setup: func(dir string) {
+				lines := make([]string, 5)
+				for i := range lines {
+					lines[i] = vulLine(fmt.Sprintf("CVE-%d", i+1), "ubuntu:22.04", "High")
+				}
+				writeTBLines(t, dir, "ubuntu_full.tb", lines)
+			},
+			batchSize: 2,
+			wantCount: 5,
+		},
+		{
+			name: "mixed OS and apps across batches",
+			setup: func(dir string) {
+				writeTBLines(t, dir, "ubuntu_full.tb", []string{
+					vulLine("CVE-1", "ubuntu:22.04", "High"),
+					vulLine("CVE-2", "ubuntu:22.04", "Medium"),
+				})
+				writeTBLines(t, dir, "apps.tb", []string{
+					appLine("CVE-A", "Low"),
+				})
+			},
+			batchSize: 2,
+			wantCount: 3,
+		},
+		{
+			name: "deduplication across files",
+			setup: func(dir string) {
+				writeTBLines(t, dir, "ubuntu_full.tb", []string{
+					vulLine("CVE-1", "ubuntu:upstream", "High"),
+				})
+				writeTBLines(t, dir, "debian_full.tb", []string{
+					vulLine("CVE-1", "ubuntu:upstream", "High"), // duplicate via upstream key
+				})
+			},
+			batchSize: 10,
+			wantCount: 1,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			dir := t.TempDir()
+			c.setup(dir)
+
+			var lastCount int
+			collected := make(map[string]*share.ScanVulnerability)
+
+			err := StreamCveDbBatches(dir+"/", c.batchSize, func(batch map[string]*share.ScanVulnerability, isLast bool) error {
+				if isLast {
+					lastCount++
+				} else {
+					assert.Equal(t, c.batchSize, len(batch), "non-last batch must be exactly batchSize")
+				}
+				for k, v := range batch {
+					collected[k] = v
+				}
+				return nil
+			})
+
+			require.NoError(t, err)
+			assert.Equal(t, 1, lastCount, "isLast must be signaled exactly once")
+			assert.Equal(t, c.wantCount, len(collected))
+
+			// count and stream must agree
+			count, err := CountCveDbEntries(dir + "/")
+			require.NoError(t, err)
+			assert.Equal(t, count, len(collected))
 		})
 	}
 }

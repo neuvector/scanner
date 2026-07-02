@@ -104,7 +104,7 @@ func parseTagOrDigest(name string) (string, string) {
 	return name, "latest"
 }
 
-func writeResultToFile(req *share.ScanImageRequest, result *share.ScanResult, err error) {
+func writeResultToFile(req *share.ScanImageRequest, result *share.ScanResult, err error, cvedb scanUtils.CVELookup) {
 	var rptData scanOnDemandReportData
 
 	switch {
@@ -117,7 +117,7 @@ func writeResultToFile(req *share.ScanImageRequest, result *share.ScanResult, er
 	case result.Error != share.ScanErrorCode_ScanErrNone:
 		rptData.ErrMsg = scanUtils.ScanErrorToStr(result.Error)
 	default:
-		rpt := scanUtils.ScanRepoResult2REST(result, nil)
+		rpt := scanUtils.ScanRepoResult2REST(cvedb, result, nil)
 		rptData.Report = rpt
 	}
 
@@ -150,12 +150,12 @@ func writeResultToFile(req *share.ScanImageRequest, result *share.ScanResult, er
 	}
 }
 
-func writeResultToStdout(result *share.ScanResult, showOptions string, capCritical bool) {
+func writeResultToStdout(result *share.ScanResult, showOptions string, capCritical bool, cvedb scanUtils.CVELookup) {
 	if result == nil || result.Error != share.ScanErrorCode_ScanErrNone {
 		return
 	}
 
-	rpt := scanUtils.ScanRepoResult2REST(result, nil)
+	rpt := scanUtils.ScanRepoResult2REST(cvedb, result, nil)
 
 	var critical, high, med, low, unk int
 	for _, v := range rpt.Vuls {
@@ -265,12 +265,7 @@ func writeResultToStdout(result *share.ScanResult, showOptions string, capCritic
 }
 
 func scanRunning(pid int, cvedb map[string]*share.ScanVulnerability, showOptions string, capCritical bool) {
-	newDB := &share.CLUSScannerDB{
-		CVEDBVersion:    cveDB.CveDBVersion,
-		CVEDBCreateTime: cveDB.CveDBCreateTime,
-		CVEDB:           cvedb,
-	}
-	scanUtils.SetScannerDB(newDB)
+	lookup := scanUtils.CVEDBMapLookup{M: cvedb}
 
 	sys := system.NewSystemTools()
 	sysInfo := sys.GetSystemInfo()
@@ -305,7 +300,7 @@ func scanRunning(pid int, cvedb map[string]*share.ScanVulnerability, showOptions
 	}
 
 	fmt.Printf("PID: %d\n", pid)
-	writeResultToStdout(result, showOptions, capCritical)
+	writeResultToStdout(result, showOptions, capCritical, lookup)
 }
 
 // Normalize registry because we can supply registry via environment trough monitor (standalone).
@@ -336,12 +331,7 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 	var result *share.ScanResult
 	var err error
 
-	newDB := &share.CLUSScannerDB{
-		CVEDBVersion:    cveDB.CveDBVersion,
-		CVEDBCreateTime: cveDB.CveDBCreateTime,
-		CVEDB:           cvedb,
-	}
-	scanUtils.SetScannerDB(newDB)
+	lookup := scanUtils.CVEDBMapLookup{M: cvedb}
 	req.Registry, err = normalizeRegistry(req.Registry)
 	if err != nil {
 		log.WithFields(log.Fields{"registry": req.Registry, "error": err}).Error("Failed to normalize registry")
@@ -426,8 +416,8 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 	}
 	fmt.Printf("Image: %s\n", imageRef)
 
-	writeResultToFile(req, result, err)
-	writeResultToStdout(result, showOptions, capCritical)
+	writeResultToFile(req, result, err, lookup)
+	writeResultToStdout(result, showOptions, capCritical, lookup)
 	return result
 }
 

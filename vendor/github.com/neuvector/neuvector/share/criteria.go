@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -28,12 +30,12 @@ const (
 	CriteriaKeyBaseImage                     string = "baseImage"
 	CriteriaKeyCVENames                      string = "cveNames"
 	CriteriaKeyCVECriticalCount              string = "cveCriticalCount"
-	CriteriaKeyCVEHighCount                  string = "cveHighCount"
-	CriteriaKeyCVEHighCountNoCritical        string = "cveHighCountNoCritical"
+	CriteriaKeyCVEHighCount                  string = "cveHighCount"           // count of high & critical CVEs (for backward compatibility)
+	CriteriaKeyCVEHighCountNoCritical        string = "cveHighCountNoCritical" // count of high CVEs only
 	CriteriaKeyCVEMediumCount                string = "cveMediumCount"
 	CriteriaKeyCVECriticalWithFixCount       string = "cveCriticalWithFixCount"
-	CriteriaKeyCVEHighWithFixCount           string = "cveHighWithFixCount"
-	CriteriaKeyCVEHighWithFixCountNoCritical string = "cveHighWithFixCountNoCritical"
+	CriteriaKeyCVEHighWithFixCount           string = "cveHighWithFixCount"           // count of "high with fix" & "critical with fix" CVEs (for backward compatibility)
+	CriteriaKeyCVEHighWithFixCountNoCritical string = "cveHighWithFixCountNoCritical" // count of "high with fix" CVEs only
 	CriteriaKeyCVEScore                      string = "cveScore"
 	CriteriaKeyCVEScoreCount                 string = "cveScoreCount"
 	CriteriaKeyImageScanned                  string = "imageScanned"
@@ -279,10 +281,18 @@ func isCriterionMet(crt *CLUSCriteriaEntry, value string) (bool, bool) {
 	case CriteriaOpPrefix:
 		return strings.HasPrefix(value, crt.Value), true
 	case CriteriaOpRegex:
-		matched, _ := regexp.MatchString(crt.Value, value)
+		matched, err := regexp.MatchString(crt.Value, value)
+		if err != nil {
+			// Suppress error: invalid regex at high-frequency match path; treat as no match
+			log.WithError(err).WithFields(log.Fields{"key": crt.Key, "pattern": crt.Value, "op": crt.Op}).Debug("failed to match regex criterion")
+		}
 		return matched, true
 	case CriteriaOpNotRegex:
-		matched, _ := regexp.MatchString(crt.Value, value)
+		matched, err := regexp.MatchString(crt.Value, value)
+		if err != nil {
+			// Suppress error: invalid regex at high-frequency match path; treat as no match
+			log.WithError(err).WithFields(log.Fields{"key": crt.Key, "pattern": crt.Value, "op": crt.Op}).Debug("failed to match regex criterion")
+		}
 		return !matched, false
 	}
 
