@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build !libc.membrk && libc.memgrind
-// +build !libc.membrk,libc.memgrind
+//go:build !libc.membrk && libc.memgrind && !(linux && (amd64 || arm64 || loong64 || ppc64le || s390x || riscv64 || 386 || arm))
 
 // This is a debug-only version of the memory handling functions. When a
 // program is built with -tags=libc.memgrind the functions MemAuditStart and
@@ -13,6 +12,8 @@ package libc // import "modernc.org/libc"
 
 import (
 	"fmt"
+	"math"
+	"math/bits"
 	"runtime"
 	"sort"
 	"strings"
@@ -74,8 +75,13 @@ func pc2origin(pc uintptr) string {
 
 // void *malloc(size_t size);
 func Xmalloc(t *TLS, size types.Size_t) uintptr {
+	if __ccgo_strace {
+		trc("t=%v size=%v, (%v:)", t, size, origin(2))
+	}
 	if size == 0 {
-		return 0
+		// malloc(0) should return unique pointers
+		// (often expected and gnulib replaces malloc if malloc(0) returns 0)
+		size = 1
 	}
 
 	allocMu.Lock()
@@ -83,9 +89,9 @@ func Xmalloc(t *TLS, size types.Size_t) uintptr {
 	defer allocMu.Unlock()
 
 	p, err := allocator.UintptrCalloc(int(size))
-	if dmesgs {
-		dmesg("%v: %v -> %#x, %v", origin(1), size, p, err)
-	}
+	// 	if dmesgs {
+	// 		dmesg("%v: %v -> %#x, %v", origin(1), size, p, err)
+	// 	}
 	if err != nil {
 		t.setErrno(errno.ENOMEM)
 		return 0
@@ -110,19 +116,27 @@ func Xmalloc(t *TLS, size types.Size_t) uintptr {
 
 // void *calloc(size_t nmemb, size_t size);
 func Xcalloc(t *TLS, n, size types.Size_t) uintptr {
-	rq := int(n * size)
-	if rq == 0 {
+	if __ccgo_strace {
+		trc("t=%v n=%v size=%v, (%v:)", t, n, size, origin(2))
+	}
+	hi, rq0 := bits.Mul(uint(n), uint(size))
+	if hi != 0 || rq0 > math.MaxInt {
+		t.setErrno(errno.ENOMEM)
 		return 0
+	}
+	rq := int(rq0)
+	if rq == 0 {
+		rq = 1
 	}
 
 	allocMu.Lock()
 
 	defer allocMu.Unlock()
 
-	p, err := allocator.UintptrCalloc(int(n * size))
-	if dmesgs {
-		dmesg("%v: %v -> %#x, %v", origin(1), n*size, p, err)
-	}
+	p, err := allocator.UintptrCalloc(rq)
+	// 	if dmesgs {
+	// 		dmesg("%v: %v -> %#x, %v", origin(1), n*size, p, err)
+	// 	}
 	if err != nil {
 		t.setErrno(errno.ENOMEM)
 		return 0
@@ -147,6 +161,9 @@ func Xcalloc(t *TLS, n, size types.Size_t) uintptr {
 
 // void *realloc(void *ptr, size_t size);
 func Xrealloc(t *TLS, ptr uintptr, size types.Size_t) uintptr {
+	if __ccgo_strace {
+		trc("t=%v ptr=%v size=%v, (%v:)", t, ptr, size, origin(2))
+	}
 	allocMu.Lock()
 
 	defer allocMu.Unlock()
@@ -169,42 +186,49 @@ func Xrealloc(t *TLS, ptr uintptr, size types.Size_t) uintptr {
 				panic(fmt.Errorf("%v: realloc, free of unallocated memory: %#x", pc2origin(pc), ptr))
 			}
 
-			delete(allocs, ptr)
-			delete(allocsMore, ptr)
-			frees[ptr] = pc
 		}
 	}
 
 	p, err := allocator.UintptrRealloc(ptr, int(size))
-	if dmesgs {
-		dmesg("%v: %#x, %v -> %#x, %v", origin(1), ptr, size, p, err)
-	}
+	// 	if dmesgs {
+	// 		dmesg("%v: %#x, %v -> %#x, %v", origin(1), ptr, size, p, err)
+	// 	}
 	if err != nil {
 		t.setErrno(errno.ENOMEM)
 		return 0
 	}
 
-	if memAuditEnabled && p != 0 {
-		delete(frees, p)
-		if pc0, ok := allocs[p]; ok {
-			dmesg("%v: realloc returns same address twice, previous call at %v:", pc2origin(pc), pc2origin(pc0))
-			panic(fmt.Errorf("%v: realloc returns same address twice, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
+	if memAuditEnabled {
+		if ptr != 0 {
+			delete(allocs, ptr)
+			delete(allocsMore, ptr)
+			frees[ptr] = pc
 		}
+		if p != 0 {
+			delete(frees, p)
+			if pc0, ok := allocs[p]; ok {
+				dmesg("%v: realloc returns same address twice, previous call at %v:", pc2origin(pc), pc2origin(pc0))
+				panic(fmt.Errorf("%v: realloc returns same address twice, previous call at %v:", pc2origin(pc), pc2origin(pc0)))
+			}
 
-		allocs[p] = pc
+			allocs[p] = pc
+		}
 	}
 	return p
 }
 
 // void free(void *ptr);
 func Xfree(t *TLS, p uintptr) {
+	if __ccgo_strace {
+		trc("t=%v p=%v, (%v:)", t, p, origin(2))
+	}
 	if p == 0 {
 		return
 	}
 
-	if dmesgs {
-		dmesg("%v: %#x", origin(1), p)
-	}
+	// 	if dmesgs {
+	// 		dmesg("%v: %#x", origin(1), p)
+	// 	}
 
 	allocMu.Lock()
 
@@ -256,6 +280,21 @@ func UsableSize(p uintptr) types.Size_t {
 	}
 
 	return types.Size_t(memory.UintptrUsableSize(p))
+}
+
+func Xmalloc_usable_size(tls *TLS, p uintptr) (r Tsize_t) {
+	return UsableSize(p)
+}
+
+type MemAllocatorStat struct {
+	Allocs int
+	Bytes  int
+	Mmaps  int
+}
+
+// MemStat no-op for this build tag
+func MemStat() MemAllocatorStat {
+	return MemAllocatorStat{}
 }
 
 // MemAuditStart locks the memory allocator, initializes and enables memory
