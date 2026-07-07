@@ -439,8 +439,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/natefinch/atomic v1.0.1 h1:ZPYKxkqQOx3KZ+RsbnP/YsgvxWQPGxjC0oBt2AhwV0A=
 github.com/natefinch/atomic v1.0.1/go.mod h1:N/D/ELrljoqDyT3rZrsUmtsuzvHkeB/wWjHV22AZRbM=
-github.com/neuvector/neuvector v0.0.0-20260708144319-b63e0c3435fe h1:DqTlwJ3DPCEjNRhMG1HaHo7HRkSD7ScEAfBMoI+c2f8=
-github.com/neuvector/neuvector v0.0.0-20260708144319-b63e0c3435fe/go.mod h1:aYUkDuJEP7TX+5mJvnvH/xFcdH55gkIeTdI4OnkX2As=
+github.com/neuvector/neuvector v0.0.0-20260720233621-8b367c616b18 h1:81r2HB6P1Pu4/dfZePnSCzH8ahGH2wzaiWW9t6cdzNU=
+github.com/neuvector/neuvector v0.0.0-20260720233621-8b367c616b18/go.mod h1:UOSpSrtxl2AQCJ6XYEa577VlXRChcKgvxUghKd3qYAc=
 github.com/neuvector/neuvector/controller/k8sapi v1.0.0 h1:Zn4yQQtHc2uuPHA+uSaBe3bn8gADo8LqM9BzrT7pqOU=
 github.com/neuvector/neuvector/controller/k8sapi v1.0.0/go.mod h1:McwcXqmrfjN41Y5ETg3Bjfe8DfCp8KHrZjF5DhVLRuk=
 github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481 h1:Up6+btDp321ZG5/zdSLo48H9Iaq0UQGthrhWC6pCxzE=
