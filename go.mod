@@ -9,7 +9,7 @@ require (
 	github.com/google/go-containerregistry v0.21.6
 	github.com/google/uuid v1.6.0
 	github.com/jedib0t/go-pretty/v6 v6.7.10
-	github.com/neuvector/neuvector v0.0.0-20260706141937-18f5dff01022
+	github.com/neuvector/neuvector v0.0.0-20260707174923-4c5fd44d0c6d
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/quay/clair/v2 v2.1.8
 	github.com/sigstore/cosign/v3 v3.0.6
