@@ -1,8 +1,10 @@
 module github.com/neuvector/scanner
 
-go 1.26.6
+go 1.27.0
 
 replace k8s.io/cri-api => k8s.io/cri-api v0.25.16
+
+replace github.com/neuvector/neuvector => ../neuvector
 
 require (
 	github.com/containerd/errdefs v1.0.0
