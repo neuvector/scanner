@@ -508,7 +508,7 @@ github.com/knqyf263/go-rpmdb/pkg/bdb
 github.com/knqyf263/go-rpmdb/pkg/db
 github.com/knqyf263/go-rpmdb/pkg/ndb
 github.com/knqyf263/go-rpmdb/pkg/sqlite3
-# github.com/letsencrypt/boulder v0.20260223.0
+# github.com/letsencrypt/boulder v0.20260309.0
 ## explicit; go 1.25.0
 github.com/letsencrypt/boulder/core
 github.com/letsencrypt/boulder/core/proto
@@ -750,7 +750,7 @@ github.com/sigstore/rekor-tiles/v2/pkg/generated/protobuf
 github.com/sigstore/rekor-tiles/v2/pkg/note
 github.com/sigstore/rekor-tiles/v2/pkg/types/verifier
 github.com/sigstore/rekor-tiles/v2/pkg/verify
-# github.com/sigstore/sigstore v1.10.6
+# github.com/sigstore/sigstore v1.10.8
 ## explicit; go 1.25.0
 github.com/sigstore/sigstore/pkg/cryptoutils
 github.com/sigstore/sigstore/pkg/cryptoutils/goodkey
@@ -867,6 +867,9 @@ github.com/vishvananda/netns
 # github.com/x448/float16 v0.8.4
 ## explicit; go 1.11
 github.com/x448/float16
+# github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78
+## explicit; go 1.17
+github.com/youmark/pkcs8
 # gitlab.com/gitlab-org/api/client-go v1.46.0
 ## explicit; go 1.24.0
 gitlab.com/gitlab-org/api/client-go
