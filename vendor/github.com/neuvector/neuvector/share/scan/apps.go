@@ -17,6 +17,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/utils"
 )
 
@@ -51,6 +52,7 @@ const (
 	javaMnfstBundleVersion = "Bundle-Version:"
 	javaMnfstBundleSymName = "Bundle-SymbolicName:"
 	javaMnfstBundleName    = "Bundle-Name:"
+	javaMnfstAutoModName   = "Automatic-Module-Name:"
 
 	python            = "python"
 	ruby              = "ruby"
@@ -139,12 +141,17 @@ type dotnetPackage struct {
 }
 
 type ScanApps struct {
-	pkgs    map[string][]AppPackage // AppPackage set
-	replace bool
+	pkgs        map[string][]AppPackage // AppPackage set
+	replace     bool
+	parsingCaps *share.ParsingCaps
 }
 
-func NewScanApps(v2 bool) *ScanApps {
-	return &ScanApps{pkgs: make(map[string][]AppPackage), replace: v2}
+func NewScanApps(v2 bool, parsingCaps *share.ParsingCaps) *ScanApps {
+	return &ScanApps{
+		pkgs:        make(map[string][]AppPackage),
+		replace:     v2,
+		parsingCaps: parsingCaps,
+	}
 }
 
 func IsAppsPkgFile(filename, fullpath string) bool {
@@ -239,6 +246,16 @@ func (s *ScanApps) DerivePkg(data map[string][]byte) []AppPackage {
 		}
 	}
 	return pkgs
+}
+
+// cutLast cuts s at the last occurrence of sep.
+// This function will be replaced by strings.CutLast once it's available in Go stdlib.
+// See: https://github.com/golang/go/issues/46336
+func cutLast(s, sep string) (first, last string, ok bool) {
+	if i := strings.LastIndex(s, sep); i > 0 {
+		return s[:i], s[i+len(sep):], true
+	}
+	return "", "", false
 }
 
 func isExe(info os.FileInfo) bool {
@@ -362,8 +379,12 @@ func IsJava(filename string) bool {
 		strings.HasSuffix(filename, ".ear")
 }
 
-func parseJarManifestFile(path string, rc io.Reader) (*AppPackage, error) {
-	var vendorId, version, title, symName string
+func isUnresolvedField(s string) bool {
+	return len(s) == 0 || s[0] == '%'
+}
+
+func parseJarManifestFile(path string, rc io.Reader, parsingCaps *share.ParsingCaps) (*AppPackage, error) {
+	var vendorId, version, title, symName, autoModName string
 	var vendorSet, titleSet bool
 	var lineCount int
 
@@ -407,6 +428,8 @@ func parseJarManifestFile(path string, rc io.Reader) (*AppPackage, error) {
 				title = strings.TrimSpace(strings.TrimPrefix(line, javaMnfstBundleName))
 				title = strings.Split(title, ";")[0]
 			}
+		case parsingCaps.GetJarAutoModuleName() && strings.HasPrefix(line, javaMnfstAutoModName):
+			autoModName = strings.TrimSpace(strings.TrimPrefix(line, javaMnfstAutoModName))
 		}
 
 		if len(version) > 0 && titleSet && vendorSet {
@@ -427,16 +450,24 @@ func parseJarManifestFile(path string, rc io.Reader) (*AppPackage, error) {
 			// NVSHAS-8757
 			vendorId = "org.postgresql"
 			title = "postgresql"
-		} else if len(vendorId) == 0 || vendorId[0] == '%' || len(title) == 0 || title[0] == '%' {
-			if dot := strings.LastIndex(symName, "."); dot > 0 {
-				vendorId = symName[:dot]
-				title = symName[dot+1:]
+		} else if isUnresolvedField(vendorId) || isUnresolvedField(title) {
+			if first, last, ok := cutLast(symName, "."); ok {
+				vendorId = first
+				title = last
 			}
 		}
 	}
 
-	if len(vendorId) == 0 || vendorId[0] == '%' {
-		vendorId = "jar"
+	if isUnresolvedField(vendorId) {
+		switch {
+		case parsingCaps.GetJarAutoModuleName() && autoModName == "spring.boot":
+			// spring.boot maps to org.springframework.boot in the DB
+			vendorId = "org.springframework.boot"
+		case parsingCaps.GetJarAutoModuleName() && autoModName != "":
+			vendorId = autoModName
+		default:
+			vendorId = "jar"
+		}
 	}
 
 	// NVSHAS-9942
@@ -564,7 +595,7 @@ func (s *ScanApps) parseJarPackage(r *zip.Reader, origJar, filename, fullpath st
 				continue
 			}
 
-			if pkg, err := parseJarManifestFile(path, rc); err == nil {
+			if pkg, err := parseJarManifestFile(path, rc, s.parsingCaps); err == nil {
 				key := fmt.Sprintf("%s-%s-%s", pkg.FileName, pkg.ModuleName, pkg.Version)
 				if !dedup.Contains(key) {
 					dedup.Add(key)

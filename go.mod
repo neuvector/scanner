@@ -4,6 +4,8 @@ go 1.26.4
 
 replace k8s.io/cri-api => k8s.io/cri-api v0.25.16
 
+replace github.com/neuvector/neuvector => ../neuvector
+
 require (
 	github.com/containerd/errdefs v1.0.0
 	github.com/google/go-containerregistry v0.21.6

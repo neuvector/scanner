@@ -104,7 +104,7 @@ func (rs *rpcService) ScanRunning(ctx context.Context, req *share.ScanRunningReq
 	if scanTasker != nil {
 		sr, err = scanTasker.Run(ctx, *data)
 	} else {
-		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
+		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "", getParsingCaps())
 		sr, err = cveTools.ScanImageData(data)
 	}
 
@@ -121,7 +121,7 @@ func (rs *rpcService) ScanImageData(ctx context.Context, data *share.ScanData) (
 	if scanTasker != nil {
 		sr, err = scanTasker.Run(ctx, *data)
 	} else {
-		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
+		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "", getParsingCaps())
 		sr, err = cveTools.ScanImageData(data)
 	}
 
@@ -146,7 +146,7 @@ func (rs *rpcService) ScanImage(ctx context.Context, req *share.ScanImageRequest
 	if scanTasker != nil {
 		sr, err = scanTasker.Run(ctx, *req)
 	} else {
-		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
+		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "", getParsingCaps())
 		sr, err = cveTools.ScanImage(ctx, req, "")
 	}
 
@@ -162,7 +162,7 @@ func (rs *rpcService) ScanAppPackage(ctx context.Context, req *share.ScanAppRequ
 	if scanTasker != nil {
 		sr, err = scanTasker.Run(ctx, *req)
 	} else {
-		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
+		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "", getParsingCaps())
 		sr, err = cveTools.ScanAppPackage(req, "")
 	}
 
@@ -178,7 +178,7 @@ func (rs *rpcService) ScanAwsLambda(ctx context.Context, req *share.ScanAwsLambd
 	if scanTasker != nil {
 		sr, err = scanTasker.Run(ctx, *req)
 	} else {
-		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
+		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "", getParsingCaps())
 		sr, err = cveTools.ScanAwsLambda(req, "")
 	}
 
@@ -529,10 +529,13 @@ func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegister
 		}
 		// Server is old and doesn't implement GetCaps — treat as no capabilities.
 		isGetCapsActivate = false
+		ctrlCaps = share.ControllerCaps{}
+		setParsingCaps(nil)
 	} else {
 		isGetCapsActivate = true
 		log.WithField("cap", caps).Info("controller capabilities")
 		ctrlCaps = *caps
+		setParsingCaps(caps.GetParsingCaps())
 	}
 
 	haveControllerSetting := false

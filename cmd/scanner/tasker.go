@@ -122,6 +122,10 @@ func (ts *Tasker) putInputFile(request interface{}) (string, []string, error) {
 		args = append(args, "-x")
 	}
 
+	if caps := getParsingCaps(); caps != nil && caps.GetJarAutoModuleName() {
+		args = append(args, "--enable-jar-auto-module-name")
+	}
+
 	cfg := getGlobalConfig()
 	cacerts := ""
 

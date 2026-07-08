@@ -1,6 +1,7 @@
 package cvetools
 
 import (
+	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/system"
 	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
@@ -27,6 +28,7 @@ type ScanTools struct {
 	sys         *system.SystemTools
 	LayerCacher *ImageLayerCacher
 	modulesFile string
+	parsingCaps *share.ParsingCaps
 }
 
 type vulShortReport struct {

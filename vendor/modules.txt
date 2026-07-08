@@ -591,7 +591,7 @@ github.com/modern-go/reflect2
 # github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
 ## explicit
 github.com/munnerz/goautoneg
-# github.com/neuvector/neuvector v0.0.0-20260707174923-4c5fd44d0c6d
+# github.com/neuvector/neuvector v0.0.0-20260707174923-4c5fd44d0c6d => ../neuvector
 ## explicit; go 1.26.4
 github.com/neuvector/neuvector/controller/api
 github.com/neuvector/neuvector/share
@@ -1679,3 +1679,4 @@ sigs.k8s.io/structured-merge-diff/v6/value
 ## explicit; go 1.22
 sigs.k8s.io/yaml
 # k8s.io/cri-api => k8s.io/cri-api v0.25.16
+# github.com/neuvector/neuvector => ../neuvector
