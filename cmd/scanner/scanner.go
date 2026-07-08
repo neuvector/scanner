@@ -41,6 +41,8 @@ type globalConfig struct {
 var (
 	globalCfgLock sync.RWMutex
 	globalCfg     globalConfig
+	parsingCaps   *share.ParsingCaps
+	parsingCapsMu sync.RWMutex
 )
 
 func getGlobalConfig() globalConfig {
@@ -53,6 +55,20 @@ func setGlobalConfig(input globalConfig) {
 	globalCfgLock.Lock()
 	defer globalCfgLock.Unlock()
 	globalCfg = input
+}
+
+func getParsingCaps() *share.ParsingCaps {
+	parsingCapsMu.RLock()
+	defer parsingCapsMu.RUnlock()
+
+	return parsingCaps
+}
+
+func setParsingCaps(caps *share.ParsingCaps) {
+	parsingCapsMu.Lock()
+	defer parsingCapsMu.Unlock()
+
+	parsingCaps = caps
 }
 
 const taskerPath = "/usr/local/bin/scannerTask"
