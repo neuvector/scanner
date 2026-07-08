@@ -106,7 +106,7 @@ var matchKubenetesModeules map[string]bool = map[string]bool{ // should expand i
 	"ingress-nginx": true,
 }
 
-func NewScanTools(rtSock string, sys *system.SystemTools, layerCacher *ImageLayerCacher, mFile string) *ScanTools {
+func NewScanTools(rtSock string, sys *system.SystemTools, layerCacher *ImageLayerCacher, mFile string, parsingCaps *share.ParsingCaps) *ScanTools {
 	cveDB := common.NewCveDB()
 	return &ScanTools{
 		CveDB:       *cveDB,
@@ -114,6 +114,7 @@ func NewScanTools(rtSock string, sys *system.SystemTools, layerCacher *ImageLaye
 		sys:         sys,
 		LayerCacher: layerCacher,
 		modulesFile: mFile,
+		parsingCaps: parsingCaps,
 	}
 }
 
@@ -165,7 +166,7 @@ func (cv *ScanTools) ScanImageData(data *share.ScanData) (*share.ScanResult, err
 		}
 	}
 
-	appPkgs := scan.NewScanApps(true).DerivePkg(pkgs)
+	appPkgs := scan.NewScanApps(true, cv.parsingCaps).DerivePkg(pkgs)
 	if k8sAppString != "" {
 		log.WithFields(log.Fields{"k8sAppRes": k8sAppString}).Debug()
 		// append k8s repo into the appPkgs
@@ -375,7 +376,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 		}
 
 		// There is a download timeout inside this function
-		layerRecords, errCode = DownloadRemoteImage(ctx, rc, req.Repository, imgPath, info.Layers, info.Sizes, cv.LayerCacher)
+		layerRecords, errCode = DownloadRemoteImage(ctx, rc, req.Repository, imgPath, info.Layers, info.Sizes, cv.LayerCacher, cv.parsingCaps)
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
 			return result, nil
