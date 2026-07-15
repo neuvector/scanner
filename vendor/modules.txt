@@ -1604,11 +1604,11 @@ modernc.org/libc/utime
 modernc.org/libc/uuid
 modernc.org/libc/uuid/uuid
 modernc.org/libc/wctype
-# modernc.org/mathutil v1.6.0
-## explicit; go 1.18
+# modernc.org/mathutil v1.7.1
+## explicit; go 1.21
 modernc.org/mathutil
-# modernc.org/memory v1.7.2
-## explicit; go 1.18
+# modernc.org/memory v1.11.0
+## explicit; go 1.23.0
 modernc.org/memory
 # modernc.org/sqlite v1.28.0
 ## explicit; go 1.19
