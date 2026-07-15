@@ -210,8 +210,8 @@ github.com/go-openapi/loads v0.23.3 h1:g5Xap1JfwKkUnZdn+S0L3SzBDpcTIYzZ5Qaag0YDk
 github.com/go-openapi/loads v0.23.3/go.mod h1:NOH07zLajXo8y55hom0omlHWDVVvCwBM/S+csCK8LqA=
 github.com/go-openapi/runtime v0.32.3 h1:J7Ycy5DJmhhP1By3NifhRUjnkXTrk21qbeqSULjwX8U=
 github.com/go-openapi/runtime v0.32.3/go.mod h1:/WTQi0fa5DiGnnCXQKsTkSm15OzJp8Uz3H2t+67TBr4=
-github.com/go-openapi/runtime/server-middleware v0.30.0 h1:8rPoJ/xv7JL8BsovaqboKETlpWBArVh8n+0L/GyePog=
-github.com/go-openapi/runtime/server-middleware v0.30.0/go.mod h1:OYNT/TxNvB/VK5oe4htM2jDTwlEXuejVJmu0DVZfAMs=
+github.com/go-openapi/runtime/server-middleware v0.32.4 h1:AU6eLMq9CXwh8f6kC1pivtkz+7lfo3TmakMBbUisKME=
+github.com/go-openapi/runtime/server-middleware v0.32.4/go.mod h1:fYPep4GdTwg/XqZUjR40uIM/8C12Ba5M+MrGCiwpTHo=
 github.com/go-openapi/spec v0.22.5 h1:KhO7RBlKQfonUWX2WzQCoLIXVA6AcNqDGZ3a1Dutdlo=
 github.com/go-openapi/spec v0.22.5/go.mod h1:vxpOtMya5TXtENXKE5bKqv5NjocVhyhxHrlZfvKnZ74=
 github.com/go-openapi/strfmt v0.26.3 h1:rzmslHarJgBbf2qfGge+X3htclQfmXqBZMm0Too0HhU=
