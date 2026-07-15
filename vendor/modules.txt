@@ -851,7 +851,7 @@ github.com/theupdateframework/go-tuf/pkg/targets
 github.com/theupdateframework/go-tuf/sign
 github.com/theupdateframework/go-tuf/util
 github.com/theupdateframework/go-tuf/verify
-# github.com/theupdateframework/go-tuf/v2 v2.4.2-0.20260407074541-7e8f69f906ef
+# github.com/theupdateframework/go-tuf/v2 v2.4.2
 ## explicit; go 1.25.0
 github.com/theupdateframework/go-tuf/v2/metadata
 github.com/theupdateframework/go-tuf/v2/metadata/config
