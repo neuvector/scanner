@@ -18,7 +18,7 @@ require (
 	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
 	github.com/theupdateframework/go-tuf v0.7.0
-	google.golang.org/grpc v1.81.1
+	google.golang.org/grpc v1.82.0
 )
 
 require (
