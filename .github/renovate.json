@@ -24,12 +24,6 @@
   ],
   "packageRules": [
     {
-      "description": "Enable update on indirect imports in gomod",
-      "matchManagers": ["gomod"],
-      "matchDepTypes": ["indirect"],
-      "enabled": true
-    },
-    {
       "description": "Enable updates from neuvector/neuvector",
       "matchPackageNames": [
         "github.com/neuvector/neuvector"
