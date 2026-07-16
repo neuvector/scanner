@@ -597,6 +597,9 @@ github.com/modern-go/reflect2
 # github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
 ## explicit
 github.com/munnerz/goautoneg
+# github.com/ncruces/go-strftime v1.0.0
+## explicit; go 1.17
+github.com/ncruces/go-strftime
 # github.com/neuvector/neuvector v0.0.0-20260708144319-b63e0c3435fe
 ## explicit; go 1.26.4
 github.com/neuvector/neuvector/controller/api
@@ -1576,8 +1579,8 @@ k8s.io/utils/internal/third_party/forked/golang/net
 k8s.io/utils/net
 k8s.io/utils/ptr
 k8s.io/utils/trace
-# modernc.org/libc v1.37.6
-## explicit; go 1.20
+# modernc.org/libc v1.73.4
+## explicit; go 1.25.0
 modernc.org/libc
 modernc.org/libc/errno
 modernc.org/libc/fcntl
@@ -1604,14 +1607,14 @@ modernc.org/libc/utime
 modernc.org/libc/uuid
 modernc.org/libc/uuid/uuid
 modernc.org/libc/wctype
-# modernc.org/mathutil v1.6.0
-## explicit; go 1.18
+# modernc.org/mathutil v1.7.1
+## explicit; go 1.21
 modernc.org/mathutil
-# modernc.org/memory v1.7.2
-## explicit; go 1.18
+# modernc.org/memory v1.11.0
+## explicit; go 1.23.0
 modernc.org/memory
-# modernc.org/sqlite v1.28.0
-## explicit; go 1.19
+# modernc.org/sqlite v1.53.0
+## explicit; go 1.25.0
 modernc.org/sqlite/lib
 # sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
 ## explicit; go 1.23
