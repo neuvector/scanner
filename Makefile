@@ -58,8 +58,8 @@ ARCH := $(shell uname -p)
 all: test build copy_scan gen_license
 
 build:
-	go build -ldflags='-s -w' -buildvcs=false -o scanner ./cmd/scanner
-	go build -ldflags='-s -w' -buildvcs=false -o sigstore-interface ./cmd/sigstore-interface
+	go build -ldflags='-s -w' -o scanner ./cmd/scanner
+	go build -ldflags='-s -w' -o sigstore-interface ./cmd/sigstore-interface
 	make -C task/
 	make -C monitor/
 
