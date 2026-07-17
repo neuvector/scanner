@@ -18,6 +18,7 @@ COPY detectors/ /src/detectors
 COPY monitor/ /src/monitor
 COPY task/ /src/task
 COPY vendor/ /src/vendor
+COPY .git /src/.git
 COPY Makefile go.mod go.sum genlic.sh /src/
 
 WORKDIR /src
