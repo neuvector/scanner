@@ -96,7 +96,7 @@ jobs:
           fi
       - name: Login to registry
         if: env.UPDATE_MUTABLE_TAG == 'True'
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: docker.io
           username: ${{ env.DOCKER_USERNAME }}
