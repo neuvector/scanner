@@ -34,7 +34,7 @@ jobs:
         run: |
           wget https://${{ secrets.VULNDB_SERVER }}/${TAG}/cvedb.regular -O data/cvedb.regular
       - name: Publish neuvector manifest
-        uses: rancher/ecm-distro-tools/actions/publish-image@a7a867a6376bf4a1cee397558f3c85393769f069 # v0.69.4
+        uses: rancher/ecm-distro-tools/actions/publish-image@2a5f19818678d4406e1d8f66e675b72fb0074965 # v0.76.0
         with:
           push-to-public: true
           push-to-prime: false
