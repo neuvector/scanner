@@ -2,7 +2,7 @@ module github.com/neuvector/scanner
 
 go 1.26.6
 
-replace k8s.io/cri-api => k8s.io/cri-api v0.25.16
+replace k8s.io/cri-api => k8s.io/cri-api v0.37.0
 
 require (
 	github.com/containerd/errdefs v1.0.0
