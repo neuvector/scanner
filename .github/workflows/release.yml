@@ -1,12 +1,9 @@
 name: Release
-
 on:
   push:
     tags:
       - 'v*'
-
 jobs:
-
   publish:
     runs-on: ubuntu-latest
     permissions:
@@ -15,59 +12,55 @@ jobs:
       # - OIDC for cosign's use in ecm-distro-tools/publish-image.
       # - Read vault secrets in rancher-eio/read-vault-secrets.
       id-token: write
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-    - name: Load Secrets from Vault
-      uses: rancher-eio/read-vault-secrets@7282bf97898cd1c16c89f837e0bb442e6d384c89 # v3
-      with:
-        secrets: |
-          secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | RANCHER_DOCKER_USERNAME ;
-          secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | RANCHER_DOCKER_PASSWORD ;
-          secret/data/github/repo/${{ github.repository }}/dockerhub/neuvector/credentials username | DOCKER_USERNAME ;
-          secret/data/github/repo/${{ github.repository }}/dockerhub/neuvector/credentials password | DOCKER_PASSWORD ;
-          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry | PRIME_REGISTRY ;
-          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username | PRIME_REGISTRY_USERNAME ;
-          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password | PRIME_REGISTRY_PASSWORD
-    - name: Parse target tag
-      run: |
-        TARGET=${{ github.ref_name }}
-        echo "TAG=${TARGET#v}" >> $GITHUB_ENV
-    - name: Download vulnerability database
-      run: |
-        wget https://${{ secrets.VULNDB_SERVER }}/${TAG}/cvedb.regular -O data/cvedb.regular
-    - name: Publish neuvector manifest
-      uses: rancher/ecm-distro-tools/actions/publish-image@a7a867a6376bf4a1cee397558f3c85393769f069 # v0.69.4
-      with:
-        push-to-public: true
-        push-to-prime: false
-        image: scanner
-        tag: ${{ env.TAG }}
-        platforms: linux/amd64,linux/arm64
-
-        public-registry: docker.io
-        public-repo: neuvector
-        public-username: ${{ env.DOCKER_USERNAME }}
-        public-password: ${{ env.DOCKER_PASSWORD }}
-    - name: Publish rancher manifest
-      uses: rancher/ecm-distro-tools/actions/publish-image@a7a867a6376bf4a1cee397558f3c85393769f069 # v0.69.4
-      env:
-        IMAGE_PREFIX: neuvector-
-      with:
-        image: neuvector-scanner
-        tag: ${{ env.TAG }}
-        platforms: linux/amd64,linux/arm64
-
-        public-registry: docker.io
-        public-repo: rancher
-        public-username: ${{ env.RANCHER_DOCKER_USERNAME }}
-        public-password: ${{ env.RANCHER_DOCKER_PASSWORD }}
-
-        prime-registry: ${{ env.PRIME_REGISTRY }}
-        prime-repo: rancher
-        prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
-        prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Load Secrets from Vault
+        uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
+        with:
+          secrets: |
+            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | RANCHER_DOCKER_USERNAME ;
+            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | RANCHER_DOCKER_PASSWORD ;
+            secret/data/github/repo/${{ github.repository }}/dockerhub/neuvector/credentials username | DOCKER_USERNAME ;
+            secret/data/github/repo/${{ github.repository }}/dockerhub/neuvector/credentials password | DOCKER_PASSWORD ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry | PRIME_REGISTRY ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username | PRIME_REGISTRY_USERNAME ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password | PRIME_REGISTRY_PASSWORD
+      - name: Parse target tag
+        run: |
+          TARGET=${{ github.ref_name }}
+          echo "TAG=${TARGET#v}" >> $GITHUB_ENV
+      - name: Download vulnerability database
+        run: |
+          wget https://${{ secrets.VULNDB_SERVER }}/${TAG}/cvedb.regular -O data/cvedb.regular
+      - name: Publish neuvector manifest
+        uses: rancher/ecm-distro-tools/actions/publish-image@2a5f19818678d4406e1d8f66e675b72fb0074965 # v0.76.0
+        with:
+          push-to-public: true
+          push-to-prime: false
+          image: scanner
+          tag: ${{ env.TAG }}
+          platforms: linux/amd64,linux/arm64
+          public-registry: docker.io
+          public-repo: neuvector
+          public-username: ${{ env.DOCKER_USERNAME }}
+          public-password: ${{ env.DOCKER_PASSWORD }}
+      - name: Publish rancher manifest
+        uses: rancher/ecm-distro-tools/actions/publish-image@2a5f19818678d4406e1d8f66e675b72fb0074965 # v0.76.0
+        env:
+          IMAGE_PREFIX: neuvector-
+        with:
+          image: neuvector-scanner
+          tag: ${{ env.TAG }}
+          platforms: linux/amd64,linux/arm64
+          public-registry: docker.io
+          public-repo: rancher
+          public-username: ${{ env.RANCHER_DOCKER_USERNAME }}
+          public-password: ${{ env.RANCHER_DOCKER_PASSWORD }}
+          prime-registry: ${{ env.PRIME_REGISTRY }}
+          prime-repo: rancher
+          prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
+          prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
   retag:
     runs-on: ubuntu-latest
     needs: [publish]
@@ -78,59 +71,59 @@ jobs:
       # - Read vault secrets in rancher-eio/read-vault-secrets.
       id-token: write
     steps:
-    - name: Checkout code
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-    - name: Load Secrets from Vault
-      uses: rancher-eio/read-vault-secrets@7282bf97898cd1c16c89f837e0bb442e6d384c89 # v3
-      with:
-        secrets: |
-          secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | RANCHER_DOCKER_USERNAME ;
-          secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | RANCHER_DOCKER_PASSWORD ;
-          secret/data/github/repo/${{ github.repository }}/dockerhub/neuvector/credentials username | DOCKER_USERNAME ;
-          secret/data/github/repo/${{ github.repository }}/dockerhub/neuvector/credentials password | DOCKER_PASSWORD ;
-          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry | PRIME_REGISTRY ;
-          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username | PRIME_REGISTRY_USERNAME ;
-          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password | PRIME_REGISTRY_PASSWORD
-    - name: Parse target tag
-      run: |
-        TARGET=${{ github.ref_name }}
-        echo "TAG=${TARGET#v}" >> $GITHUB_ENV
-    - name: Check if we should tag v6 scanner
-      run: |
-        if [[ ${{ github.ref_name }} =~ ^v[0-9]+\.[0-9]+$ ]];then
-          echo "We should update v6 scanner"
-          echo "UPDATE_MUTABLE_TAG=True" >> $GITHUB_ENV
-        fi
-    - name: Login to registry
-      if: env.UPDATE_MUTABLE_TAG == 'True'
-      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
-      with:
-        registry: docker.io
-        username: ${{ env.DOCKER_USERNAME }}
-        password: ${{ env.DOCKER_PASSWORD }}
-    - name: Tag v6 scanner to neuvector
-      if: env.UPDATE_MUTABLE_TAG == 'True'
-      run: |
-        docker buildx imagetools create --tag docker.io/${{ github.repository_owner }}/scanner:6 docker.io/${{ github.repository_owner }}/scanner:${TAG}
-    - name: Login to registry
-      if: env.UPDATE_MUTABLE_TAG == 'True'
-      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
-      with:
-        registry: ${{ env.PRIME_REGISTRY }}
-        username: ${{ env.PRIME_REGISTRY_USERNAME }}
-        password: ${{ env.PRIME_REGISTRY_PASSWORD }}
-    - name: Tag v6 scanner to prime
-      if: env.UPDATE_MUTABLE_TAG == 'True'
-      run: |
-        docker buildx imagetools create --tag ${PRIME_REGISTRY}/rancher/neuvector-scanner:6 ${PRIME_REGISTRY}/rancher/neuvector-scanner:${TAG}
-    - name: Login to registry
-      if: env.UPDATE_MUTABLE_TAG == 'True'
-      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
-      with:
-        registry: docker.io
-        username: ${{ env.RANCHER_DOCKER_USERNAME }}
-        password: ${{ env.RANCHER_DOCKER_PASSWORD }}
-    - name: Tag v6 scanner to rancher
-      if: env.UPDATE_MUTABLE_TAG == 'True'
-      run: |
-        docker buildx imagetools create --tag docker.io/rancher/neuvector-scanner:6 docker.io/rancher/neuvector-scanner:${TAG}
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Load Secrets from Vault
+        uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
+        with:
+          secrets: |
+            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | RANCHER_DOCKER_USERNAME ;
+            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | RANCHER_DOCKER_PASSWORD ;
+            secret/data/github/repo/${{ github.repository }}/dockerhub/neuvector/credentials username | DOCKER_USERNAME ;
+            secret/data/github/repo/${{ github.repository }}/dockerhub/neuvector/credentials password | DOCKER_PASSWORD ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry | PRIME_REGISTRY ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username | PRIME_REGISTRY_USERNAME ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password | PRIME_REGISTRY_PASSWORD
+      - name: Parse target tag
+        run: |
+          TARGET=${{ github.ref_name }}
+          echo "TAG=${TARGET#v}" >> $GITHUB_ENV
+      - name: Check if we should tag v6 scanner
+        run: |
+          if [[ ${{ github.ref_name }} =~ ^v[0-9]+\.[0-9]+$ ]];then
+            echo "We should update v6 scanner"
+            echo "UPDATE_MUTABLE_TAG=True" >> $GITHUB_ENV
+          fi
+      - name: Login to registry
+        if: env.UPDATE_MUTABLE_TAG == 'True'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: docker.io
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ env.DOCKER_PASSWORD }}
+      - name: Tag v6 scanner to neuvector
+        if: env.UPDATE_MUTABLE_TAG == 'True'
+        run: |
+          docker buildx imagetools create --tag docker.io/${{ github.repository_owner }}/scanner:6 docker.io/${{ github.repository_owner }}/scanner:${TAG}
+      - name: Login to registry
+        if: env.UPDATE_MUTABLE_TAG == 'True'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ env.PRIME_REGISTRY }}
+          username: ${{ env.PRIME_REGISTRY_USERNAME }}
+          password: ${{ env.PRIME_REGISTRY_PASSWORD }}
+      - name: Tag v6 scanner to prime
+        if: env.UPDATE_MUTABLE_TAG == 'True'
+        run: |
+          docker buildx imagetools create --tag ${PRIME_REGISTRY}/rancher/neuvector-scanner:6 ${PRIME_REGISTRY}/rancher/neuvector-scanner:${TAG}
+      - name: Login to registry
+        if: env.UPDATE_MUTABLE_TAG == 'True'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: docker.io
+          username: ${{ env.RANCHER_DOCKER_USERNAME }}
+          password: ${{ env.RANCHER_DOCKER_PASSWORD }}
+      - name: Tag v6 scanner to rancher
+        if: env.UPDATE_MUTABLE_TAG == 'True'
+        run: |
+          docker buildx imagetools create --tag docker.io/rancher/neuvector-scanner:6 docker.io/rancher/neuvector-scanner:${TAG}
