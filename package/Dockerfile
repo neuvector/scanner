@@ -3,7 +3,7 @@ ARG VULNDB_CHECKSUM=178b8ceae3e805bcac26c6163f7ac6427e383ec9eb4515afb1a97b17f731
 #
 # Builder
 #
-FROM registry.suse.com/bci/golang:1.26.6 AS builder
+FROM registry.suse.com/bci/golang:1.27.0 AS builder
 ARG VERSION
 ARG VULNDB_CHECKSUM
 
