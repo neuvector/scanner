@@ -38,6 +38,12 @@ type scanOnDemandReportData struct {
 	Report *api.RESTScanRepoReport `json:"report"`
 }
 
+func getStandaloneParsingCaps() *share.ParsingCaps {
+	return &share.ParsingCaps{
+		JarAutoModuleName: true,
+	}
+}
+
 func parseImageValue(value string) (string, string, string) {
 	var parts []string
 	var proto, registry, repository, ref string // ref can be a tag or digest.
@@ -266,14 +272,15 @@ func writeResultToStdout(result *share.ScanResult, showOptions string, capCritic
 
 func scanRunning(pid int, cvedb map[string]*share.ScanVulnerability, showOptions string, capCritical bool) {
 	lookup := scanUtils.CVEDBMapLookup{M: cvedb}
+	parsingCaps := getStandaloneParsingCaps()
 
 	sys := system.NewSystemTools()
 	sysInfo := sys.GetSystemInfo()
 	scanUtil := scanUtils.NewScanUtil(sys)
-	cveTools := cvetools.NewScanTools("", sys, nil, "")
+	cveTools := cvetools.NewScanTools("", sys, nil, "", parsingCaps)
 
 	var data share.ScanData
-	data.Buffer, data.Error = scanUtil.GetRunningPackages("1", share.ScanObjectType_HOST, pid, sysInfo.Kernel.Release, "", false)
+	data.Buffer, data.Error = scanUtil.GetRunningPackages("1", share.ScanObjectType_HOST, pid, sysInfo.Kernel.Release, "", false, parsingCaps)
 	if data.Error != share.ScanErrorCode_ScanErrNone {
 		log.WithFields(log.Fields{"pid": pid, "error": data.Error}).Error("Failed to get the packages")
 		return
@@ -332,6 +339,7 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 	var err error
 
 	lookup := scanUtils.CVEDBMapLookup{M: cvedb}
+	parsingCaps := getStandaloneParsingCaps()
 	req.Registry, err = normalizeRegistry(req.Registry)
 	if err != nil {
 		log.WithFields(log.Fields{"registry": req.Registry, "error": err}).Error("Failed to normalize registry")
@@ -348,7 +356,7 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 	if scanTasker != nil {
 		result, err = scanTasker.Run(ctx, *req)
 	} else {
-		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
+		cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "", parsingCaps)
 		result, err = cveTools.ScanImage(ctx, req, "")
 	}
 	cancel()
@@ -369,7 +377,7 @@ func scanOnDemand(req *share.ScanImageRequest, cvedb map[string]*share.ScanVulne
 		if scanTasker != nil {
 			result, err = scanTasker.Run(ctx, *req)
 		} else {
-			cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "")
+			cveTools := cvetools.NewScanTools("", system.NewSystemTools(), nil, "", parsingCaps)
 			result, err = cveTools.ScanImage(ctx, req, "")
 		}
 		cancel()
