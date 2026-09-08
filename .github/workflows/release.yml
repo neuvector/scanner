@@ -34,9 +34,21 @@ jobs:
       run: |
         TARGET=${{ github.ref_name }}
         echo "TAG=${TARGET#v}" >> $GITHUB_ENV
-    - name: Download vulnerability database
+    - name: Install crane
+      uses: ./.github/actions/install-crane
+    - name: Log in to GHCR
       run: |
-        wget https://${{ secrets.VULNDB_SERVER }}/${TAG}/cvedb.regular -O data/cvedb.regular
+        echo "${{ github.token }}" | crane auth login ghcr.io -u "${{ github.actor }}" --password-stdin
+    - name: Download vulnerability database
+      env:
+        GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+      run: |
+        VULNDB_VERSION=$(grep '^ARG VULNDB_VERSION=' package/Dockerfile | cut -d= -f2)
+        bash scripts/ghcr-vulndb-artifact.sh download \
+          cvedb \
+          cvedb.regular \
+          data/cvedb.regular \
+          "${VULNDB_VERSION}"
     - name: Publish neuvector manifest
       uses: rancher/ecm-distro-tools/actions/publish-image@a7a867a6376bf4a1cee397558f3c85393769f069 # v0.69.4
       with:
