@@ -11,17 +11,21 @@ runs:
   using: 'composite'
   steps:
     - shell: bash
+      env:
+        CRANE_VERSION: ${{ inputs.version }}
+        CHECKSUM_X86_64: ${{ inputs.checksum_linux_x86_64 }}
+        CHECKSUM_ARM64: ${{ inputs.checksum_linux_arm64 }}
       run: |
         set -euo pipefail
 
         case "$(uname -m)" in
           x86_64|amd64)
             archive="go-containerregistry_Linux_x86_64.tar.gz"
-            checksum="${{ inputs.checksum_linux_x86_64 }}"
+            checksum="${CHECKSUM_X86_64}"
             ;;
           aarch64|arm64)
             archive="go-containerregistry_Linux_arm64.tar.gz"
-            checksum="${{ inputs.checksum_linux_arm64 }}"
+            checksum="${CHECKSUM_ARM64}"
             ;;
           *)
             echo "Unsupported architecture: $(uname -m)" >&2
@@ -29,12 +33,7 @@ runs:
             ;;
         esac
 
-        install_dir="${RUNNER_TEMP}/crane-bin"
-        mkdir -p "$install_dir"
-
-        curl -fsSL "https://github.com/google/go-containerregistry/releases/download/${{ inputs.version }}/${archive}" -o crane.tar.gz
+        curl -fsSL "https://github.com/google/go-containerregistry/releases/download/${CRANE_VERSION}/${archive}" -o crane.tar.gz
         echo "${checksum}  crane.tar.gz" | sha256sum -c
         tar -xzf crane.tar.gz crane
-        chmod +x crane
-        mv crane "${install_dir}/crane"
-        echo "${install_dir}" >> "$GITHUB_PATH"
+        sudo mv crane /usr/local/bin/crane
