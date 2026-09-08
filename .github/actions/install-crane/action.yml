@@ -1,0 +1,40 @@
+name: Install crane
+inputs:
+  version:
+    default: v0.21.7
+  checksum_linux_x86_64:
+    default: 1a57bc98207fa1c0d04bf760699099e26f8383499bfd55b99c1b919a928a7230
+  checksum_linux_arm64:
+    default: b6ee979d9411dfb05ce35ab9e156fe5de7def11a230764a7856ffa2eb971fa88
+
+runs:
+  using: 'composite'
+  steps:
+    - shell: bash
+      run: |
+        set -euo pipefail
+
+        case "$(uname -m)" in
+          x86_64|amd64)
+            archive="go-containerregistry_Linux_x86_64.tar.gz"
+            checksum="${{ inputs.checksum_linux_x86_64 }}"
+            ;;
+          aarch64|arm64)
+            archive="go-containerregistry_Linux_arm64.tar.gz"
+            checksum="${{ inputs.checksum_linux_arm64 }}"
+            ;;
+          *)
+            echo "Unsupported architecture: $(uname -m)" >&2
+            exit 1
+            ;;
+        esac
+
+        install_dir="${RUNNER_TEMP}/crane-bin"
+        mkdir -p "$install_dir"
+
+        curl -fsSL "https://github.com/google/go-containerregistry/releases/download/${{ inputs.version }}/${archive}" -o crane.tar.gz
+        echo "${checksum}  crane.tar.gz" | sha256sum -c
+        tar -xzf crane.tar.gz crane
+        chmod +x crane
+        mv crane "${install_dir}/crane"
+        echo "${install_dir}" >> "$GITHUB_PATH"
