@@ -15,6 +15,8 @@ jobs:
       # - OIDC for cosign's use in ecm-distro-tools/publish-image.
       # - Read vault secrets in rancher-eio/read-vault-secrets.
       id-token: write
+      # read is needed for reading cvedb from ghcr.io
+      packages: read
 
     steps:
     - name: Checkout code
