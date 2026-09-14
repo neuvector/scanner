@@ -15,6 +15,8 @@ jobs:
       # - OIDC for cosign's use in ecm-distro-tools/publish-image.
       # - Read vault secrets in rancher-eio/read-vault-secrets.
       id-token: write
+      # read is needed for reading cvedb from ghcr.io
+      packages: read
 
     steps:
     - name: Checkout code
@@ -37,8 +39,13 @@ jobs:
     - name: Install crane
       uses: ./.github/actions/install-crane
     - name: Log in to GHCR
+      env:
+        GHCR_TOKEN: ${{ github.token }}
+        GHCR_ACTOR: ${{ github.actor }}
       run: |
-        echo "$GITHUB_TOKEN" | crane auth login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        echo "$GHCR_TOKEN" | crane auth login ghcr.io \
+          -u "$GHCR_ACTOR" \
+          --password-stdin
     - name: Download vulnerability database
       env:
         GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}

@@ -15,6 +15,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/utils"
 )
 
@@ -49,6 +50,7 @@ const (
 	javaMnfstBundleVersion = "Bundle-Version:"
 	javaMnfstBundleSymName = "Bundle-SymbolicName:"
 	javaMnfstBundleName    = "Bundle-Name:"
+	javaMnfstAutoModName   = "Automatic-Module-Name:"
 
 	python            = "python"
 	ruby              = "ruby"
@@ -65,8 +67,10 @@ const (
 )
 
 // var verRegexp = regexp.MustCompile(`<([a-zA-Z0-9\.]+)>([0-9\.]+)</([a-zA-Z0-9\.]+)>`)
-var pyRegexp = regexp.MustCompile(`/([a-zA-Z0-9_\.]+)-([a-zA-Z0-9\.]+)[\-a-zA-Z0-9\.]*\.(egg-info\/PKG-INFO|dist-info\/WHEEL)$`)
-var rubyRegexp = regexp.MustCompile(`/([a-zA-Z0-9_\-]+)-([0-9\.]+)\.gemspec$`)
+var (
+	pyRegexp   = regexp.MustCompile(`/([a-zA-Z0-9_\.]+)-([a-zA-Z0-9\.]+)[\-a-zA-Z0-9\.]*\.(egg-info\/PKG-INFO|dist-info\/WHEEL)$`)
+	rubyRegexp = regexp.MustCompile(`/([a-zA-Z0-9_\-]+)-([0-9\.]+)\.gemspec$`)
+)
 
 type NodeJSPackageInfo struct {
 	Name    string `json:"name"`
@@ -131,12 +135,17 @@ type dotnetPackage struct {
 }
 
 type ScanApps struct {
-	pkgs    map[string][]AppPackage // AppPackage set
-	replace bool
+	pkgs        map[string][]AppPackage // AppPackage set
+	replace     bool
+	parsingCaps *share.ParsingCaps
 }
 
-func NewScanApps(v2 bool) *ScanApps {
-	return &ScanApps{pkgs: make(map[string][]AppPackage), replace: v2}
+func NewScanApps(v2 bool, parsingCaps *share.ParsingCaps) *ScanApps {
+	return &ScanApps{
+		pkgs:        make(map[string][]AppPackage),
+		replace:     v2,
+		parsingCaps: parsingCaps,
+	}
 }
 
 func IsAppsPkgFile(filename, fullpath string) bool {
@@ -234,7 +243,7 @@ func (s *ScanApps) DerivePkg(data map[string][]byte) []AppPackage {
 }
 
 func isExe(info os.FileInfo) bool {
-	return info.Mode().IsRegular() && (info.Mode()&0111) != 0
+	return info.Mode().IsRegular() && (info.Mode()&0o111) != 0
 }
 
 func isGolang(filename, fullpath string) bool {
@@ -341,8 +350,12 @@ func IsJava(filename string) bool {
 		strings.HasSuffix(filename, ".ear")
 }
 
-func parseJarManifestFile(path string, rc io.Reader) (*AppPackage, error) {
-	var vendorId, version, title, symName string
+func isUnresolvedField(s string) bool {
+	return len(s) == 0 || s[0] == '%'
+}
+
+func parseJarManifestFile(path string, rc io.Reader, parsingCaps *share.ParsingCaps) (*AppPackage, error) {
+	var vendorId, version, title, symName, autoModName string
 	var vendorSet, titleSet bool
 	var lineCount int
 
@@ -386,6 +399,8 @@ func parseJarManifestFile(path string, rc io.Reader) (*AppPackage, error) {
 				title = strings.TrimSpace(strings.TrimPrefix(line, javaMnfstBundleName))
 				title = strings.Split(title, ";")[0]
 			}
+		case parsingCaps.GetJarAutoModuleName() && strings.HasPrefix(line, javaMnfstAutoModName):
+			autoModName = strings.TrimSpace(strings.TrimPrefix(line, javaMnfstAutoModName))
 		}
 
 		if len(version) > 0 && titleSet && vendorSet {
@@ -406,16 +421,24 @@ func parseJarManifestFile(path string, rc io.Reader) (*AppPackage, error) {
 			// NVSHAS-8757
 			vendorId = "org.postgresql"
 			title = "postgresql"
-		} else if len(vendorId) == 0 || vendorId[0] == '%' || len(title) == 0 || title[0] == '%' {
-			if dot := strings.LastIndex(symName, "."); dot > 0 {
-				vendorId = symName[:dot]
-				title = symName[dot+1:]
+		} else if isUnresolvedField(vendorId) || isUnresolvedField(title) {
+			if first, last, ok := strings.CutLast(symName, "."); ok {
+				vendorId = first
+				title = last
 			}
 		}
 	}
 
-	if len(vendorId) == 0 || vendorId[0] == '%' {
-		vendorId = "jar"
+	if isUnresolvedField(vendorId) {
+		switch {
+		case parsingCaps.GetJarAutoModuleName() && autoModName == "spring.boot":
+			// spring.boot maps to org.springframework.boot in the DB
+			vendorId = "org.springframework.boot"
+		case parsingCaps.GetJarAutoModuleName() && autoModName != "":
+			vendorId = autoModName
+		default:
+			vendorId = "jar"
+		}
 	}
 
 	// NVSHAS-9942
@@ -543,7 +566,7 @@ func (s *ScanApps) parseJarPackage(r *zip.Reader, origJar, filename, fullpath st
 				continue
 			}
 
-			if pkg, err := parseJarManifestFile(path, rc); err == nil {
+			if pkg, err := parseJarManifestFile(path, rc, s.parsingCaps); err == nil {
 				key := fmt.Sprintf("%s-%s-%s", pkg.FileName, pkg.ModuleName, pkg.Version)
 				if !dedup.Contains(key) {
 					dedup.Add(key)
@@ -593,7 +616,7 @@ func IsRlangPackage(filename string) bool {
 
 func (s *ScanApps) parsePhpComposerJson(filename string, filepath string) {
 	data := ComposerLock{}
-	//extract json data
+	// extract json data
 	bytes, err := os.ReadFile(filepath)
 	if err != nil {
 		log.WithFields(log.Fields{"err": err, "file": filename}).Error("failed to read composer.lock file")
@@ -604,7 +627,7 @@ func (s *ScanApps) parsePhpComposerJson(filename string, filepath string) {
 		log.WithFields(log.Fields{"err": err, "file": filename}).Error("failed to unmarshal json data from composer.lock file")
 		return
 	}
-	//convert json data to one or more AppPackage
+	// convert json data to one or more AppPackage
 	for _, composerPackage := range data.Packages {
 		packageNameSplit := strings.Split(composerPackage.Name, "/")
 		packageName := packageNameSplit[len(packageNameSplit)-1]
@@ -614,7 +637,7 @@ func (s *ScanApps) parsePhpComposerJson(filename string, filepath string) {
 			Version:    composerPackage.Version,
 			FileName:   filename,
 		}
-		//add each AppPackage to s.pkgs map, append if entry already exists.
+		// add each AppPackage to s.pkgs map, append if entry already exists.
 		if _, ok := s.pkgs[filename]; !ok {
 			s.pkgs[filename] = []AppPackage{appPackage}
 		} else {
@@ -708,7 +731,6 @@ func (s *ScanApps) parseDotNetPackage(filename string, fullpath string) {
 	var dotnet dotnetPackage
 
 	data, err := os.ReadFile(fullpath)
-
 	if err != nil {
 		log.WithFields(log.Fields{"err": err, "fullpath": fullpath, "filename": filename}).Error("Failed to read file")
 		return
@@ -754,7 +776,7 @@ func parseDotNetJsonData(filename string, fullpath string, dotnet dotnetPackage)
 			if dep.Runtime == nil && os.Getenv("SCAN_DOTNET_RUNTIME") != "" {
 				continue
 			}
-			//Get dependencies of individual targets
+			// Get dependencies of individual targets
 			for app, v := range dep.Deps {
 				key := fmt.Sprintf("%s-%s", ".NET:"+app, v)
 				if !dedup.Contains(key) {
@@ -774,7 +796,7 @@ func parseDotNetJsonData(filename string, fullpath string, dotnet dotnetPackage)
 				log.WithFields(log.Fields{"fullpath": fullpath, "filename": filename, "target": target}).Error("Failed to determine .Net ModuleName")
 				continue
 			}
-			//Add module for the target itself.
+			// Add module for the target itself.
 			if version != "" {
 				key := fmt.Sprintf(".NET:%s-%s", name, version)
 				if !dedup.Contains(key) {
