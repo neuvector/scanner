@@ -412,6 +412,9 @@ func main() {
 			return
 		}
 
+		// Set parsing capabilities for standalone scanner mode
+		setParsingCaps(getStandaloneParsingCaps())
+
 		if *pid != 0 {
 			scanRunning(*pid, dbData, *show, *capCritical)
 			return
