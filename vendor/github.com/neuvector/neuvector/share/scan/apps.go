@@ -67,10 +67,8 @@ const (
 )
 
 // var verRegexp = regexp.MustCompile(`<([a-zA-Z0-9\.]+)>([0-9\.]+)</([a-zA-Z0-9\.]+)>`)
-var (
-	pyRegexp   = regexp.MustCompile(`/([a-zA-Z0-9_\.]+)-([a-zA-Z0-9\.]+)[\-a-zA-Z0-9\.]*\.(egg-info\/PKG-INFO|dist-info\/WHEEL)$`)
-	rubyRegexp = regexp.MustCompile(`/([a-zA-Z0-9_\-]+)-([0-9\.]+)\.gemspec$`)
-)
+var pyRegexp = regexp.MustCompile(`/([a-zA-Z0-9_\.]+)-([a-zA-Z0-9\.]+)[\-a-zA-Z0-9\.]*\.(egg-info\/PKG-INFO|dist-info\/WHEEL)$`)
+var rubyRegexp = regexp.MustCompile(`/([a-zA-Z0-9_\-]+)-([0-9\.]+)\.gemspec$`)
 
 type NodeJSPackageInfo struct {
 	Name    string `json:"name"`
@@ -243,7 +241,7 @@ func (s *ScanApps) DerivePkg(data map[string][]byte) []AppPackage {
 }
 
 func isExe(info os.FileInfo) bool {
-	return info.Mode().IsRegular() && (info.Mode()&0o111) != 0
+	return info.Mode().IsRegular() && (info.Mode()&0111) != 0
 }
 
 func isGolang(filename, fullpath string) bool {
@@ -616,7 +614,7 @@ func IsRlangPackage(filename string) bool {
 
 func (s *ScanApps) parsePhpComposerJson(filename string, filepath string) {
 	data := ComposerLock{}
-	// extract json data
+	//extract json data
 	bytes, err := os.ReadFile(filepath)
 	if err != nil {
 		log.WithFields(log.Fields{"err": err, "file": filename}).Error("failed to read composer.lock file")
@@ -627,7 +625,7 @@ func (s *ScanApps) parsePhpComposerJson(filename string, filepath string) {
 		log.WithFields(log.Fields{"err": err, "file": filename}).Error("failed to unmarshal json data from composer.lock file")
 		return
 	}
-	// convert json data to one or more AppPackage
+	//convert json data to one or more AppPackage
 	for _, composerPackage := range data.Packages {
 		packageNameSplit := strings.Split(composerPackage.Name, "/")
 		packageName := packageNameSplit[len(packageNameSplit)-1]
@@ -637,7 +635,7 @@ func (s *ScanApps) parsePhpComposerJson(filename string, filepath string) {
 			Version:    composerPackage.Version,
 			FileName:   filename,
 		}
-		// add each AppPackage to s.pkgs map, append if entry already exists.
+		//add each AppPackage to s.pkgs map, append if entry already exists.
 		if _, ok := s.pkgs[filename]; !ok {
 			s.pkgs[filename] = []AppPackage{appPackage}
 		} else {
@@ -731,6 +729,7 @@ func (s *ScanApps) parseDotNetPackage(filename string, fullpath string) {
 	var dotnet dotnetPackage
 
 	data, err := os.ReadFile(fullpath)
+
 	if err != nil {
 		log.WithFields(log.Fields{"err": err, "fullpath": fullpath, "filename": filename}).Error("Failed to read file")
 		return
@@ -776,7 +775,7 @@ func parseDotNetJsonData(filename string, fullpath string, dotnet dotnetPackage)
 			if dep.Runtime == nil && os.Getenv("SCAN_DOTNET_RUNTIME") != "" {
 				continue
 			}
-			// Get dependencies of individual targets
+			//Get dependencies of individual targets
 			for app, v := range dep.Deps {
 				key := fmt.Sprintf("%s-%s", ".NET:"+app, v)
 				if !dedup.Contains(key) {
@@ -796,7 +795,7 @@ func parseDotNetJsonData(filename string, fullpath string, dotnet dotnetPackage)
 				log.WithFields(log.Fields{"fullpath": fullpath, "filename": filename, "target": target}).Error("Failed to determine .Net ModuleName")
 				continue
 			}
-			// Add module for the target itself.
+			//Add module for the target itself.
 			if version != "" {
 				key := fmt.Sprintf(".NET:%s-%s", name, version)
 				if !dedup.Contains(key) {
