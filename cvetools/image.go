@@ -85,7 +85,7 @@ func (s *ScanTools) GetLocalImageMeta(ctx context.Context, repository, tag strin
 	return meta, share.ScanErrorCode_ScanErrNone
 }
 
-func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath string, cacher *ImageLayerCacher) (
+func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath string, cacher *ImageLayerCacher, parsingCaps *share.ParsingCaps) (
 	map[string]*LayerRecord, *scan.ImageInfo, []string, share.ScanErrorCode,
 ) {
 	sock, repo := parseSocketFromRepo(repository)
@@ -186,7 +186,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 
 	log.WithFields(log.Fields{"imageName": imageName, "downloads": downloads}).Debug()
 
-	layerModules, errCode := getImageLayerIterate(ctx, downloads, nil, imgPath, nil,
+	layerModules, errCode := getImageLayerIterate(ctx, downloads, nil, imgPath, parsingCaps,
 		func(ctx context.Context, layer string) (interface{}, int64, error) {
 			blob := blobs[layer]
 			file, err := os.Open(filepath.Join(repoFolder, blob))
