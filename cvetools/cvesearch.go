@@ -32,6 +32,8 @@ const (
 	contentManifest = "root/buildinfo/content_manifests"
 )
 
+var wolfiRcRegex = regexp.MustCompile(`(.*)(_rc\d*)(.*)`)
+
 /* removed by golint
 var redhat_db []common.VulShort = nil
 var debian_db []common.VulShort = nil
@@ -1265,6 +1267,16 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 				}
 			}
 
+			if strings.HasPrefix(namespace, "wolfi") {
+				if containsWolfiReleaseCandidate(ftVer.String()) && !containsWolfiReleaseCandidate(fixVer) {
+					rclessVersion := trimWolfiReleaseCandidate(ftVer.String())
+					v, err := utils.NewVersion(rclessVersion)
+					if err == nil {
+						ftVer = v
+					}
+				}
+			}
+
 			// the naming of centos and redhat is different. centos skip the el7_5's minor version 5.
 			if strings.Contains(ft.Version.String(), "centos") {
 				if a := strings.Index(fix.Version, ".el"); a > 0 {
@@ -1350,6 +1362,14 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 		}
 	}
 	return affectVs, moduleVuls
+}
+
+func containsWolfiReleaseCandidate(version string) bool {
+	return wolfiRcRegex.MatchString(version)
+}
+
+func trimWolfiReleaseCandidate(version string) string {
+	return wolfiRcRegex.ReplaceAllString(version, "$1$3")
 }
 
 func makeFeatureMap(vss []common.VulShort, namespace string) map[string][]common.VulShort {
