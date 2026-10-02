@@ -8,6 +8,7 @@ import (
 	"github.com/neuvector/scanner/common"
 	"github.com/neuvector/scanner/detectors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSelectDB(t *testing.T) {
@@ -170,4 +171,53 @@ func TestEpochComparison(t *testing.T) {
 	if len(vuls) != expected2 || len(modvul) != expected2 {
 		t.Errorf("error without epoch comparison, expected results: %+v, returned %v\n", expected2, len(modvul))
 	}
+}
+
+// If package version inside wolfi image contains release candidate part, e.g. 1.3.2.1_rc20260601-r0, then _rc20260601 should be removed since it can't be handled by verrevcmp comparison logic
+func TestWolfiImageWithReleaseCandidateVersionPackageSearchAffectedFeature(t *testing.T) {
+	shortVulMap := map[string][]common.VulShort{
+		"wolfi:rolling:zlib": {
+			{
+				Name:      "CVE-2023-45853",
+				Namespace: "wolfi:rolling",
+				Fixin: []common.FeaShort{
+					{
+						Name:    "zlib",
+						Version: "1.3-r1",
+						MinVer:  "",
+					},
+				},
+				CPEs: []string{},
+			},
+			{
+				Name:      "CVE-2026-27171",
+				Namespace: "wolfi:rolling",
+				Fixin: []common.FeaShort{
+					{
+						Name:    "zlib",
+						Version: "1.3.2-r0",
+						MinVer:  "",
+					},
+				},
+				CPEs: []string{},
+			},
+		},
+	}
+	version, err := utils.NewVersion("1.3.2.1_rc20260601-r0")
+	require.NoError(t, err)
+
+	feature := detectors.FeatureVersion{
+		Package:    "zlib",
+		File:       "",
+		Version:    version,
+		MinVer:     utils.Version{},
+		ModuleVuls: []detectors.ModuleVul{},
+		CPEs:       nil,
+		InBase:     false,
+	}
+
+	vuls, modvul := searchAffectedFeature(shortVulMap, "wolfi:rolling", feature)
+
+	require.Empty(t, vuls)
+	require.Empty(t, modvul)
 }
