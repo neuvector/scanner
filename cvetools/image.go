@@ -61,6 +61,18 @@ func parseSocketFromRepo(repo string) (string, string) {
 	return "", repo
 }
 
+const sha256Prefix = "sha256:"
+
+func dockerImageSaveID(id string) string {
+	if d, err := goDigest.Parse(id); err == nil {
+		return d.String()
+	}
+	if d, err := goDigest.Parse(sha256Prefix + id); err == nil {
+		return d.String()
+	}
+
+	return id
+}
 func (s *ScanTools) GetLocalImageMeta(ctx context.Context, repository, tag string) (*container.ImageMeta, share.ScanErrorCode) {
 	sock, repo := parseSocketFromRepo(repository)
 	if sock == "" {
@@ -119,7 +131,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 		return nil, nil, nil, share.ScanErrorCode_ScanErrContainerAPI
 	}
 
-	file, err := rt.GetImageFile(meta.ID)
+	file, err := rt.GetImageFile(dockerImageSaveID(meta.ID))
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to get image")
 		if errdefs.IsNotFound(err) {
