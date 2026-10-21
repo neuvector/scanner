@@ -597,8 +597,8 @@ github.com/modern-go/reflect2
 # github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
 ## explicit
 github.com/munnerz/goautoneg
-# github.com/neuvector/neuvector v0.0.0-20260916003457-3e6513991487
-## explicit; go 1.27.1
+# github.com/neuvector/neuvector v0.0.0-20261020230936-5d727663d233
+## explicit; go 1.27.2
 github.com/neuvector/neuvector/controller/api
 github.com/neuvector/neuvector/share
 github.com/neuvector/neuvector/share/cluster
@@ -991,11 +991,11 @@ golang.org/x/net/internal/httpcommon
 golang.org/x/net/internal/httpsfv
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
-# golang.org/x/oauth2 v0.36.0
-## explicit; go 1.25.0
+# golang.org/x/oauth2 v0.37.0
+## explicit; go 1.26.0
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
-# golang.org/x/sync v0.23.0
+# golang.org/x/sync v0.24.0
 ## explicit; go 1.26.0
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
