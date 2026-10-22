@@ -1,6 +1,6 @@
 module github.com/neuvector/scanner
 
-go 1.27.2
+go 1.27.3
 
 replace k8s.io/cri-api => k8s.io/cri-api v0.25.16
 
