@@ -597,7 +597,7 @@ github.com/modern-go/reflect2
 # github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
 ## explicit
 github.com/munnerz/goautoneg
-# github.com/neuvector/neuvector v0.0.0-20261020230936-5d727663d233
+# github.com/neuvector/neuvector v0.0.0-20261022190102-ae49a50f873f
 ## explicit; go 1.27.2
 github.com/neuvector/neuvector/controller/api
 github.com/neuvector/neuvector/share
