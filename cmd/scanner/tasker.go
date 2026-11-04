@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"syscall"
@@ -21,9 +22,11 @@ import (
 	"github.com/neuvector/scanner/common"
 )
 
-const reqTemplate = "/tmp/%s_i.json"
-const resTemplate = "/tmp/%s_o.json"
-const cacertTemplate = "/tmp/%s_cacert"
+const (
+	reqSuffix    = "_i.json"
+	resSuffix    = "_o.json"
+	cacertSuffix = "_cacert"
+)
 
 // ///
 type Tasker struct {
@@ -31,43 +34,58 @@ type Tasker struct {
 	bShowDebug          bool
 	mutex               sync.Mutex
 	taskPath            string
+	taskDir             string // private (0700) directory holding the task request, result and cacert files
 	rtSock              string // Container socket URL
 	sys                 *system.SystemTools
 	maxCacherRecordSize int64
 }
 
 // ///
-func newTasker(taskPath, rtSock string, showDebug bool, sys *system.SystemTools, maxCacherRecordSize int64) *Tasker {
+// Task files may carry registry credentials, so they are kept in a directory only this process's user can
+// access instead of the shared /tmp.
+func newTasker(taskPath, rtSock string, showDebug bool, sys *system.SystemTools, maxCacherRecordSize int64) (*Tasker, error) {
 	log.WithFields(log.Fields{"showDebug": showDebug}).Debug()
+
+	taskDir, err := os.MkdirTemp("", "scanner-task-")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create task file directory: %w", err)
+	}
 
 	return &Tasker{
 		bEnable:             true,
 		taskPath:            taskPath, // sannnerTask path
-		rtSock:              rtSock,   // Container socket URL
+		taskDir:             taskDir,
+		rtSock:              rtSock, // Container socket URL
 		bShowDebug:          showDebug,
 		sys:                 sys,
 		maxCacherRecordSize: maxCacherRecordSize, // MB
-	}
+	}, nil
 }
 
-func TryWriteFile(filepath string, data []byte) error {
-	_, err := os.Stat(filepath)
-	if err == nil {
-		return fmt.Errorf("file exists: %s", filepath)
-	}
-	if !os.IsNotExist(err) {
+func (ts *Tasker) taskFile(uid, suffix string) string {
+	return filepath.Join(ts.taskDir, uid+suffix)
+}
+
+// TryWriteFile creates a new owner-only file. It fails if the path already exists, including as a symlink,
+// because task files may carry registry credentials.
+func TryWriteFile(path string, data []byte) (err error) {
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	if err != nil {
 		return err
 	}
-	if err = os.WriteFile(filepath, data, 0644); err != nil {
-		return err
-	}
-	return nil
+	defer func() {
+		if cerr := f.Close(); cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
+	_, err = f.Write(data)
+	return err
 }
 
 func (ts *Tasker) writeInputFile(data []byte, cacert []byte) (uid string, err error) {
 	uid = uuid.New().String()
-	input := fmt.Sprintf(reqTemplate, uid)
-	cacertInput := fmt.Sprintf(cacertTemplate, uid)
+	input := ts.taskFile(uid, reqSuffix)
+	cacertInput := ts.taskFile(uid, cacertSuffix)
 
 	defer func() {
 		// clean up
@@ -143,10 +161,10 @@ func (ts *Tasker) putInputFile(request interface{}) (string, []string, error) {
 			continue // retry
 		}
 
-		args = append(args, "-i", fmt.Sprintf(reqTemplate, uid))
-		args = append(args, "-o", fmt.Sprintf(resTemplate, uid))
+		args = append(args, "-i", ts.taskFile(uid, reqSuffix))
+		args = append(args, "-o", ts.taskFile(uid, resSuffix))
 		if cacerts != "" {
-			args = append(args, "--cacerts", fmt.Sprintf(cacertTemplate, uid))
+			args = append(args, "--cacerts", ts.taskFile(uid, cacertSuffix))
 		}
 		return uid, args, nil
 	}
@@ -156,7 +174,7 @@ func (ts *Tasker) putInputFile(request interface{}) (string, []string, error) {
 
 // ///
 func (ts *Tasker) getResultFile(uid string) (*share.ScanResult, error) {
-	jsonFile, err := os.Open(fmt.Sprintf(resTemplate, uid))
+	jsonFile, err := os.Open(ts.taskFile(uid, resSuffix))
 	if err != nil {
 		log.WithFields(log.Fields{"error": err, "uid": uid}).Error("Failed to open result")
 		return nil, err
@@ -187,9 +205,9 @@ func (ts *Tasker) Run(ctx context.Context, request interface{}) (*share.ScanResu
 	}
 
 	// remove files
-	defer os.Remove(fmt.Sprintf(reqTemplate, uid))
-	defer os.Remove(fmt.Sprintf(resTemplate, uid))
-	defer os.Remove(fmt.Sprintf(cacertTemplate, uid))
+	defer os.Remove(ts.taskFile(uid, reqSuffix))
+	defer os.Remove(ts.taskFile(uid, resSuffix))
+	defer os.Remove(ts.taskFile(uid, cacertSuffix))
 
 	// image working folder
 	workingFolder := common.CreateImagePath(uid)
@@ -254,4 +272,8 @@ func (ts *Tasker) Close() {
 	//
 	ts.sys.ShowToolProcesses()
 	ts.sys.StopToolProcesses()
+
+	if err := os.RemoveAll(ts.taskDir); err != nil {
+		log.WithFields(log.Fields{"error": err, "dir": ts.taskDir}).Error("Failed to remove task file directory")
+	}
 }

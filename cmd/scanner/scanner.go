@@ -389,11 +389,13 @@ func main() {
 
 	if !*noTask {
 		log.WithFields(log.Fields{"record": *maxCacherRecordSize}).Info("Scan cacher maximum sizes")
-		scanTasker = newTasker(taskerPath, *rtSock, showTaskDebug, sys, *maxCacherRecordSize)
-		if scanTasker != nil {
-			log.Debug("Use scannerTask")
-			defer scanTasker.Close()
+		scanTasker, err = newTasker(taskerPath, *rtSock, showTaskDebug, sys, *maxCacherRecordSize)
+		if err != nil {
+			log.WithFields(log.Fields{"error": err}).Error("Failed to initialize scannerTask. Exit!")
+			os.Exit(-2)
 		}
+		log.Debug("Use scannerTask")
+		defer scanTasker.Close()
 	}
 
 	done := make(chan bool, 1)

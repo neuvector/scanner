@@ -7,9 +7,10 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
+	"io/fs"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -48,16 +49,29 @@ func checkDbReady() bool {
 	return dbReady
 }
 
-// //////////////////////
-func processRequest(tm *taskMain, scanType, infile, workingPath string) int {
-	var err error
-	jsonFile, err := os.Open(infile)
-	if err != nil {
-		log.WithFields(log.Fields{"error": err, "file": infile}).Error("Failed to open input file")
-		return -1
+// Name suffixes of the files the scanner creates for each task (see cmd/scanner/tasker.go).
+const (
+	reqFileSuffix    = "_i.json"
+	cacertFileSuffix = "_cacert"
+)
+
+// readTaskFile reads a file and, if it is one the scanner created for this task (name ends with
+// scannerSuffix), deletes it right away so request data, which may include registry credentials,
+// does not stay on disk for the duration of the scan. Files supplied manually for debugging are kept.
+func readTaskFile(path, scannerSuffix string) ([]byte, error) {
+	data, err := os.ReadFile(path)
+	if !strings.HasSuffix(filepath.Base(path), scannerSuffix) {
+		return data, err
 	}
-	byteValue, _ := io.ReadAll(jsonFile)
-	jsonFile.Close()
+	if rerr := os.Remove(path); rerr != nil && !errors.Is(rerr, fs.ErrNotExist) {
+		log.WithFields(log.Fields{"error": rerr, "file": path}).Warn("Failed to remove input file")
+	}
+	return data, err
+}
+
+// //////////////////////
+func processRequest(tm *taskMain, scanType string, byteValue []byte, workingPath string) int {
+	var err error
 
 	// selector
 	switch scanType {
@@ -113,9 +127,16 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
+	// Read (and delete) the request before anything that can block, such as waiting for the CVE DB.
+	request, err := readTaskFile(*infile, reqFileSuffix)
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "file": *infile}).Error("Failed to read input file")
+		os.Exit(-10)
+	}
+
 	var pool *x509.CertPool
 	if *cacerts != "" {
-		certs, err := os.ReadFile(*cacerts)
+		certs, err := readTaskFile(*cacerts, cacertFileSuffix)
 		if err != nil {
 			log.WithError(err).Warn("failed to load ca certs")
 		}
@@ -126,7 +147,7 @@ func main() {
 	}
 
 	// Default TLS config
-	err := httpclient.SetDefaultTLSClientConfig(&httpclient.TLSClientSettings{
+	err = httpclient.SetDefaultTLSClientConfig(&httpclient.TLSClientSettings{
 		TLSconfig: &tls.Config{
 			InsecureSkipVerify: !*tlsVerification, // #nosec G402
 			RootCAs:            pool,
@@ -155,8 +176,7 @@ func main() {
 	if *infile == "inputs.json" { // default
 		imageWorkingPath = common.CreateImagePath("")
 	} else { // normal from scanner
-		uid := strings.TrimPrefix(*infile, "/tmp/")
-		uid = strings.TrimSuffix(uid, "_i.json") // obtains the uuid
+		uid := strings.TrimSuffix(filepath.Base(*infile), reqFileSuffix) // obtains the uuid
 		imageWorkingPath = common.GetImagePath(uid)
 	}
 	log.WithFields(log.Fields{"imageWorkingPath": imageWorkingPath}).Debug()
@@ -177,7 +197,7 @@ func main() {
 		nRet := -1
 		if checkDbReady() { // check if loaded and unzipped in the target path
 			if tm, ok := InitTaskMain(*outfile); ok {
-				nRet = processRequest(tm, *scanType, *infile, imageWorkingPath)
+				nRet = processRequest(tm, *scanType, request, imageWorkingPath)
 			}
 		}
 
