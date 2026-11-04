@@ -81,7 +81,7 @@ func (tm *taskMain) doScanTask(request interface{}, workingPath string) int {
 
 	// log.WithFields(log.Fields{"result": res}).Info("")
 	data, _ := json.Marshal(res)
-	if err := os.WriteFile(tm.outfile, data, 0644); err != nil {
+	if err := os.WriteFile(tm.outfile, data, 0600); err != nil {
 		log.WithFields(log.Fields{"error": err}).Error()
 	}
 	return 0
