@@ -6,9 +6,14 @@ usage() {
 Usage:
   ghcr-vulndb-artifact.sh publish <artifact-name> <payload-file> <version-file> <version> [ref-file]
   ghcr-vulndb-artifact.sh download <artifact-name> <payload-file> <destination-file> <version> [ref-file]
+  ghcr-vulndb-artifact.sh verify  <artifact-name> <version>
 
 Environment:
-  OCI_REPOSITORY_PREFIX   Defaults to ghcr.io/${GITHUB_REPOSITORY_OWNER}/vul
+  OCI_REPOSITORY_PREFIX              Defaults to ghcr.io/${GITHUB_REPOSITORY_OWNER}/vul
+  COSIGN_CERTIFICATE_IDENTITY        Required for download/verify.
+                                     Workflow identity that signed the artifact, e.g.
+                                     https://github.com/neuvector/release/.github/workflows/build-vuldbgen.yaml@refs/heads/master
+  COSIGN_CERTIFICATE_OIDC_ISSUER     Defaults to https://token.actions.githubusercontent.com
 EOF
 }
 
@@ -100,6 +105,43 @@ publish_artifact() {
   echo "Published ${artifact_name} to: $full_reference"
 }
 
+resolve_and_verify() {
+  local artifact_name=$1
+  local tag_ref=$2
+  local prefix
+  local digest
+  local digest_ref
+  local oidc_issuer
+  local identity
+
+  prefix=$(repo_prefix)
+  digest=$(crane digest "$tag_ref")
+  digest_ref="${prefix}/${artifact_name}@${digest}"
+
+  oidc_issuer="${COSIGN_CERTIFICATE_OIDC_ISSUER:-https://token.actions.githubusercontent.com}"
+  identity="${COSIGN_CERTIFICATE_IDENTITY:?COSIGN_CERTIFICATE_IDENTITY env var is required}"
+
+  cosign verify \
+    --certificate-oidc-issuer="$oidc_issuer" \
+    --certificate-identity="$identity" \
+    "$digest_ref"
+
+  printf '%s\n' "$digest_ref"
+}
+
+verify_artifact() {
+  local artifact_name=$1
+  local version=$2
+  local prefix
+  local tag_ref
+  local digest_ref
+
+  prefix=$(repo_prefix)
+  tag_ref="${prefix}/${artifact_name}:${version}"
+  digest_ref=$(resolve_and_verify "$artifact_name" "$tag_ref")
+  echo "Verified: $digest_ref"
+}
+
 download_artifact() {
   local artifact_name=$1
   local payload_file=$2
@@ -107,16 +149,20 @@ download_artifact() {
   local version=$4
   local ref_file=${5:-$(default_ref_file "$artifact_name")}
   local prefix
-  local reference
+  local tag_ref
+  local digest_ref
   local temp_dir
   local temp_tar
 
   prefix=$(repo_prefix)
-  reference="${prefix}/${artifact_name}:${version}"
+  tag_ref="${prefix}/${artifact_name}:${version}"
 
   if [ -f "$ref_file" ]; then
-    reference=$(tr -d '\n' < "$ref_file")
+    tag_ref=$(tr -d '\n' < "$ref_file")
   fi
+
+  # Resolve tag to digest, verify signature, then pull the same digest (TOCTOU-safe, fail closed)
+  digest_ref=$(resolve_and_verify "$artifact_name" "$tag_ref")
 
   temp_dir=$(mktemp -d)
   trap "rm -rf -- '$temp_dir'" EXIT
@@ -124,7 +170,7 @@ download_artifact() {
 
   mkdir -p "$(dirname "$destination_file")"
 
-  crane export "$reference" "$temp_tar"
+  crane export "$digest_ref" "$temp_tar"
   tar -xf "$temp_tar" -C "$temp_dir"
   cp "$temp_dir/db/$payload_file" "$destination_file"
 }
@@ -151,6 +197,14 @@ main() {
       fi
       shift
       download_artifact "$@"
+      ;;
+    verify)
+      if [ "$#" -ne 3 ]; then
+        usage >&2
+        exit 1
+      fi
+      shift
+      verify_artifact "$@"
       ;;
     *)
       usage >&2
