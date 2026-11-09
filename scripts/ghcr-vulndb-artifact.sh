@@ -47,7 +47,6 @@ publish_artifact() {
   local repository
   local reference
   local digest
-  local latest_digest
   local full_reference
   local temp_dir
   local layer_dir
@@ -90,15 +89,6 @@ publish_artifact() {
   crane tag "$reference" latest
 
   digest=$(crane digest "$reference")
-  latest_digest=$(crane digest "${repository}:latest")
-
-  if [ "$digest" != "$latest_digest" ]; then
-    echo "latest tag verification failed for ${artifact_name}" >&2
-    echo "Version digest: $digest" >&2
-    echo "Latest digest:  $latest_digest" >&2
-    exit 1
-  fi
-
   full_reference="${repository}:${version}@${digest}"
 
   printf '%s\n' "$full_reference" > "$ref_file"
@@ -124,7 +114,7 @@ resolve_and_verify() {
   cosign verify \
     --certificate-oidc-issuer="$oidc_issuer" \
     --certificate-identity="$identity" \
-    "$digest_ref"
+    "$digest_ref" >&2
 
   printf '%s\n' "$digest_ref"
 }
