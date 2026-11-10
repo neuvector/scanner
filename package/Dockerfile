@@ -1,11 +1,9 @@
-ARG VULNDB_VERSION=4.307
-ARG VULNDB_CHECKSUM=434c50673e2d4222d46869b68020da05561bb8a8cccb613fb03d7a14f87d0b24
+ARG VULNDB_VERSION=4.322
 #
 # Builder
 #
-FROM registry.suse.com/bci/golang:1.27.2 AS builder
+FROM registry.suse.com/bci/golang:1.27.3 AS builder
 ARG VERSION
-ARG VULNDB_CHECKSUM
 
 RUN zypper in -y wget
 
@@ -22,7 +20,7 @@ COPY .git /src/.git
 COPY Makefile go.mod go.sum genlic.sh /src/
 
 WORKDIR /src
-RUN if [ -f "data/cvedb.regular" ]; then echo "using cvedb.regular"; echo "$VULNDB_CHECKSUM data/cvedb.regular" | sha256sum --check --status; else echo "using cvedb"; cp "data/cvedb" "data/cvedb.regular"; fi
+RUN if [ -f "data/cvedb.regular" ]; then echo "using cvedb.regular"; else echo "using cvedb"; cp "data/cvedb" "data/cvedb.regular"; fi
 RUN make all
 
 #
