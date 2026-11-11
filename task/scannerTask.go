@@ -101,6 +101,7 @@ func main() {
 	modulefile := flag.String("m", "", "modules json name")                           // debug: modules for reg type
 	rtSock := flag.String("u", "", "Container socket URL")                            // used for scan local image
 	maxCacherRecordSize := flag.Int64("maxrec", 0, "maximum layer cacher size in MB") // common.MaxRecordCacherSizeMB
+	jarAutoModuleName := flag.Bool("enable-jar-auto-module-name", false, "enable parsing Automatic-Module-Name from jar manifests")
 	tlsVerification := flag.Bool("enable-tls-verification", false, "enable tls verification")
 	cacerts := flag.String("cacerts", "", "the path of cacerts file")
 	verbose := flag.Bool("x", false, "more debug")
@@ -141,7 +142,12 @@ func main() {
 		defer layerCacher.LeaveLayerCacher()
 	}
 
-	cveTools = cvetools.NewScanTools(*rtSock, system.NewSystemTools(), layerCacher, *modulefile)
+	var parsingCaps *share.ParsingCaps
+	if *jarAutoModuleName {
+		parsingCaps = &share.ParsingCaps{JarAutoModuleName: true}
+	}
+
+	cveTools = cvetools.NewScanTools(*rtSock, system.NewSystemTools(), layerCacher, *modulefile, parsingCaps)
 	common.InitDebugFilters("")
 
 	// create an imgPath from the input file

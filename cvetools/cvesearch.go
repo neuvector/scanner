@@ -32,6 +32,8 @@ const (
 	contentManifest = "root/buildinfo/content_manifests"
 )
 
+var wolfiRcRegex = regexp.MustCompile(`(.*)(_rc\d+)(.*)`)
+
 /* removed by golint
 var redhat_db []common.VulShort = nil
 var debian_db []common.VulShort = nil
@@ -106,7 +108,7 @@ var matchKubenetesModeules map[string]bool = map[string]bool{ // should expand i
 	"ingress-nginx": true,
 }
 
-func NewScanTools(rtSock string, sys *system.SystemTools, layerCacher *ImageLayerCacher, mFile string) *ScanTools {
+func NewScanTools(rtSock string, sys *system.SystemTools, layerCacher *ImageLayerCacher, mFile string, parsingCaps *share.ParsingCaps) *ScanTools {
 	cveDB := common.NewCveDB()
 	return &ScanTools{
 		CveDB:       *cveDB,
@@ -114,6 +116,7 @@ func NewScanTools(rtSock string, sys *system.SystemTools, layerCacher *ImageLaye
 		sys:         sys,
 		LayerCacher: layerCacher,
 		modulesFile: mFile,
+		parsingCaps: parsingCaps,
 	}
 }
 
@@ -165,7 +168,7 @@ func (cv *ScanTools) ScanImageData(data *share.ScanData) (*share.ScanResult, err
 		}
 	}
 
-	appPkgs := scan.NewScanApps(true).DerivePkg(pkgs)
+	appPkgs := scan.NewScanApps(true, cv.parsingCaps).DerivePkg(pkgs)
 	if k8sAppString != "" {
 		log.WithFields(log.Fields{"k8sAppRes": k8sAppString}).Debug()
 		// append k8s repo into the appPkgs
@@ -375,7 +378,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 		}
 
 		// There is a download timeout inside this function
-		layerRecords, errCode = DownloadRemoteImage(ctx, rc, req.Repository, imgPath, info.Layers, info.Sizes, cv.LayerCacher)
+		layerRecords, errCode = DownloadRemoteImage(ctx, rc, req.Repository, imgPath, info.Layers, info.Sizes, cv.LayerCacher, cv.parsingCaps)
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
 			return result, nil
@@ -427,7 +430,7 @@ func (cv *ScanTools) ScanImage(ctx context.Context, req *share.ScanImageRequest,
 			log.WithFields(log.Fields{"baseImage": req.BaseImage, "base": baseLayers, "layers": len(meta.Layers)}).Debug()
 		}
 
-		layerRecords, info, tarLayers, errCode = cv.LoadLocalImage(ctx, req.Repository, req.Tag, imgPath, cv.LayerCacher)
+		layerRecords, info, tarLayers, errCode = cv.LoadLocalImage(ctx, req.Repository, req.Tag, imgPath, cv.LayerCacher, cv.parsingCaps)
 		if errCode != share.ScanErrorCode_ScanErrNone {
 			result.Error = errCode
 			return result, nil
@@ -1264,6 +1267,16 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 				}
 			}
 
+			if strings.HasPrefix(namespace, "wolfi") {
+				if containsWolfiReleaseCandidate(ftVer.String()) && !containsWolfiReleaseCandidate(fixVer) {
+					rclessVersion := removeWolfiReleaseCandidate(ftVer.String())
+					v, err := utils.NewVersion(rclessVersion)
+					if err == nil {
+						ftVer = v
+					}
+				}
+			}
+
 			// the naming of centos and redhat is different. centos skip the el7_5's minor version 5.
 			if strings.Contains(ft.Version.String(), "centos") {
 				if a := strings.Index(fix.Version, ".el"); a > 0 {
@@ -1349,6 +1362,14 @@ func searchAffectedFeature(mv map[string][]common.VulShort, namespace string, ft
 		}
 	}
 	return affectVs, moduleVuls
+}
+
+func containsWolfiReleaseCandidate(version string) bool {
+	return wolfiRcRegex.MatchString(version)
+}
+
+func removeWolfiReleaseCandidate(version string) string {
+	return wolfiRcRegex.ReplaceAllString(version, "$1$3")
 }
 
 func makeFeatureMap(vss []common.VulShort, namespace string) map[string][]common.VulShort {

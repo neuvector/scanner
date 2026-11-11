@@ -61,6 +61,18 @@ func parseSocketFromRepo(repo string) (string, string) {
 	return "", repo
 }
 
+const sha256Prefix = "sha256:"
+
+func dockerImageSaveID(id string) string {
+	if d, err := goDigest.Parse(id); err == nil {
+		return d.String()
+	}
+	if d, err := goDigest.Parse(sha256Prefix + id); err == nil {
+		return d.String()
+	}
+
+	return id
+}
 func (s *ScanTools) GetLocalImageMeta(ctx context.Context, repository, tag string) (*container.ImageMeta, share.ScanErrorCode) {
 	sock, repo := parseSocketFromRepo(repository)
 	if sock == "" {
@@ -85,7 +97,7 @@ func (s *ScanTools) GetLocalImageMeta(ctx context.Context, repository, tag strin
 	return meta, share.ScanErrorCode_ScanErrNone
 }
 
-func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath string, cacher *ImageLayerCacher) (
+func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath string, cacher *ImageLayerCacher, parsingCaps *share.ParsingCaps) (
 	map[string]*LayerRecord, *scan.ImageInfo, []string, share.ScanErrorCode,
 ) {
 	sock, repo := parseSocketFromRepo(repository)
@@ -119,7 +131,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 		return nil, nil, nil, share.ScanErrorCode_ScanErrContainerAPI
 	}
 
-	file, err := rt.GetImageFile(meta.ID)
+	file, err := rt.GetImageFile(dockerImageSaveID(meta.ID))
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to get image")
 		if errdefs.IsNotFound(err) {
@@ -186,7 +198,7 @@ func (s *ScanTools) LoadLocalImage(ctx context.Context, repository, tag, imgPath
 
 	log.WithFields(log.Fields{"imageName": imageName, "downloads": downloads}).Debug()
 
-	layerModules, errCode := getImageLayerIterate(ctx, downloads, nil, imgPath,
+	layerModules, errCode := getImageLayerIterate(ctx, downloads, nil, imgPath, parsingCaps,
 		func(ctx context.Context, layer string) (interface{}, int64, error) {
 			blob := blobs[layer]
 			file, err := os.Open(filepath.Join(repoFolder, blob))
@@ -423,6 +435,7 @@ func getApkPackages(fullpath string) ([]byte, error) {
 
 func getImageLayerIterate(
 	ctx context.Context, layers []string, sizes map[string]int64, imgPath string,
+	parsingCaps *share.ParsingCaps,
 	layerReader func(ctx context.Context, layer string) (interface{}, int64, error),
 ) (map[string]*LayerFiles, share.ScanErrorCode) { // layer -> filename -> file content
 	lfs := make(map[string]*LayerFiles)
@@ -469,7 +482,7 @@ func getImageLayerIterate(
 
 		// for file content
 		curLayerFiles := make(map[string][]byte)
-		curLayerApps := scan.NewScanApps(true)
+		curLayerApps := scan.NewScanApps(true, parsingCaps)
 		for filename, fullpath := range pathMap {
 			var data []byte
 			if scan.RPMPkgFiles.Contains(filename) {
@@ -721,7 +734,7 @@ func collectLayerRawRecord(imgPath string, downloads []string) (map[string][]sha
 	return secretLogs, setidPermLogs, fmap, removed
 }
 
-func DownloadRemoteImage(ctx context.Context, rc *scan.RegClient, name, imgPath string, layers []string, sizes map[string]int64, cacher *ImageLayerCacher) (map[string]*LayerRecord, share.ScanErrorCode) {
+func DownloadRemoteImage(ctx context.Context, rc *scan.RegClient, name, imgPath string, layers []string, sizes map[string]int64, cacher *ImageLayerCacher, parsingCaps *share.ParsingCaps) (map[string]*LayerRecord, share.ScanErrorCode) {
 	var downloads []string // download layer requests
 	var total_downloaded int64
 
@@ -752,7 +765,7 @@ func DownloadRemoteImage(ctx context.Context, rc *scan.RegClient, name, imgPath 
 
 	log.WithFields(log.Fields{"downloads": downloads}).Debug()
 	// scheme is always set to v1 because layers of v2 image have been reversed in GetImageInfo.
-	layerModules, err := getImageLayerIterate(ctx, downloads, sizes, imgPath, func(ctx context.Context, layer string) (interface{}, int64, error) {
+	layerModules, err := getImageLayerIterate(ctx, downloads, sizes, imgPath, parsingCaps, func(ctx context.Context, layer string) (interface{}, int64, error) {
 		return downloadRemoteLayer(ctx, rc, name, goDigest.Digest(layer))
 	})
 
