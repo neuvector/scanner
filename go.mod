@@ -15,7 +15,7 @@ require (
 	github.com/sigstore/cosign/v3 v3.0.6
 	github.com/sigstore/rekor v1.5.2
 	github.com/sigstore/sigstore v1.10.8
-	github.com/sirupsen/logrus v1.9.4
+	github.com/sirupsen/logrus v1.10.2
 	github.com/stretchr/testify v1.12.1
 	github.com/theupdateframework/go-tuf v0.7.0
 	google.golang.org/grpc v1.83.2
