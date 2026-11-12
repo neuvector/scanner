@@ -1,11 +1,20 @@
 ARG VULNDB_VERSION=4.325
+FROM registry.suse.com/rancher/appco-go:1.27.4 AS golang
+
 #
 # Builder
 #
-FROM registry.suse.com/bci/golang:1.27.3 AS builder
+FROM registry.suse.com/bci/bci-base:15.7 AS builder
 ARG VERSION
 
-RUN zypper in -y wget
+ENV GOPATH=/go
+ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+
+COPY --from=golang /usr/local/go /usr/local/go
+ENV GOROOT=/usr/local/go
+ENV GOTOOLCHAIN=local
+
+RUN zypper in -y gcc make git wget
 
 # Build controller
 COPY cmd/ /src/cmd
