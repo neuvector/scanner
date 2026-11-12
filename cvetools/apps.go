@@ -3,6 +3,7 @@ package cvetools
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -31,6 +32,12 @@ func microPrefix(ver string) string {
 	parts := strings.Split(ver, ".")
 	if len(parts) < 4 {
 		return ""
+	}
+	// "4.0.0.beta8" from being misidentified as a 4-part numeric version, return ""
+	for _, p := range parts {
+		if _, err := strconv.Atoi(p); err != nil {
+			return ""
+		}
 	}
 	return strings.Join(parts[:len(parts)-1], ".")
 }
@@ -238,13 +245,20 @@ func compareAppVersion(ver string, affectedVer []common.AppModuleVersion) bool {
 
 		ret := av.Compare(bv)
 
-		// Semver pre-release correction: a release version must be newer than its
-		// own pre-release (semver: 1.27.0 > 1.27.0-rc.3), but Debian revision
-		// comparison returns the opposite.
+		// Semver pre-release correction: Debian revision ordering is the opposite
+		// of semver for prerelease suffixes. Fix both directions:
+		//   DB prerelease:        Compare("1.27.0",     "1.27.0-rc.3") = -1 → +1
+		//   Installed prerelease: Compare("1.27.0-rc.3","1.27.0")     = +1 → -1
 		if ret < 0 {
 			if base, ok := semverPreReleaseBase(mv.Version); ok {
 				if bv2, err2 := utils.NewVersion(base); err2 == nil && av.Compare(bv2) == 0 {
 					ret = 1
+				}
+			}
+		} else if ret > 0 {
+			if base, ok := semverPreReleaseBase(ver); ok {
+				if bv2, err2 := utils.NewVersion(base); err2 == nil && bv2.Compare(bv) == 0 {
+					ret = -1
 				}
 			}
 		}

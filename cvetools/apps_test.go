@@ -81,6 +81,15 @@ func TestFixedVersion(t *testing.T) {
 			{OpCode: "lt", Version: "1.25.13"}, {OpCode: "orlt", Version: "1.26.6"},
 			{OpCode: "orlt", Version: "1.27.0-rc.3"},
 		}},
+		{result: true, version: "4.0.2", dbVer: []common.AppModuleVersion{
+			{OpCode: "gteq", Version: "4.0.0.beta8,4.0"},
+		}},
+		{result: true, version: "1.27.0-rc.3", dbVer: []common.AppModuleVersion{
+			{OpCode: "lt", Version: "1.27.0"},
+		}},
+		{result: false, version: "1.27.0-rc.3", dbVer: []common.AppModuleVersion{
+			{OpCode: "lt", Version: "1.26.0"},
+		}},
 	}
 	for _, c := range cases {
 		v, _ := utils.NewVersion(c.version)
