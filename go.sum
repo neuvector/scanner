@@ -191,8 +191,8 @@ github.com/glebarez/go-sqlite v1.23.0 h1:FyhIq4jqmgphQAUlY79zPldYGwISEZikaDfhiGW
 github.com/glebarez/go-sqlite v1.23.0/go.mod h1:IIYrOH3L0rHY3jb4IXOHoWdklNajSGUN2eJcvK8WrnI=
 github.com/go-chi/chi/v5 v5.4.0 h1:+ufzvFTGKyin26Or5DLrlIDq4ygIDBVcj7oVNeeaYFE=
 github.com/go-chi/chi/v5 v5.4.0/go.mod h1:d1IG7GtKPSjPyBP365PH8sAGVHk3qfB/IhjFNRH1wWM=
-github.com/go-jose/go-jose/v4 v4.1.6 h1:sNRkftxFJxwsILiQukqp5z83QBSmntVwmgRY7AqBDO4=
-github.com/go-jose/go-jose/v4 v4.1.6/go.mod h1:x4oUasVrzR7071A4TnHLGSPpNOm2a21K9Kf04k1rs08=
+github.com/go-jose/go-jose/v4 v4.1.8 h1:k38WifTutpGuqt6Imq9xW1OgCvnWFri0Nz7FnfiACM8=
+github.com/go-jose/go-jose/v4 v4.1.8/go.mod h1:x4oUasVrzR7071A4TnHLGSPpNOm2a21K9Kf04k1rs08=
 github.com/go-logr/logr v1.2.2/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
 github.com/go-logr/logr v1.4.4 h1:tG4xh9yMsRCAiodLVTxyrkzSZ9+o0L1Kg/+cPVcbP/8=
 github.com/go-logr/logr v1.4.4/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
@@ -444,8 +444,8 @@ github.com/natefinch/atomic v1.0.1 h1:ZPYKxkqQOx3KZ+RsbnP/YsgvxWQPGxjC0oBt2AhwV0
 github.com/natefinch/atomic v1.0.1/go.mod h1:N/D/ELrljoqDyT3rZrsUmtsuzvHkeB/wWjHV22AZRbM=
 github.com/ncruces/go-strftime v1.0.0 h1:HMFp8mLCTPp341M/ZnA4qaf7ZlsbTc+miZjCLOFAw7w=
 github.com/ncruces/go-strftime v1.0.0/go.mod h1:Fwc5htZGVVkseilnfgOVb9mKy6w1naJmn9CehxcKcls=
-github.com/neuvector/neuvector v0.0.0-20261111032419-b814459cf882 h1:SBF4xhK9Bjye8ljOINQNTo3mM4iyiUiZMa9uZbsDR/0=
-github.com/neuvector/neuvector v0.0.0-20261111032419-b814459cf882/go.mod h1:XEdVyfL+A/WQ9Wx5clrWaIk0bB6J2Sfzo6zGt+nfleY=
+github.com/neuvector/neuvector v0.0.0-20261111182209-230e5ebe26e2 h1:L9oy1OFv/fSgreb1Yg73KaRg2v9nV9VEU2bymL+Of/Q=
+github.com/neuvector/neuvector v0.0.0-20261111182209-230e5ebe26e2/go.mod h1:Hi4wB/R7uV9RL2nxHY98MXazvYnWQgQnmRhUWw2nPA0=
 github.com/neuvector/neuvector/controller/k8sapi v1.0.0 h1:Zn4yQQtHc2uuPHA+uSaBe3bn8gADo8LqM9BzrT7pqOU=
 github.com/neuvector/neuvector/controller/k8sapi v1.0.0/go.mod h1:McwcXqmrfjN41Y5ETg3Bjfe8DfCp8KHrZjF5DhVLRuk=
 github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481 h1:Up6+btDp321ZG5/zdSLo48H9Iaq0UQGthrhWC6pCxzE=
