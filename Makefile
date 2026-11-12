@@ -83,6 +83,21 @@ copy_scan:
 	cp sigstore-interface ${STAGE_DIR}/usr/local/bin/sigstore-interface
 	cp data/cvedb.regular ${STAGE_DIR}/etc/neuvector/db/cvedb
 
+# all-slim builds the slim scanner image payload: binaries only, no baked-in cvedb.
+# The scanner pulls the cvedb from the OCI artifact at runtime (SCANNER_CVEDB_PULL=true).
+# NOTE: unlike `all`, this omits the `test` target so the image build does not re-run
+# the full unit suite; run `go test ./...` separately in CI.
+all-slim: build copy_scan_slim gen_license
+
+copy_scan_slim:
+	mkdir -p ${STAGE_DIR}/usr/local/bin/
+	mkdir -p ${STAGE_DIR}/etc/neuvector/db
+	#
+	cp monitor/monitor ${STAGE_DIR}/usr/local/bin/
+	cp task/scannerTask ${STAGE_DIR}/usr/local/bin/
+	cp scanner ${STAGE_DIR}/usr/local/bin/
+	cp sigstore-interface ${STAGE_DIR}/usr/local/bin/sigstore-interface
+
 buildx-machine:
 	docker buildx ls
 	@docker buildx ls | grep $(MACHINE) || \

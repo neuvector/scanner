@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -25,6 +26,7 @@ import (
 	"github.com/neuvector/neuvector/share/system"
 	"github.com/neuvector/neuvector/share/utils"
 	"github.com/neuvector/scanner/common"
+	"github.com/neuvector/scanner/common/vulndb"
 )
 
 func usage() {
@@ -112,6 +114,46 @@ func loadDb(path string, maxRetry int, onLoad func(ver, createTime string) bool)
 		}
 		time.Sleep(time.Second * 4)
 	}
+}
+
+// ensureCveDB performs runtime cvedb acquisition from the OCI artifact when enabled
+// (SCANNER_CVEDB_PULL=true); otherwise it is a no-op so images with a baked-in db are
+// unaffected. It is fail-closed: on persistent pull/verify failure it returns an error
+// so the caller exits non-zero and lets the orchestrator (or user) retry.
+func ensureCveDB(dbPath string) error {
+	cfg, err := vulndb.ConfigFromEnv(dbPath)
+	if errors.Is(err, vulndb.ErrPullDisabled) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	const (
+		maxRetry       = 5
+		attemptTimeout = 3 * time.Minute
+	)
+	backoff := 4 * time.Second
+	var lastErr error
+	for attempt := 1; attempt <= maxRetry; attempt++ {
+		// Bound each attempt so a hung registry/TLS connection can't stall forever.
+		changed, digest, acqErr := func() (bool, string, error) {
+			ctx, cancel := context.WithTimeout(context.Background(), attemptTimeout)
+			defer cancel()
+			return vulndb.Acquire(ctx, cfg)
+		}()
+		if acqErr == nil {
+			log.WithFields(log.Fields{"changed": changed, "digest": digest}).Info("cvedb acquisition complete")
+			return nil
+		}
+		lastErr = acqErr
+		log.WithFields(log.Fields{"attempt": attempt, "error": acqErr}).Error("cvedb acquisition failed")
+		if attempt < maxRetry {
+			time.Sleep(backoff)
+			backoff *= 2
+		}
+	}
+	return fmt.Errorf("cvedb acquisition failed after %d attempts: %w", maxRetry, lastErr)
 }
 
 // dbExtract decrypts and extracts the CVE database archive to cveDB.ExpandPath without loading
@@ -406,6 +448,12 @@ func main() {
 	}()
 
 	if onDemand {
+		// Acquire the cvedb from the OCI artifact if runtime acquisition is enabled.
+		if err := ensureCveDB(*dbPath); err != nil {
+			log.WithFields(log.Fields{"error": err}).Error("failed to acquire cvedb")
+			os.Exit(-2)
+		}
+
 		// DB read error printed inside dbRead()
 		dbData := dbRead(*dbPath, 3, "")
 		if dbData == nil {
@@ -514,6 +562,13 @@ func main() {
 	if selfID == "" {
 		// if not running in container
 		selfID = *adv
+	}
+
+	// Acquire the cvedb from the OCI artifact if runtime acquisition is enabled,
+	// before registering with the controller (the scanner streams the db up to it).
+	if err := ensureCveDB(*dbPath); err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("failed to acquire cvedb")
+		os.Exit(-2)
 	}
 
 	// Use the original address, which is the service name, so when controller changes,
