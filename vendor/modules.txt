@@ -271,7 +271,7 @@ github.com/glebarez/go-sqlite
 ## explicit; go 1.24
 github.com/go-chi/chi/v5
 github.com/go-chi/chi/v5/middleware
-# github.com/go-jose/go-jose/v4 v4.1.6
+# github.com/go-jose/go-jose/v4 v4.1.8
 ## explicit; go 1.24.0
 github.com/go-jose/go-jose/v4
 github.com/go-jose/go-jose/v4/cipher
@@ -602,7 +602,7 @@ github.com/munnerz/goautoneg
 # github.com/ncruces/go-strftime v1.0.0
 ## explicit; go 1.17
 github.com/ncruces/go-strftime
-# github.com/neuvector/neuvector v0.0.0-20261111032419-b814459cf882
+# github.com/neuvector/neuvector v0.0.0-20261111182209-230e5ebe26e2
 ## explicit; go 1.27.3
 github.com/neuvector/neuvector/controller/api
 github.com/neuvector/neuvector/share
