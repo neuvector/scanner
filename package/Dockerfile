@@ -1,4 +1,4 @@
-ARG VULNDB_VERSION=4.325
+ARG VULNDB_VERSION=4.326
 FROM registry.suse.com/rancher/appco-go:1.27.4 AS golang
 
 #
