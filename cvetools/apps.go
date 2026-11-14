@@ -2,6 +2,8 @@ package cvetools
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -14,6 +16,31 @@ import (
 )
 
 const log4jModName = "org.apache.logging.log4j.log4j"
+
+// semverPreReleaseRe detects Go-style semver pre-release suffixes such as "-rc.3" or "-beta.1".
+var semverPreReleaseRe = regexp.MustCompile(`-(rc|alpha|beta|pre)[\d.]`)
+
+func semverPreReleaseBase(ver string) (string, bool) {
+	loc := semverPreReleaseRe.FindStringIndex(ver)
+	if loc == nil {
+		return ver, false
+	}
+	return ver[:loc[0]], true
+}
+
+func microPrefix(ver string) string {
+	parts := strings.Split(ver, ".")
+	if len(parts) < 4 {
+		return ""
+	}
+	// "4.0.0.beta8" from being misidentified as a 4-part numeric version, return ""
+	for _, p := range parts {
+		if _, err := strconv.Atoi(p); err != nil {
+			return ""
+		}
+	}
+	return strings.Join(parts[:len(parts)-1], ".")
+}
 
 // NVSHAS-6331: remove log4j-api because it doesn't necessarily carry the same vulnerability
 // "org.apache.logging.log4j:log4j-api",
@@ -191,11 +218,50 @@ func compareAppVersion(ver string, affectedVer []common.AppModuleVersion) bool {
 			}
 		}
 
-		if prefix != "" && !strings.HasPrefix(ver, prefix) {
-			continue
+		if prefix != "" {
+			// DB entry format: ">=4.0.3.1,4.0"
+			//   version = "4.0.3.1", prefix = "4.0", opcode = "gteq"
+			//
+			// Problem: prefix "4.0" is too broad — it matches 4.0.4 too,
+			// but 4.0.4 is a different patch line; we don't know if it's fixed.
+			//
+			// Fix (gt/gteq only): narrow prefix from "4.0" to "4.0.3",
+			// so only 4.0.3.x versions are compared against this entry.
+			//
+			// lt/lteq: keep the broad prefix "4.0" so that
+			// "<5.2.4.3,5.2" still catches 5.2.3.9 as vulnerable.
+			if strings.Contains(mv.OpCode, "gt") {
+				if mp := microPrefix(mv.Version); mp != "" {
+					if !strings.HasPrefix(ver, mp+".") && ver != mp {
+						continue
+					}
+				} else if !strings.HasPrefix(ver, prefix) {
+					continue
+				}
+			} else if !strings.HasPrefix(ver, prefix) {
+				continue
+			}
 		}
 
 		ret := av.Compare(bv)
+
+		// Semver pre-release correction: Debian revision ordering is the opposite
+		// of semver for prerelease suffixes. Fix both directions:
+		//   DB prerelease:        Compare("1.27.0",     "1.27.0-rc.3") = -1 → +1
+		//   Installed prerelease: Compare("1.27.0-rc.3","1.27.0")     = +1 → -1
+		if ret < 0 {
+			if base, ok := semverPreReleaseBase(mv.Version); ok {
+				if bv2, err2 := utils.NewVersion(base); err2 == nil && av.Compare(bv2) == 0 {
+					ret = 1
+				}
+			}
+		} else if ret > 0 {
+			if base, ok := semverPreReleaseBase(ver); ok {
+				if bv2, err2 := utils.NewVersion(base); err2 == nil && bv2.Compare(bv) == 0 {
+					ret = -1
+				}
+			}
+		}
 
 		hit1 = hit0
 		hit0 = false

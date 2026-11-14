@@ -55,6 +55,41 @@ func TestAffectedVersion(t *testing.T) {
 func TestFixedVersion(t *testing.T) {
 	cases := []versionTestCase{
 		{result: true, version: "4.0.2", dbVer: []common.AppModuleVersion{{OpCode: "gteq", Version: "2.12.5"}, {OpCode: "lt", Version: "3.0.0"}, {OpCode: "orgteq", Version: "3.7.2"}, {OpCode: "lt", Version: "4.0.0"}, {OpCode: "orgteq", Version: "4.0.0.beta8"}}},
+		{result: false, version: "4.0.4", dbVer: []common.AppModuleVersion{
+			{OpCode: "gteq", Version: "4.0.3.1,4.0"}, {OpCode: "orgteq", Version: "4.0.4.1,4.0"},
+			{OpCode: "orgteq", Version: "6.0.1.1,6.0"}, {OpCode: "orgteq", Version: "6.0.4"},
+		}},
+		{result: true, version: "4.0.3.2", dbVer: []common.AppModuleVersion{
+			{OpCode: "gteq", Version: "4.0.3.1,4.0"}, {OpCode: "orgteq", Version: "4.0.4.1,4.0"},
+		}},
+		{result: true, version: "4.0.4.1", dbVer: []common.AppModuleVersion{
+			{OpCode: "gteq", Version: "4.0.3.1,4.0"}, {OpCode: "orgteq", Version: "4.0.4.1,4.0"},
+		}},
+		{result: false, version: "0.10.1", dbVer: []common.AppModuleVersion{
+			{OpCode: "gteq", Version: "0.10.0.1,0.10"}, {OpCode: "orgteq", Version: "0.10.2"},
+			{OpCode: "orgteq", Version: "0.11.1"}, {OpCode: "orgteq", Version: "0.12.1"},
+		}},
+		{result: true, version: "0.10.2", dbVer: []common.AppModuleVersion{
+			{OpCode: "gteq", Version: "0.10.0.1,0.10"}, {OpCode: "orgteq", Version: "0.10.2"},
+			{OpCode: "orgteq", Version: "0.11.1"}, {OpCode: "orgteq", Version: "0.12.1"},
+		}},
+		{result: false, version: "1.27.0", dbVer: []common.AppModuleVersion{
+			{OpCode: "lt", Version: "1.25.13"}, {OpCode: "orlt", Version: "1.26.6"},
+			{OpCode: "orlt", Version: "1.27.0-rc.3"},
+		}},
+		{result: true, version: "1.26.5", dbVer: []common.AppModuleVersion{
+			{OpCode: "lt", Version: "1.25.13"}, {OpCode: "orlt", Version: "1.26.6"},
+			{OpCode: "orlt", Version: "1.27.0-rc.3"},
+		}},
+		{result: true, version: "4.0.2", dbVer: []common.AppModuleVersion{
+			{OpCode: "gteq", Version: "4.0.0.beta8,4.0"},
+		}},
+		{result: true, version: "1.27.0-rc.3", dbVer: []common.AppModuleVersion{
+			{OpCode: "lt", Version: "1.27.0"},
+		}},
+		{result: false, version: "1.27.0-rc.3", dbVer: []common.AppModuleVersion{
+			{OpCode: "lt", Version: "1.26.0"},
+		}},
 	}
 	for _, c := range cases {
 		v, _ := utils.NewVersion(c.version)
