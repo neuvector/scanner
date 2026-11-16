@@ -20,7 +20,7 @@ jobs:
     # The FOSSA token is shared between all repos in NeuVector's GH org. It can
     # be used directly and there is no need to request specific access to EIO.
     - name: Read FOSSA token
-      uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
+      uses: rancher-eio/read-vault-secrets@4c8f4e741954651c502bb7739c46ae1bad26b44d # v3
       with:
         secrets: |
           secret/data/github/org/neuvector/fossa/credentials token | FOSSA_API_KEY_PUSH_ONLY
