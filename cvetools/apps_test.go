@@ -9,6 +9,7 @@ import (
 
 type versionTestCase struct {
 	result  bool
+	module  string
 	version string
 	dbVer   []common.AppModuleVersion
 }
@@ -45,7 +46,7 @@ func TestAffectedVersion(t *testing.T) {
 		if v.String() != c.version {
 			t.Errorf("Error parsing version:  %v => %v", c.version, v.String())
 		}
-		ret := compareAppVersion(c.version, c.dbVer)
+		ret := compareAppVersion(c.module, c.version, c.dbVer)
 		if ret != c.result {
 			t.Errorf("package %v, affected %v => %v", c.version, c.dbVer, ret)
 		}
@@ -61,9 +62,52 @@ func TestFixedVersion(t *testing.T) {
 		if v.String() != c.version {
 			t.Errorf("Error parsing version:  %v => %v", c.version, v.String())
 		}
-		ret := compareAppVersion(c.version, c.dbVer)
+		ret := compareAppVersion(c.module, c.version, c.dbVer)
 		if ret != c.result {
-			t.Errorf("package %v, fixed %v => %v", c.version, c.dbVer, ret)
+			t.Errorf("module %q package %v, fixed %v => %v", c.module, c.version, c.dbVer, ret)
+		}
+	}
+}
+
+// TestGoSemverFixed covers NVSHAS-10357 Issue 2: go:stdlib false positives
+// when the fixed version in the DB is a pre-release (rc/beta).
+func TestGoSemverFixed(t *testing.T) {
+	// DB format for go:stdlib fixed versions: each clause is a separate gteq/orgteq entry.
+	// The scanner checks: if fixed=compareAppVersion(..., FixedVer); !fixed → report.
+	// So we test the FixedVer form: result=true means "is fixed" (no report).
+	cases := []versionTestCase{
+		// 1.27.0 must NOT be reported for CVEs fixed in 1.27.0-rc.3
+		{module: "go:stdlib", result: false, version: "1.27.0", dbVer: []common.AppModuleVersion{
+			{OpCode: "lt", Version: "1.25.13"}, {OpCode: "orlt", Version: "1.26.6"},
+			{OpCode: "orlt", Version: "1.27.0-rc.3"},
+		}},
+		// 1.27.0-rc.2 must be reported for CVEs fixed in 1.27.0-rc.3
+		{module: "go:stdlib", result: true, version: "1.27.0-rc.2", dbVer: []common.AppModuleVersion{
+			{OpCode: "lt", Version: "1.25.13"}, {OpCode: "orlt", Version: "1.26.6"},
+			{OpCode: "orlt", Version: "1.27.0-rc.3"},
+		}},
+		// 1.26.5 must be reported
+		{module: "go:stdlib", result: true, version: "1.26.5", dbVer: []common.AppModuleVersion{
+			{OpCode: "lt", Version: "1.25.13"}, {OpCode: "orlt", Version: "1.26.6"},
+			{OpCode: "orlt", Version: "1.27.0-rc.3"},
+		}},
+		// 1.27.0-rc.3 must be reported (fixed at rc.3, not before)
+		{module: "go:stdlib", result: true, version: "1.27.0-rc.3", dbVer: []common.AppModuleVersion{
+			{OpCode: "lt", Version: "1.27.0"},
+		}},
+		// 1.27.0-rc.3 must NOT be reported for older CVE
+		{module: "go:stdlib", result: false, version: "1.27.0-rc.3", dbVer: []common.AppModuleVersion{
+			{OpCode: "lt", Version: "1.26.0"},
+		}},
+		// go module (not stdlib)
+		{module: "go:golang.org/x/net", result: false, version: "0.38.0", dbVer: []common.AppModuleVersion{
+			{OpCode: "lt", Version: "0.36.0"}, {OpCode: "orlt", Version: "0.38.0"},
+		}},
+	}
+	for _, c := range cases {
+		ret := compareAppVersion(c.module, c.version, c.dbVer)
+		if ret != c.result {
+			t.Errorf("module %q version %v: affected=%v want=%v", c.module, c.version, ret, c.result)
 		}
 	}
 }
