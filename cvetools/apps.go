@@ -74,14 +74,14 @@ func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detecto
 		}
 
 		if len(v.UnaffectedVer) > 0 {
-			if unaffected := compareAppVersion(app.Version, v.UnaffectedVer); unaffected {
+			if unaffected := compareAppVersion(app.ModuleName, app.Version, v.UnaffectedVer); unaffected {
 				continue
 			}
 		}
 		// ruby reports patched version. The affected version is converted from patched version.
 		// The conversion logic has flaws.
 		if strings.HasPrefix(app.ModuleName, "ruby:") && len(v.FixedVer) > 0 {
-			if fixed := compareAppVersion(app.Version, v.FixedVer); !fixed {
+			if fixed := compareAppVersion(app.ModuleName, app.Version, v.FixedVer); !fixed {
 				fv := appVul2FullVul(app, v)
 				vuls = append(vuls, fv)
 				mcve := detectors.ModuleVul{Name: v.VulName, Status: share.ScanVulStatus_FixExists}
@@ -96,7 +96,7 @@ func checkForVulns(app detectors.AppFeatureVersion, appIndex int, apps []detecto
 				}
 			}
 		} else {
-			if affected := compareAppVersion(app.Version, v.AffectedVer); affected {
+			if affected := compareAppVersion(app.ModuleName, app.Version, v.AffectedVer); affected {
 				fv := appVul2FullVul(app, v)
 				vuls = append(vuls, fv)
 				if len(v.FixedVer) > 0 {
@@ -158,7 +158,7 @@ func moduleVer2FixVer(app detectors.AppFeatureVersion, mv common.AppModuleVul) c
 	return ft
 }
 
-func compareAppVersion(ver string, affectedVer []common.AppModuleVersion) bool {
+func compareAppVersion(module, ver string, affectedVer []common.AppModuleVersion) bool {
 	// NVSHAS-4684, version in database does have revision
 	/*
 		//skip the revision, no revision in database
@@ -195,7 +195,17 @@ func compareAppVersion(ver string, affectedVer []common.AppModuleVersion) bool {
 			continue
 		}
 
-		ret := av.Compare(bv)
+		// For Go modules use native semver; fall back to dpkg for everything else.
+		var ret int
+		if strings.HasPrefix(module, "go:") {
+			if r, ok := compareGoVersions(ver, mv.Version); ok {
+				ret = r
+			} else {
+				ret = av.Compare(bv)
+			}
+		} else {
+			ret = av.Compare(bv)
+		}
 
 		hit1 = hit0
 		hit0 = false
