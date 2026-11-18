@@ -104,7 +104,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Load Secrets from Vault
-      uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
+      uses: rancher-eio/read-vault-secrets@4c8f4e741954651c502bb7739c46ae1bad26b44d # v3
       with:
         secrets: |
           secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | RANCHER_DOCKER_USERNAME ;
