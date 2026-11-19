@@ -465,6 +465,9 @@ func main() {
 				_, addr, err := cluster.ResolveJoinAndBindAddr(*join, sys)
 				if err != nil {
 					log.WithFields(log.Fields{"error": err}).Error()
+					if scanTasker != nil {
+						scanTasker.Close() // os.Exit skips the deferred Close
+					}
 					os.Exit(-2)
 				}
 
@@ -499,6 +502,9 @@ func main() {
 		_, addr, err := cluster.ResolveJoinAndBindAddr(*join, sys)
 		if err != nil {
 			log.WithFields(log.Fields{"error": err}).Error()
+			if scanTasker != nil {
+				scanTasker.Close() // os.Exit skips the deferred Close
+			}
 			os.Exit(-2)
 		}
 
