@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/neuvector/neuvector/share"
@@ -469,10 +470,15 @@ func CountCveDbEntries(path string) (int, error) {
 }
 
 // StreamCveDbBatches reads CVE entries from all database files and delivers them to fn in
-// batches of at most batchSize entries. fn receives isLast=true on the final call.
+// batches of at most batchSize entries and maxBatchBytes serialized protobuf bytes. A zero
+// maxBatchBytes disables the byte limit. fn receives isLast=true on the final call.
 // Uses a one-batch lookahead so isLast is set correctly without a second disk pass.
 // The seen map ensures cross-file deduplication identical to ReadCveDbMeta.
-func StreamCveDbBatches(path string, batchSize int, fn func(batch map[string]*share.ScanVulnerability, isLast bool) error) error {
+func StreamCveDbBatches(path string, batchSize, maxBatchBytes int, fn func(batch map[string]*share.ScanVulnerability, isLast bool) error) error {
+	if batchSize <= 0 {
+		return fmt.Errorf("CVE DB batch size must be positive: %d", batchSize)
+	}
+
 	seen := make(map[string]struct{})
 	var pending map[string]*share.ScanVulnerability
 	current := make(map[string]*share.ScanVulnerability, batchSize)
@@ -480,22 +486,40 @@ func StreamCveDbBatches(path string, batchSize int, fn func(batch map[string]*sh
 	flush := func(batch map[string]*share.ScanVulnerability, isLast bool) error {
 		return fn(batch, isLast)
 	}
+	queueCurrent := func() error {
+		if pending != nil {
+			if err := flush(pending, false); err != nil {
+				return err
+			}
+		}
+		pending = current
+		current = make(map[string]*share.ScanVulnerability, batchSize)
+		return nil
+	}
 
 	addEntry := func(key string, sv *share.ScanVulnerability) error {
 		if _, exists := seen[key]; exists {
 			return nil
 		}
-		seen[key] = struct{}{}
-		current[key] = sv
 
-		if len(current) >= batchSize {
-			if pending != nil {
-				if err := flush(pending, false); err != nil {
+		if maxBatchBytes > 0 {
+			current[key] = sv
+			messageSize := proto.Size(&share.ScannerRegisterV3Request{CVEDB: current})
+			delete(current, key)
+			if messageSize > maxBatchBytes {
+				if len(current) == 0 {
+					return fmt.Errorf("CVE DB entry %q is %d bytes, exceeding the %d byte batch limit", key, messageSize, maxBatchBytes)
+				}
+				if err := queueCurrent(); err != nil {
 					return err
 				}
 			}
-			pending = current
-			current = make(map[string]*share.ScanVulnerability, batchSize)
+		}
+
+		seen[key] = struct{}{}
+		current[key] = sv
+		if len(current) >= batchSize {
+			return queueCurrent()
 		}
 		return nil
 	}

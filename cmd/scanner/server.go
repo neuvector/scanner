@@ -24,8 +24,9 @@ import (
 )
 
 const (
-	period   = 20 // Minutes to check if the scanner is in the controller and controller is alive
-	retryMax = 3  // Number of retry
+	period                   = 20 // Minutes to check if the scanner is in the controller and controller is alive
+	retryMax                 = 3  // Number of retry
+	maxCVEDBUploadBatchBytes = 24 * 1024 * 1024
 )
 
 const scannerRegisterStreamCloseCompatErr = "cardinality violation: received no response message from non-server-streaming RPC"
@@ -406,10 +407,10 @@ func scannerRegisterV3(ctx context.Context, client share.ControllerScanServiceCl
 			batchSize = 5000
 		}
 
-		log.WithFields(log.Fields{"entries": total, "batchSize": batchSize}).Info("V3 register: streaming CVEDB from disk")
+		log.WithFields(log.Fields{"entries": total, "batchSize": batchSize, "maxBatchBytes": maxCVEDBUploadBatchBytes}).Info("V3 register: streaming CVEDB from disk")
 
 		var sent int
-		if err := common.StreamCveDbBatches(cveDB.ExpandPath, batchSize, func(batch map[string]*share.ScanVulnerability, isLast bool) error {
+		if err := common.StreamCveDbBatches(cveDB.ExpandPath, batchSize, maxCVEDBUploadBatchBytes, func(batch map[string]*share.ScanVulnerability, isLast bool) error {
 			log.WithFields(log.Fields{"sent": sent, "total": total}).Info("sending cvedb batch")
 			if err := stream.Send(&share.ScannerRegisterV3Request{
 				CVEDB:     batch,
