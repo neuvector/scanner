@@ -15,10 +15,12 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/neuvector/neuvector/share"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -453,7 +455,7 @@ func TestStreamCveDbBatches(t *testing.T) {
 			var lastCount int
 			collected := make(map[string]*share.ScanVulnerability)
 
-			err := StreamCveDbBatches(dir+"/", c.batchSize, func(batch map[string]*share.ScanVulnerability, isLast bool) error {
+			err := StreamCveDbBatches(dir+"/", c.batchSize, 0, func(batch map[string]*share.ScanVulnerability, isLast bool) error {
 				if isLast {
 					lastCount++
 				} else {
@@ -475,4 +477,55 @@ func TestStreamCveDbBatches(t *testing.T) {
 			assert.Equal(t, count, len(collected))
 		})
 	}
+}
+
+func TestStreamCveDbBatchesHonorsByteLimit(t *testing.T) {
+	const maxBatchBytes = 1500
+	dir := t.TempDir()
+	lines := make([]string, 3)
+	for i := range lines {
+		v := VulFull{
+			Name:        fmt.Sprintf("CVE-%d", i+1),
+			Namespace:   "ubuntu:22.04",
+			Description: strings.Repeat("x", 1024),
+			Severity:    "High",
+		}
+		data, err := json.Marshal(v)
+		require.NoError(t, err)
+		lines[i] = string(data)
+	}
+	writeTBLines(t, dir, "ubuntu_full.tb", lines)
+
+	var batches, lastCount int
+	err := StreamCveDbBatches(dir+"/", 5000, maxBatchBytes, func(batch map[string]*share.ScanVulnerability, isLast bool) error {
+		batches++
+		if isLast {
+			lastCount++
+		}
+		assert.LessOrEqual(t, proto.Size(&share.ScannerRegisterV3Request{CVEDB: batch}), maxBatchBytes)
+		return nil
+	})
+
+	require.NoError(t, err)
+	assert.Greater(t, batches, 1, "byte limit should split entries despite the large entry limit")
+	assert.Equal(t, 1, lastCount, "isLast must be signaled exactly once")
+}
+
+func TestStreamCveDbBatchesRejectsOversizedEntry(t *testing.T) {
+	dir := t.TempDir()
+	v := VulFull{
+		Name:        "CVE-1",
+		Namespace:   "ubuntu:22.04",
+		Description: strings.Repeat("x", 1024),
+		Severity:    "High",
+	}
+	data, err := json.Marshal(v)
+	require.NoError(t, err)
+	writeTBLines(t, dir, "ubuntu_full.tb", []string{string(data)})
+
+	err = StreamCveDbBatches(dir+"/", 5000, 1, func(map[string]*share.ScanVulnerability, bool) error {
+		return nil
+	})
+
+	require.ErrorContains(t, err, "exceeding the 1 byte batch limit")
 }
