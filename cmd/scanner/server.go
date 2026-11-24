@@ -535,8 +535,8 @@ func scannerRegister(joinIP string, joinPort uint16, data *share.ScannerRegister
 	}
 
 	// Timeout must be long enough for the CVEDB upload lock wait (up to 3 minutes)
-	// plus the actual upload and write time.
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*10)
+	// plus the actual upload and write time for large V2 and V3 CVEDB databases.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*30)
 	defer cancel()
 
 	caps, err := client.GetCaps(ctx, &share.RPCVoid{})
