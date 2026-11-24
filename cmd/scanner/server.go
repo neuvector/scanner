@@ -14,6 +14,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/protoadapt"
 
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/cluster"
@@ -311,24 +313,12 @@ func scannerRegisterStream(ctx context.Context, client share.ControllerScanServi
 	}
 
 	for {
-		var count int
-
-		if len(clone) > cvedbChunkMax {
-			count = cvedbChunkMax
-		} else {
-			count = len(clone)
+		send, err := nextCveDBUploadBatch(data, clone, cvedbChunkMax, maxCVEDBUploadBatchBytes)
+		if err != nil {
+			return err
 		}
-
-		send := make(map[string]*share.ScanVulnerability, count)
-
-		for k, v := range clone {
-			send[k] = v
+		for k := range send {
 			delete(clone, k)
-
-			count--
-			if count == 0 {
-				break
-			}
 		}
 
 		log.WithFields(log.Fields{"entries": len(send)}).Info("Stream send")
@@ -359,6 +349,33 @@ func scannerRegisterStream(ctx context.Context, client share.ControllerScanServi
 	}
 
 	return nil
+}
+
+func nextCveDBUploadBatch(data *share.ScannerRegisterData, entries map[string]*share.ScanVulnerability, maxEntries, maxBytes int) (map[string]*share.ScanVulnerability, error) {
+	if maxEntries <= 0 {
+		return nil, fmt.Errorf("CVE DB batch size must be positive: %d", maxEntries)
+	}
+
+	batch := make(map[string]*share.ScanVulnerability, min(len(entries), maxEntries))
+	request := *data
+	for key, entry := range entries {
+		if len(batch) == maxEntries {
+			break
+		}
+
+		batch[key] = entry
+		request.CVEDB = batch
+		messageSize := proto.Size(protoadapt.MessageV2Of(&request))
+		if maxBytes > 0 && messageSize > maxBytes {
+			delete(batch, key)
+			if len(batch) == 0 {
+				return nil, fmt.Errorf("CVE DB entry %q is %d bytes, exceeding the %d byte batch limit", key, messageSize, maxBytes)
+			}
+			break
+		}
+	}
+
+	return batch, nil
 }
 
 func scannerRegisterV3(ctx context.Context, client share.ControllerScanServiceClient, data *share.ScannerRegisterData) error {
