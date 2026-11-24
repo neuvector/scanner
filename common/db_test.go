@@ -20,11 +20,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/neuvector/neuvector/share"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/protoadapt"
 )
 
 var (
@@ -502,7 +503,7 @@ func TestStreamCveDbBatchesHonorsByteLimit(t *testing.T) {
 		if isLast {
 			lastCount++
 		}
-		assert.LessOrEqual(t, proto.Size(&share.ScannerRegisterV3Request{CVEDB: batch}), maxBatchBytes)
+		assert.LessOrEqual(t, proto.Size(protoadapt.MessageV2Of(&share.ScannerRegisterV3Request{CVEDB: batch})), maxBatchBytes)
 		return nil
 	})
 

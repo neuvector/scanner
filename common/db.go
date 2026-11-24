@@ -17,8 +17,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/protoadapt"
 
 	"github.com/neuvector/neuvector/share"
 	"github.com/neuvector/neuvector/share/utils"
@@ -504,7 +505,7 @@ func StreamCveDbBatches(path string, batchSize, maxBatchBytes int, fn func(batch
 
 		if maxBatchBytes > 0 {
 			current[key] = sv
-			messageSize := proto.Size(&share.ScannerRegisterV3Request{CVEDB: current})
+			messageSize := proto.Size(protoadapt.MessageV2Of(&share.ScannerRegisterV3Request{CVEDB: current}))
 			delete(current, key)
 			if messageSize > maxBatchBytes {
 				if len(current) == 0 {
